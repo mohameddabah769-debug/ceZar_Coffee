@@ -593,8 +593,8 @@
 </head>
 <body>
 
-    <!-- Manager Login Modal -->
-    <div class="pin-modal-overlay" id="loginModal" style="display: none;">
+    <!-- Manager Login Modal (مغلق ومحمي بكلمة مرور) -->
+    <div class="pin-modal-overlay" id="loginModal" style="display: flex; position: fixed; inset: 0; background: rgba(25, 14, 9, 0.95); z-index: 999999; justify-content: center; align-items: center;">
         <div class="pin-card" style="max-width: 400px; padding: 26px 22px;">
             <img src="/static/images/cezar_logo.jpg" alt="ceZar Logo" style="width: 74px; height: 74px; border-radius: 50%; margin-bottom: 12px; border: 2px solid var(--cezar-gold);">
             <h2 style="font-size: 20px; font-weight: 900; color: var(--primary-espresso);">بوابة دخول الإدارة</h2>
@@ -604,7 +604,7 @@
                 <label style="font-size: 12px; font-weight: 800; color: #555;">اسم المستخدم:</label>
                 <div style="position: relative; margin-top: 4px; margin-bottom: 12px;">
                     <i class="fa-solid fa-user-tie" style="position: absolute; right: 12px; top: 13px; color: #888;"></i>
-                    <input type="text" id="loginUsername" placeholder="مثال: admin" style="width: 100%; padding: 10px 36px 10px 12px; border-radius: 10px; border: 1.5px solid var(--border-color); font-weight: bold; font-size: 14px; outline: none;">
+                    <input type="text" id="loginUsername" placeholder="اسم المستخدم" style="width: 100%; padding: 10px 36px 10px 12px; border-radius: 10px; border: 1.5px solid var(--border-color); font-weight: bold; font-size: 14px; outline: none;">
                 </div>
 
                 <label style="font-size: 12px; font-weight: 800; color: #555;">كلمة المرور:</label>
@@ -619,9 +619,6 @@
                 </button>
 
                 <div id="loginError" style="background: #FDE8E8; color: #9B1C1C; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; margin-top: 12px; display: none; text-align: center;"></div>
-                <div style="margin-top: 14px; text-align: center; font-size: 11px; color: #999;">
-                    بيانات الدخول الافتراضية: <strong>admin</strong> / <strong>123</strong>
-                </div>
             </div>
         </div>
     </div>
@@ -946,13 +943,25 @@
             setInterval(fetchOrders, 3000); // Live poll every 3 seconds
         }
 
-        // Check Manager Authentication & Auto Start Live Dashboard
-        var currentToken = localStorage.getItem('cezar_manager_token') || sessionStorage.getItem('cezar_manager_token') || 'admin_session';
-        var currentUsername = localStorage.getItem('cezar_manager_username') || sessionStorage.getItem('cezar_manager_username') || 'admin';
-        document.getElementById('managerNameDisplay').textContent = currentUsername;
+        // Check Manager Authentication & Protection
+        function checkManagerAuth() {
+            var token = sessionStorage.getItem('cezar_manager_token');
+            var user = sessionStorage.getItem('cezar_manager_username');
+            var modal = document.getElementById('loginModal');
 
-        // Start Dashboard & Audio Engine immediately without blocking!
-        initDashboard();
+            if (!token || !user) {
+                if (modal) modal.style.display = 'flex';
+                return false;
+            } else {
+                if (modal) modal.style.display = 'none';
+                document.getElementById('managerNameDisplay').textContent = user;
+                initDashboard();
+                return true;
+            }
+        }
+
+        // Start Protection Check immediately on load!
+        checkManagerAuth();
 
         async function submitManagerLogin() {
             const u = document.getElementById('loginUsername').value.trim();
@@ -973,7 +982,7 @@
                 });
                 const data = await res.json();
                 if (res.ok && data.status === 'success') {
-                    sessionStorage.setItem('cezar_manager_token', 'logged_in_' + u);
+                    sessionStorage.setItem('cezar_manager_token', 'token_' + Date.now());
                     sessionStorage.setItem('cezar_manager_username', data.username);
                     document.getElementById('managerNameDisplay').textContent = data.username;
                     document.getElementById('loginModal').style.display = 'none';
