@@ -666,10 +666,9 @@
         <p class="brand-subtitle">سيزر كوفي | متعة المذاق الفاخر</p>
         
         <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
-            <div class="table-pill" onclick="openTableSelector()" style="margin-top: 0;">
-                <i class="fa-solid fa-chair"></i>
+            <div class="table-pill" style="margin-top: 0; cursor: default; background: rgba(232, 93, 4, 0.25); border-color: var(--cezar-orange);">
+                <i class="fa-solid fa-lock" style="font-size: 11px; color: var(--cezar-gold);"></i>
                 <span id="currentTableDisplay">ترابيزة رقم 1</span>
-                <i class="fa-solid fa-pen-to-square" style="font-size: 11px; opacity: 0.8;"></i>
             </div>
             <button onclick="sendWaiterCall()" class="btn-waiter-call" title="طلب حضور الويتر للترابيزة">
                 <i class="fa-solid fa-bell-concierge"></i>
@@ -758,11 +757,12 @@
                     <!-- Dynamic Cart Rows -->
                 </div>
 
-                <div class="form-group" id="tableSelectGroup">
-                    <label><i class="fa-solid fa-chair" style="color: var(--cezar-gold);"></i> رقم الترابيزة:</label>
-                    <select id="modalTableSelect" class="form-control" style="font-weight: 800; font-size: 15px;">
-                        <!-- Generated 1 to 25 tables -->
-                    </select>
+                <div class="form-group" id="tableSelectGroup" style="background: #F8F5F0; padding: 10px 14px; border-radius: 12px; border: 1.5px solid #E2D9CF;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-weight: 800; font-size: 13px; color: var(--primary-espresso);"><i class="fa-solid fa-chair" style="color: var(--cezar-orange); margin-left: 6px;"></i> رقم الترابيزة المحجوزة:</span>
+                        <span id="lockedTableBadge" style="background: var(--primary-espresso); color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 900;"><i class="fa-solid fa-lock" style="font-size: 10px; margin-left: 4px; color: var(--cezar-gold);"></i> ترابيزة 1</span>
+                    </div>
+                    <input type="hidden" id="modalTableSelect" value="1">
                 </div>
 
                 <div class="form-group" id="orderNotesGroup">
@@ -806,24 +806,7 @@
         </div>
     </div>
 
-    <!-- Table Selection Modal -->
-    <div class="modal-overlay" id="tableSelectorModal">
-        <div class="modal-sheet" style="text-align: center;">
-            <div class="modal-header">
-                <h3>اختر رقم ترابيزتك</h3>
-                <button class="btn-close-modal" onclick="closeTableSelector()">&times;</button>
-            </div>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">حدد رقم الترابيزة التي تجلس عليها لتوصيل الطلب إليها فوراً:</p>
-            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
-                <!-- 25 Table Buttons -->
-                <script>
-                    for(let i=1; i<=25; i++) {
-                        document.write(`<button onclick="selectTable(${i})" class="form-control" style="font-weight: 900; padding: 12px 0; background: #FAF7F2; border-color: #E2D9CF;">${i}</button>`);
-                    }
-                </script>
-            </div>
-        </div>
-    </div>
+    <!-- Table Selection Modal (Locked & Disabled) -->
 
     <!-- Bill Request Modal -->
     <div class="modal-overlay" id="billModal">
@@ -879,32 +862,18 @@
         }
 
         // Populate table selector select options (1-25)
-        const tableSelectEl = document.getElementById('modalTableSelect');
-        for (let i = 1; i <= 25; i++) {
-            const opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = `ترابيزة رقم ${i}`;
-            if (i === currentTable) opt.selected = true;
-            tableSelectEl.appendChild(opt);
-        }
-
         function updateTableDisplay() {
             document.getElementById('currentTableDisplay').textContent = `ترابيزة رقم ${currentTable}`;
-            tableSelectEl.value = currentTable;
+            const lockedBadge = document.getElementById('lockedTableBadge');
+            if (lockedBadge) lockedBadge.innerHTML = `<i class="fa-solid fa-lock" style="font-size: 10px; margin-left: 4px; color: var(--cezar-gold);"></i> ترابيزة ${currentTable}`;
+            const selectEl = document.getElementById('modalTableSelect');
+            if (selectEl) selectEl.value = currentTable;
         }
         updateTableDisplay();
 
-        function openTableSelector() {
-            document.getElementById('tableSelectorModal').style.display = 'flex';
-        }
-        function closeTableSelector() {
-            document.getElementById('tableSelectorModal').style.display = 'none';
-        }
-        function selectTable(num) {
-            currentTable = num;
-            updateTableDisplay();
-            closeTableSelector();
-        }
+        function openTableSelector() {}
+        function closeTableSelector() {}
+        function selectTable(num) {}
 
         let selectedPaymentMethod = 'كاش';
         let currentTableBillData = null;
