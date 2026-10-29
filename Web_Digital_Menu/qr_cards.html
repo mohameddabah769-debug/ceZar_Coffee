@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ceZar COFFEE | كروت الـ QR للترابيزات الـ 25</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-espresso: #2B1810;
+            --primary-dark: #190E09;
+            --cezar-orange: #E85D04;
+            --cezar-gold: #D4A373;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: #F0ECE4;
+            color: #333;
+            padding: 20px;
+        }
+
+        /* Top Action Bar (Hidden in Print) */
+        .no-print-bar {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-espresso) 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 18px;
+            max-width: 1100px;
+            margin: 0 auto 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .bar-title h1 {
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .bar-title p {
+            font-size: 13px;
+            color: var(--cezar-gold);
+            font-weight: 600;
+        }
+
+        .btn-print {
+            background: linear-gradient(135deg, var(--cezar-orange) 0%, #D04F00 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(232, 93, 4, 0.4);
+            transition: transform 0.15s;
+        }
+
+        .btn-print:active {
+            transform: scale(0.97);
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* Individual Table Stand Card */
+        .table-card {
+            background: white;
+            border-radius: 20px;
+            padding: 22px 18px;
+            text-align: center;
+            border: 2px solid #E2D9CF;
+            box-shadow: 0 4px 16px rgba(43, 24, 16, 0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 1 / 1.45;
+        }
+
+        .card-top-decoration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, var(--primary-espresso) 0%, var(--cezar-orange) 50%, var(--cezar-gold) 100%);
+        }
+
+        .card-logo {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            border: 2px solid var(--cezar-gold);
+            object-fit: cover;
+            margin-bottom: 6px;
+        }
+
+        .card-brand-name {
+            font-size: 17px;
+            font-weight: 900;
+            color: var(--primary-espresso);
+            line-height: 1.1;
+        }
+
+        .card-brand-name span {
+            color: var(--cezar-orange);
+        }
+
+        .card-table-pill {
+            background: linear-gradient(135deg, var(--primary-espresso) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 6px 20px;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 900;
+            margin: 10px 0;
+            box-shadow: 0 3px 8px rgba(43, 24, 16, 0.2);
+            border: 1px solid var(--cezar-gold);
+        }
+
+        .card-qr-box {
+            background: #FFFFFF;
+            padding: 8px;
+            border-radius: 14px;
+            border: 1px solid #E2D9CF;
+            display: inline-block;
+            margin: 4px 0;
+        }
+
+        .card-qr-img {
+            width: 140px;
+            height: 140px;
+            display: block;
+        }
+
+        .card-instruction {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--primary-espresso);
+            line-height: 1.4;
+            margin-top: 6px;
+        }
+
+        .card-footer {
+            font-size: 10px;
+            color: var(--cezar-gold);
+            font-weight: 700;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Print Media Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .no-print-bar {
+                display: none !important;
+            }
+
+            .cards-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+                max-width: 100%;
+                margin: 0;
+            }
+
+            .table-card {
+                border: 2px solid #2B1810;
+                box-shadow: none;
+                page-break-inside: avoid;
+                break-inside: avoid;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Action Bar -->
+    <div class="no-print-bar">
+        <div class="bar-title">
+            <h1><i class="fa-solid fa-qrcode" style="color: var(--cezar-gold); margin-left: 8px;"></i> كروت الـ QR للترابيزات الـ 25</h1>
+            <p>كروت جاهزة للطباعة على استاندات الأكريليك الفاخرة لكافيه ceZar COFFEE | إعداد: <strong>م / محمد دباح</strong> (01095744676)</p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.25); padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(212,163,115,0.3);">
+                <label for="serverHostInput" style="font-size: 12px; color: var(--cezar-gold); font-weight: 700;">رابط السيرفر:</label>
+                <input id="serverHostInput" type="text" placeholder="مثال: http://10.62.251.186:8000" style="padding: 4px 8px; border-radius: 8px; border: none; font-size: 12px; direction: ltr; font-weight: bold; width: 190px;">
+                <button onclick="renderAllCards()" style="background: var(--cezar-orange); color: white; border: none; padding: 4px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold;">تحديث</button>
+            </div>
+            <a href="/menu?table=1" target="_blank" style="background: rgba(255,255,255,0.15); color: white; padding: 10px 16px; border-radius: 12px; text-decoration: none; font-size: 13px; font-weight: 800;">
+                <i class="fa-solid fa-eye"></i> معاينة المنيو
+            </a>
+            <button class="btn-print" onclick="window.print()">
+                <i class="fa-solid fa-print"></i>
+                <span>طباعة جميع الكروت (25 ترابيزة)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Cards Grid (Tables 1 to 25) -->
+    <main class="cards-grid" id="cardsGrid">
+        <!-- Rendered via JavaScript -->
+    </main>
+
+    <script>
+        const cardsGrid = document.getElementById('cardsGrid');
+        const hostInput = document.getElementById('serverHostInput');
+        const TOTAL_TABLES = 25;
+
+        // الرابط السحابي المباشر الدائم لكافيه سيزر
+        const ONLINE_MENU_BASE = 'https://mohameddabah769-debug.github.io/AI_Restaurant';
+        hostInput.value = ONLINE_MENU_BASE;
+
+        function renderAllCards() {
+            cardsGrid.innerHTML = '';
+            const baseUrl = hostInput.value.trim().replace(/\/$/, '');
+
+            for (let t = 1; t <= TOTAL_TABLES; t++) {
+                const card = document.createElement('div');
+                card.className = 'table-card';
+
+                // الرابط النهائي المشفر بداخل الباركود
+                const fullMenuUrl = `${baseUrl}/?table=${t}`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=6&data=${encodeURIComponent(fullMenuUrl)}`;
+
+                card.innerHTML = `
+                    <div class="card-top-decoration"></div>
+                    
+                    <div>
+                        <img src="/static/images/cezar_logo.jpg" alt="Logo" class="card-logo" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=100'">
+                        <div class="card-brand-name">ce<span>Z</span>ar COFFEE</div>
+                    </div>
+
+                    <div class="card-table-pill">
+                        <i class="fa-solid fa-chair" style="font-size: 14px; margin-left: 6px;"></i>
+                        ترابيزة رقم ${t}
+                    </div>
+
+                    <div class="card-qr-box">
+                        <img src="${qrUrl}" alt="QR Code Table ${t}" class="card-qr-img">
+                    </div>
+
+                    <div>
+                        <p class="card-instruction">
+                            امسح الكود بكاميرا الموبايل<br>
+                            لتصفح المنيو وقائمة الأسعار مباشرة ☕✨
+                        </p>
+                        <div class="card-footer">ceZar COFFEE • Luxury Coffee Experience</div>
+                    </div>
+                `;
+
+                cardsGrid.appendChild(card);
+            }
+        }
+
+        renderAllCards();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ceZar COFFEE | لوحة تحكم الإدارة والمتحكم الرئيسي</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-espresso: #2B1810;
+            --primary-dark: #190E09;
+            --cezar-orange: #E85D04;
+            --cezar-gold: #D4A373;
+            --bg-body: #F4F1EA;
+            --card-bg: #FFFFFF;
+            --text-main: #212529;
+            --text-muted: #6C757D;
+            --border-color: #E2D9CF;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding-bottom: 50px;
+        }
+
+        /* Top Navbar */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-espresso) 100%);
+            color: white;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-logo {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid var(--cezar-gold);
+            background: white;
+            object-fit: cover;
+        }
+
+        .nav-title h1 {
+            font-size: 18px;
+            font-weight: 900;
+            color: white;
+            line-height: 1.1;
+        }
+
+        .nav-title span {
+            font-size: 11px;
+            color: var(--cezar-gold);
+            font-weight: 700;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-nav {
+            background: rgba(255,255,255,0.12);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 7px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-nav:hover, .btn-nav.active {
+            background: var(--cezar-orange);
+            border-color: var(--cezar-orange);
+        }
+
+        @keyframes pulseUrgent {
+            0% { background: linear-gradient(135deg, #B71C1C 0%, #D04F00 100%); box-shadow: 0 4px 15px rgba(183,28,28,0.5); }
+            100% { background: linear-gradient(135deg, #E65100 0%, #B71C1C 100%); box-shadow: 0 8px 30px rgba(230,81,0,0.85); }
+        }
+
+        /* Stats Bar */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            padding: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 16px 18px;
+            border-radius: 18px;
+            border: 1.5px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            position: relative;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(43, 24, 16, 0.1);
+            border-color: var(--cezar-gold);
+        }
+
+        .stat-card:active {
+            transform: scale(0.98);
+        }
+
+        .stat-card.active-filter {
+            border: 2px solid var(--cezar-orange);
+            background: #FFFAF5;
+            box-shadow: 0 0 0 3px rgba(232, 93, 4, 0.18), 0 8px 20px rgba(43, 24, 16, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .stat-card.active-filter::after {
+            content: 'محدد';
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            background: var(--cezar-orange);
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .stat-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .stat-val {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--primary-espresso);
+            line-height: 1.1;
+        }
+
+        .stat-lbl {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 800;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .filter-pill {
+            background: white;
+            border: 1.5px solid #E2D9CF;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--primary-espresso);
+            cursor: pointer;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .filter-pill:hover {
+            border-color: var(--cezar-orange);
+            color: var(--cezar-orange);
+        }
+
+        .filter-pill.active {
+            background: linear-gradient(135deg, var(--primary-espresso) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-color: var(--primary-espresso);
+            box-shadow: 0 4px 12px rgba(43, 24, 16, 0.2);
+        }
+
+        /* Main Tabs */
+        .tab-controls {
+            display: flex;
+            gap: 10px;
+            padding: 0 16px 12px;
+            max-width: 1200px;
+            margin: 0 auto;
+            border-bottom: 2px solid #E6DEC3;
+        }
+
+        .tab-btn {
+            background: white;
+            border: 1px solid #DDD5CC;
+            padding: 10px 20px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--primary-espresso);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-espresso);
+            color: white;
+            border-color: var(--primary-espresso);
+            box-shadow: 0 4px 12px rgba(43, 24, 16, 0.2);
+        }
+
+        .tab-content {
+            display: none;
+            max-width: 1200px;
+            margin: 16px auto;
+            padding: 0 16px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Orders Grid */
+        .orders-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 18px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .order-card.new-order {
+            border: 2px solid var(--cezar-orange);
+            background: #FFFBF8;
+            animation: pulseCard 2s infinite;
+        }
+
+        @keyframes pulseCard {
+            0% { box-shadow: 0 0 0 0 rgba(232, 93, 4, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(232, 93, 4, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(232, 93, 4, 0); }
+        }
+
+        @keyframes highlightGlow {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(232, 93, 4, 0.8); }
+            50% { transform: scale(1.03); box-shadow: 0 0 30px 8px rgba(232, 93, 4, 0.9); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(232, 93, 4, 0); }
+        }
+
+        .order-card.highlight-target-order {
+            animation: highlightGlow 1.2s ease 3 !important;
+            border: 3px solid #E85D04 !important;
+            z-index: 10;
+        }
+
+        .btn-nav.alarm-ringing-btn {
+            background: linear-gradient(135deg, #B71C1C 0%, #D04F00 100%) !important;
+            color: #FFF !important;
+            border: 2px solid #FFD54F !important;
+            animation: pulseUrgent 0.8s infinite alternate !important;
+            box-shadow: 0 0 15px rgba(232, 93, 4, 0.8) !important;
+            cursor: pointer !important;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #E2D9CF;
+        }
+
+        .table-badge {
+            background: linear-gradient(135deg, var(--primary-espresso) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .status-جديد { background: #FFE8D6; color: #D04F00; }
+        .status-جاري-التحضير { background: #FFF3CD; color: #856404; }
+        .status-تم-التقديم { background: #D4EDDA; color: #155724; }
+        .status-ملغي { background: #F8D7DA; color: #721C24; }
+        .status-نداء-ويتر { background: #E85D04; color: white; font-weight: 900; animation: pulseBadge 1.2s infinite; }
+        .status-طلب-حساب { background: #E8F5E9; color: #1B5E20; font-weight: 900; border: 1px solid #81C784; }
+
+        .order-card.bill-request-active {
+            border: 2px solid #2E7D32;
+            background: #F4FAF5;
+            animation: pulseBill 2s infinite;
+        }
+        @keyframes pulseBill {
+            0% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(46, 125, 50, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0); }
+        }
+        @keyframes pulseBadge {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .order-summary {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            white-space: pre-line;
+            color: #333;
+        }
+
+        .order-notes {
+            background: #FFF8E1;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #795548;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .order-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px dashed #E2D9CF;
+        }
+
+        .order-total {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--cezar-orange);
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-status {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.1s;
+        }
+
+        .btn-prep { background: #FFF3CD; color: #856404; }
+        .btn-done { background: #D4EDDA; color: #155724; }
+        .btn-cancel { background: #F8D7DA; color: #721C24; }
+
+        /* Menu Management Tab */
+        .menu-ctrl-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .search-admin {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-admin input {
+            width: 100%;
+            padding: 10px 38px 10px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-admin i {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .btn-add-item {
+            background: var(--cezar-orange);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .table-responsive {
+            background: white;
+            border-radius: 16px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+            font-size: 14px;
+        }
+
+        th {
+            background: #FAF7F2;
+            padding: 12px 16px;
+            font-weight: 800;
+            color: var(--primary-espresso);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #EFEAE3;
+            vertical-align: middle;
+        }
+
+        .price-input {
+            width: 80px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid #DDD5CC;
+            font-weight: 800;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: #28a745; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Login Modal */
+        .pin-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(25, 14, 9, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .pin-card {
+            background: white;
+            width: 100%;
+            max-width: 380px;
+            border-radius: 24px;
+            padding: 30px 24px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .pin-input {
+            width: 100%;
+            font-size: 26px;
+            letter-spacing: 8px;
+            text-align: center;
+            padding: 12px;
+            border-radius: 14px;
+            border: 2px solid var(--border-color);
+            margin: 18px 0;
+            outline: none;
+            font-weight: 900;
+        }
+
+        .pin-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--cezar-orange) 0%, #D04F00 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Manager Login Modal -->
+    <div class="pin-modal-overlay" id="loginModal" style="display: none;">
+        <div class="pin-card" style="max-width: 400px; padding: 26px 22px;">
+            <img src="/static/images/cezar_logo.jpg" alt="ceZar Logo" style="width: 74px; height: 74px; border-radius: 50%; margin-bottom: 12px; border: 2px solid var(--cezar-gold);">
+            <h2 style="font-size: 20px; font-weight: 900; color: var(--primary-espresso);">بوابة دخول الإدارة</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">لوحة تحكم المدير والمتحكم الرئيسي لكافيه سيزر</p>
+
+            <div style="text-align: right; margin-top: 18px;">
+                <label style="font-size: 12px; font-weight: 800; color: #555;">اسم المستخدم:</label>
+                <div style="position: relative; margin-top: 4px; margin-bottom: 12px;">
+                    <i class="fa-solid fa-user-tie" style="position: absolute; right: 12px; top: 13px; color: #888;"></i>
+                    <input type="text" id="loginUsername" placeholder="مثال: admin" style="width: 100%; padding: 10px 36px 10px 12px; border-radius: 10px; border: 1.5px solid var(--border-color); font-weight: bold; font-size: 14px; outline: none;">
+                </div>
+
+                <label style="font-size: 12px; font-weight: 800; color: #555;">كلمة المرور:</label>
+                <div style="position: relative; margin-top: 4px; margin-bottom: 16px;">
+                    <i class="fa-solid fa-lock" style="position: absolute; right: 12px; top: 13px; color: #888;"></i>
+                    <input type="password" id="loginPassword" placeholder="••••••••" style="width: 100%; padding: 10px 36px 10px 12px; border-radius: 10px; border: 1.5px solid var(--border-color); font-weight: bold; font-size: 14px; outline: none;" onkeydown="if(event.key==='Enter') submitManagerLogin()">
+                </div>
+
+                <button class="pin-btn" onclick="submitManagerLogin()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>تسجيل الدخول للإدارة</span>
+                </button>
+
+                <div id="loginError" style="background: #FDE8E8; color: #9B1C1C; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; margin-top: 12px; display: none; text-align: center;"></div>
+                <div style="margin-top: 14px; text-align: center; font-size: 11px; color: #999;">
+                    بيانات الدخول الافتراضية: <strong>admin</strong> / <strong>123</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Credentials Modal -->
+    <div class="pin-modal-overlay" id="changeCredModal" style="display: none;">
+        <div class="pin-card" style="max-width: 420px; text-align: right; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 17px; font-weight: 900; color: var(--primary-espresso);"><i class="fa-solid fa-key" style="color: var(--cezar-orange);"></i> تعديل بيانات دخول المدير</h3>
+                <button onclick="closeChangeCredModal()" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 800;">كلمة المرور الحالية:</label>
+                <input type="password" id="curPassword" placeholder="أدخل كلمة المرور الحالية" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 4px; font-weight: bold;">
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 800;">اسم المستخدم الجديد:</label>
+                <input type="text" id="newUsername" placeholder="مثال: cezar_owner" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 4px; font-weight: bold;">
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 12px; font-weight: 800;">كلمة المرور الجديدة:</label>
+                <input type="password" id="newPassword" placeholder="أدخل كلمة المرور الجديدة" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 4px; font-weight: bold;">
+            </div>
+
+            <button class="pin-btn" onclick="submitChangeCredentials()" style="width: 100%;">حفظ البيانات الجديدة</button>
+            <div id="changeCredMsg" style="margin-top: 10px; font-size: 12px; font-weight: 800; text-align: center; display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Continuous Urgent Alarm Banner (Flashing Restaurant Alert) -->
+    <div id="urgentAlarmBanner" style="display: none; position: sticky; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #B71C1C 0%, #D04F00 100%); color: white; padding: 12px 18px; z-index: 1000; box-shadow: 0 6px 25px rgba(183, 28, 28, 0.6); animation: pulseUrgent 0.9s infinite alternate;">
+        <div style="max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="navigateToAlarmOrder()" title="انقر لفتح الطلب مباشرة">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: white; color: #B71C1C; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; box-shadow: 0 3px 10px rgba(0,0,0,0.3);">
+                    <i class="fa-solid fa-bell fa-shake"></i>
+                </div>
+                <div>
+                    <div id="urgentAlarmText" style="font-weight: 900; font-size: 16px; color: white;">🚨 يوجد طلب جديد وارد من ترابيزة!</div>
+                    <div style="font-size: 12px; color: #FFE082; margin-top: 2px;">👈 اضغط هنا لفتح الطلب ومكانه فوراً على الشاشة</div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button onclick="navigateToAlarmOrder()" style="background: #FFD54F; color: #2B1810; border: none; padding: 9px 18px; border-radius: 20px; font-weight: 900; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+                    <i class="fa-solid fa-arrow-down"></i>
+                    <span>عرض الطلب 👁️</span>
+                </button>
+                <button onclick="silenceCurrentAlarm()" style="background: rgba(255,255,255,0.2); color: white; border: 1.5px solid rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 20px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-bell-slash"></i>
+                    <span>إيقاف الرنة 🔕</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <img src="/static/images/cezar_logo.jpg" alt="Logo" class="nav-logo" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=100'">
+            <div class="nav-title">
+                <h1>ce<span>Z</span>ar COFFEE</h1>
+                <span>لوحة تحكم المدير والكاشير</span>
+            </div>
+        </div>
+        <div class="nav-actions">
+            <!-- Manager Profile Badge -->
+            <div style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.12); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(212,163,115,0.4);">
+                <i class="fa-solid fa-user-shield" style="color: var(--cezar-gold); font-size: 14px;"></i>
+                <span id="managerNameDisplay" style="font-size: 12px; font-weight: 800; color: white;">admin</span>
+            </div>
+
+            <button class="btn-nav" id="soundToggleBtn" onclick="toggleSound()">
+                <i class="fa-solid fa-bell"></i>
+                <span id="soundText">الجرس مفعّل</span>
+            </button>
+            <button class="btn-nav" onclick="openChangeCredModal()" title="تعديل اسم المستخدم وكلمة المرور">
+                <i class="fa-solid fa-key"></i>
+                <span>تعديل الدخول</span>
+            </button>
+            <a href="/qr-cards" target="_blank" class="btn-nav">
+                <i class="fa-solid fa-qrcode"></i>
+                <span>كروت الترابيزات</span>
+            </a>
+            <a href="/menu?table=1" target="_blank" class="btn-nav">
+                <i class="fa-solid fa-mobile-screen"></i>
+                <span>المنيو</span>
+            </a>
+            <button class="btn-nav" onclick="logoutManager()" style="background: rgba(220, 53, 69, 0.4); border: 1px solid rgba(220, 53, 69, 0.6);" title="تسجيل الخروج">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>خروج</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Audio Elements for 100% Guaranteed Sound on All Devices -->
+    <audio id="audioNewOrder" src="/static/sounds/dingdong.wav" preload="auto"></audio>
+    <audio id="audioWaiter" src="/static/sounds/alert.wav" preload="auto"></audio>
+    <audio id="audioBill" src="/static/sounds/bell.wav" preload="auto"></audio>
+
+    <!-- Sound Activation & Status Banner (Prominent & Clear) -->
+    <div id="soundActivationBanner" style="background: linear-gradient(135deg, #2B1810 0%, #1A0D07 100%); border-bottom: 2px solid var(--cezar-gold); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div id="soundBannerIcon" style="width: 42px; height: 42px; border-radius: 50%; background: #E85D04; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 12px rgba(232,93,4,0.4);">
+                <i class="fa-solid fa-bell fa-shake"></i>
+            </div>
+            <div>
+                <div style="font-weight: 900; font-size: 15px; color: white;">جرس تنبيه الطلبات والويتر 🔔</div>
+                <div id="soundBannerStatus" style="font-size: 12px; color: var(--cezar-gold); margin-top: 2px;">اضغط على الزر لتفعيل واختبار صوت الرنة على جهازك</div>
+            </div>
+        </div>
+        <button id="btnSoundTest" onclick="activateAndTestSound()" style="background: linear-gradient(135deg, var(--cezar-orange) 0%, #B7410E 100%); color: white; border: 1.5px solid rgba(255,255,255,0.4); padding: 10px 22px; border-radius: 20px; font-weight: 900; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(232,93,4,0.45); transition: all 0.2s ease;">
+            <i class="fa-solid fa-volume-high"></i>
+            <span id="btnSoundTestText">اضغط هنا لتفعيل الصوت 🔊</span>
+        </button>
+    </div>
+
+    <!-- Stats Bar (Interactive Filters) -->
+    <section class="stats-grid">
+        <div class="stat-card" id="cardSales" onclick="setOrderFilter('sales')" title="انقر لتصفية وعرض مبيعات اليوم والفواتير المحصلة">
+            <div class="stat-icon" style="background: #E8F5E9; color: #2E7D32;">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+            <div>
+                <div class="stat-val" id="statSales">0 ج</div>
+                <div class="stat-lbl"><span>مبيعات اليوم</span> <i class="fa-solid fa-arrow-pointer" style="font-size: 10px; color: #2E7D32;"></i></div>
+            </div>
+        </div>
+        <div class="stat-card active-filter" id="cardTotalOrders" onclick="setOrderFilter('all')" title="انقر لعرض جميع طلبات اليوم">
+            <div class="stat-icon" style="background: #E3F2FD; color: #1565C0;">
+                <i class="fa-solid fa-receipt"></i>
+            </div>
+            <div>
+                <div class="stat-val" id="statTotalOrders">0</div>
+                <div class="stat-lbl"><span>طلبات اليوم</span> <i class="fa-solid fa-arrow-pointer" style="font-size: 10px; color: #1565C0;"></i></div>
+            </div>
+        </div>
+        <div class="stat-card" id="cardPending" onclick="setOrderFilter('pending')" title="انقر لعرض الطلبات التي يتم تحضيرها حالياً">
+            <div class="stat-icon" style="background: #FFF3E0; color: #E65100;">
+                <i class="fa-solid fa-mug-hot"></i>
+            </div>
+            <div>
+                <div class="stat-val" id="statPendingOrders">0</div>
+                <div class="stat-lbl"><span>جاري تحضيره</span> <i class="fa-solid fa-arrow-pointer" style="font-size: 10px; color: #E65100;"></i></div>
+            </div>
+        </div>
+        <div class="stat-card" id="cardDelivered" onclick="setOrderFilter('delivered')" title="انقر لعرض الطلبات التي تم تسليمها بنجاح للترابيزة">
+            <div class="stat-icon" style="background: #EDE7F6; color: #512DA8;">
+                <i class="fa-solid fa-check-double"></i>
+            </div>
+            <div>
+                <div class="stat-val" id="statDeliveredOrders">0</div>
+                <div class="stat-lbl"><span>تم تقديمه</span> <i class="fa-solid fa-arrow-pointer" style="font-size: 10px; color: #512DA8;"></i></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Tabs -->
+    <div class="tab-controls">
+        <button class="tab-btn active" onclick="switchTab('orders', this)">
+            <i class="fa-solid fa-bell-concierge"></i>
+            <span>طلبات الترابيزات الحية</span>
+            <span id="ordersCountBadge" style="background: var(--cezar-orange); color: white; padding: 2px 7px; border-radius: 10px; font-size: 11px;">0</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('menu', this)">
+            <i class="fa-solid fa-sliders"></i>
+            <span>التحكم في الأسعار والأصناف</span>
+        </button>
+    </div>
+
+    <!-- Tab 1: Orders -->
+    <main class="tab-content active" id="tabOrders">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; background: white; padding: 12px 18px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid var(--border-color);">
+            <div style="font-size: 14px; font-weight: 800; color: var(--primary-espresso); display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-bell fa-shake" style="color: var(--cezar-orange);"></i>
+                <span>متابعة أوردرات ونداءات الترابيزات الـ 25 المباشرة</span>
+            </div>
+            <button onclick="clearAllOrders()" style="background: rgba(220, 53, 69, 0.1); color: #dc3545; border: 1.5px solid #dc3545; padding: 6px 14px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>تصفير الطلبات التجريبية (بدء وردية جديدة)</span>
+            </button>
+        </div>
+
+        <!-- Interactive Filter Chips -->
+        <div style="display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; flex-wrap: wrap;">
+            <button class="filter-pill active" id="pill-all" onclick="setOrderFilter('all')">
+                <i class="fa-solid fa-layer-group"></i> <span>جميع الطلبات</span> (<span id="pillCountAll">0</span>)
+            </button>
+            <button class="filter-pill" id="pill-new" onclick="setOrderFilter('new')" style="color: #D04F00;">
+                <i class="fa-solid fa-bell fa-shake"></i> <span>جديد ونداء ويتر</span> (<span id="pillCountNew">0</span>)
+            </button>
+            <button class="filter-pill" id="pill-prep" onclick="setOrderFilter('prep')" style="color: #E65100;">
+                <i class="fa-solid fa-mug-hot"></i> <span>جاري تحضيره</span> (<span id="pillCountPrep">0</span>)
+            </button>
+            <button class="filter-pill" id="pill-delivered" onclick="setOrderFilter('delivered')" style="color: #2E7D32;">
+                <i class="fa-solid fa-check-double"></i> <span>تم تقديمه للترابيزة</span> (<span id="pillCountDelivered">0</span>)
+            </button>
+            <button class="filter-pill" id="pill-sales" onclick="setOrderFilter('sales')" style="color: #1565C0;">
+                <i class="fa-solid fa-coins"></i> <span>مبيعات اليوم المحصلة</span> (<span id="pillCountSales">0 ج</span>)
+            </button>
+        </div>
+
+        <!-- Filter Status Active Alert Banner -->
+        <div id="filterBanner" style="display: none; background: #FFF8E1; border: 1.5px solid #FFE082; padding: 12px 18px; border-radius: 14px; margin-bottom: 16px; font-weight: 800; font-size: 13px; color: #795548; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-filter" style="color: var(--cezar-orange); font-size: 15px;"></i>
+                <span id="filterBannerText">عرض: جميع الطلبات</span>
+            </div>
+            <button onclick="setOrderFilter('all')" style="border: none; background: #2B1810; color: white; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-weight: 800; font-size: 12px;">عرض الكل</button>
+        </div>
+        <div class="orders-container" id="ordersList">
+            <!-- Dynamic Order Cards -->
+        </div>
+    </main>
+
+    <!-- System Engineering & Developer Credit Footer -->
+    <footer style="text-align: center; padding: 24px 15px 15px; margin-top: 30px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 13px;">
+        <div style="display: inline-flex; align-items: center; gap: 8px; background: white; padding: 8px 18px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--border-color); flex-wrap: wrap; justify-content: center;">
+            <i class="fa-solid fa-code" style="color: var(--cezar-orange);"></i>
+            <span>تطوير وبرمجة النظام: <strong style="color: var(--primary-espresso);">م / محمد دباح (Eng. Mohamed Dabah)</strong></span>
+            <span style="color: #ccc;">|</span>
+            <i class="fa-solid fa-phone" style="color: var(--cezar-gold);"></i>
+            <a href="tel:01095744676" style="color: var(--cezar-orange); text-decoration: none; font-weight: 800; direction: ltr;">01095744676</a>
+        </div>
+        <p style="margin-top: 8px; font-size: 11px; color: #888;">نظام الإدارة والتحكم الذكي لكافيه ceZar COFFEE • جميع الحقوق محفوظة 2026</p>
+    </footer>
+
+    <!-- Tab 2: Menu Management -->
+    <main class="tab-content" id="tabMenu">
+        <div class="menu-ctrl-header">
+            <div class="search-admin">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="adminSearchInput" placeholder="ابحث عن صنف لتعديل سعره أو إيقافه..." oninput="filterAdminMenu()">
+            </div>
+            <button class="btn-add-item" onclick="openAddItemModal()">
+                <i class="fa-solid fa-plus"></i>
+                <span>إضافة صنف جديد</span>
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الصنف</th>
+                        <th>القسم</th>
+                        <th>السعر الحالي</th>
+                        <th>حالة التوفر</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="adminMenuTableBody">
+                    <!-- Dynamic Menu Rows -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- System Engineering & Developer Credit Footer -->
+    <footer style="text-align: center; padding: 24px 15px 15px; margin-top: 30px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 13px;">
+        <div style="display: inline-flex; align-items: center; gap: 8px; background: white; padding: 8px 18px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--border-color); flex-wrap: wrap; justify-content: center;">
+            <i class="fa-solid fa-code" style="color: var(--cezar-orange);"></i>
+            <span>تطوير وبرمجة النظام: <strong style="color: var(--primary-espresso);">م / محمد دباح (Eng. Mohamed Dabah)</strong></span>
+            <span style="color: #ccc;">|</span>
+            <i class="fa-solid fa-phone" style="color: var(--cezar-gold);"></i>
+            <a href="tel:01095744676" style="color: var(--cezar-orange); text-decoration: none; font-weight: 800; direction: ltr;">01095744676</a>
+        </div>
+        <p style="margin-top: 8px; font-size: 11px; color: #888;">نظام الإدارة والتحكم الذكي لكافيه ceZar COFFEE • جميع الحقوق محفوظة 2026</p>
+    </footer>
+
+    <!-- Add Item Modal -->
+    <div class="pin-modal-overlay" id="addItemModal" style="display: none;">
+        <div class="pin-card" style="text-align: right; max-width: 440px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 18px; font-weight: 900; color: var(--primary-espresso);">إضافة صنف جديد للمنيو</h3>
+                <button onclick="closeAddItemModal()" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 13px; font-weight: 800;">اسم المشروب / الصنف:</label>
+                <input type="text" id="newItemName" class="form-control" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; margin-top: 4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 13px; font-weight: 800;">القسم:</label>
+                <select id="newItemCat" class="form-control" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; margin-top: 4px;">
+                    <option value="أيس كوفي">أيس كوفي</option>
+                    <option value="ميلك شيك">ميلك شيك</option>
+                    <option value="ميكسات فريش">ميكسات فريش</option>
+                    <option value="كوكتيل صودا">كوكتيل صودا</option>
+                    <option value="وافلز">وافلز</option>
+                    <option value="بان كيك">بان كيك</option>
+                    <option value="أم على">أم على</option>
+                    <option value="أيس كريم">أيس كريم</option>
+                    <option value="فروت سلات">فروت سلات</option>
+                    <option value="مشروبات غازية">مشروبات غازية</option>
+                    <option value="شيشة">شيشة</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 13px; font-weight: 800;">السعر بالجنيه:</label>
+                <input type="number" id="newItemPrice" class="form-control" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; margin-top: 4px;">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 800;">الوصف أو المكونات (اختياري):</label>
+                <input type="text" id="newItemDesc" class="form-control" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; margin-top: 4px;">
+            </div>
+            <button class="pin-btn" onclick="submitNewItem()">حفظ الصنف في المنيو</button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        var soundEnabled = true;
+        var dashboardInitialized = false;
+        var lastKnownOrderIds = new Set();
+        var adminMenuItems = [];
+
+        function initDashboard() {
+            if (dashboardInitialized) return;
+            dashboardInitialized = true;
+            fetchOrders();
+            setInterval(fetchOrders, 3000); // Live poll every 3 seconds
+        }
+
+        // Check Manager Authentication & Auto Start Live Dashboard
+        var currentToken = localStorage.getItem('cezar_manager_token') || sessionStorage.getItem('cezar_manager_token') || 'admin_session';
+        var currentUsername = localStorage.getItem('cezar_manager_username') || sessionStorage.getItem('cezar_manager_username') || 'admin';
+        document.getElementById('managerNameDisplay').textContent = currentUsername;
+
+        // Start Dashboard & Audio Engine immediately without blocking!
+        initDashboard();
+
+        async function submitManagerLogin() {
+            const u = document.getElementById('loginUsername').value.trim();
+            const p = document.getElementById('loginPassword').value.trim();
+            const errEl = document.getElementById('loginError');
+
+            if (!u || !p) {
+                errEl.textContent = 'يرجى إدخال اسم المستخدم وكلمة المرور';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    sessionStorage.setItem('cezar_manager_token', 'logged_in_' + u);
+                    sessionStorage.setItem('cezar_manager_username', data.username);
+                    document.getElementById('managerNameDisplay').textContent = data.username;
+                    document.getElementById('loginModal').style.display = 'none';
+                    initDashboard();
+                } else {
+                    errEl.textContent = data.detail || 'اسم المستخدم أو كلمة المرور غير صحيحة';
+                    errEl.style.display = 'block';
+                }
+            } catch (e) {
+                errEl.textContent = 'تعذر الاتصال بالسيرفر، تأكد من تشغيل النظام.';
+                errEl.style.display = 'block';
+            }
+        }
+
+        function logoutManager() {
+            if (confirm('هل تريد بالتأكيد تسجيل الخروج من لوحة التحكم؟')) {
+                sessionStorage.removeItem('cezar_manager_token');
+                sessionStorage.removeItem('cezar_manager_username');
+                location.reload();
+            }
+        }
+
+        function openChangeCredModal() {
+            document.getElementById('changeCredModal').style.display = 'flex';
+            document.getElementById('curPassword').value = '';
+            document.getElementById('newUsername').value = sessionStorage.getItem('cezar_manager_username') || 'admin';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('changeCredMsg').style.display = 'none';
+        }
+
+        function closeChangeCredModal() {
+            document.getElementById('changeCredModal').style.display = 'none';
+        }
+
+        async function submitChangeCredentials() {
+            const curP = document.getElementById('curPassword').value.trim();
+            const newU = document.getElementById('newUsername').value.trim();
+            const newP = document.getElementById('newPassword').value.trim();
+            const msgEl = document.getElementById('changeCredMsg');
+
+            if (!curP || !newU || !newP) {
+                msgEl.style.color = '#dc3545';
+                msgEl.textContent = 'جميع الحقول مطلوبة!';
+                msgEl.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth/change-credentials', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        current_password: curP,
+                        new_username: newU,
+                        new_password: newP
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    msgEl.style.color = '#28a745';
+                    msgEl.textContent = 'تم التحديث بنجاح! تم حفظ البيانات الجديدة.';
+                    msgEl.style.display = 'block';
+                    sessionStorage.setItem('cezar_manager_username', data.username);
+                    document.getElementById('managerNameDisplay').textContent = data.username;
+                    setTimeout(closeChangeCredModal, 1500);
+                } else {
+                    msgEl.style.color = '#dc3545';
+                    msgEl.textContent = data.detail || 'حدث خطأ في تحديث البيانات';
+                    msgEl.style.display = 'block';
+                }
+            } catch (e) {
+                msgEl.style.color = '#dc3545';
+                msgEl.textContent = 'تعذر الاتصال بالسيرفر!';
+                msgEl.style.display = 'block';
+            }
+        }
+
+        // Continuous Restaurant POS Audio Alarm Engine
+        let globalAudioCtx = null;
+        let activeAlarmOrder = null;
+        let alarmIntervalTimer = null;
+        let silencedOrderIds = new Set();
+
+        function getAudioContext() {
+            try {
+                if (!globalAudioCtx) {
+                    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtxClass) globalAudioCtx = new AudioCtxClass();
+                }
+                if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+                    globalAudioCtx.resume();
+                }
+                return globalAudioCtx;
+            } catch(e) {
+                return null;
+            }
+        }
+
+        // Auto unlock Audio on any user interaction
+        document.addEventListener('click', () => { getAudioContext(); }, { once: false });
+        document.addEventListener('touchstart', () => { getAudioContext(); }, { once: false });
+
+        // Dual-Engine Audio: Plays Real WAV + Loud Web Audio Synthesizer simultaneously
+        function playAlarmBurst(orderType = 'جديد') {
+            if (!soundEnabled) return;
+
+            // 1. Play Real WAV Audio Tag
+            let audioId = 'audioNewOrder';
+            if (orderType === 'نداء ويتر') audioId = 'audioWaiter';
+            else if (orderType && orderType.startsWith('طلب حساب')) audioId = 'audioBill';
+
+            const audioEl = document.getElementById(audioId);
+            if (audioEl) {
+                audioEl.volume = 1.0;
+                audioEl.currentTime = 0;
+                audioEl.play().catch(() => {
+                    try {
+                        const fallback = new Audio(audioEl.src);
+                        fallback.volume = 1.0;
+                        fallback.play().catch(() => {});
+                    } catch(err) {}
+                });
+            }
+
+            // 2. Play Loud Web Audio Oscillator at 100% volume
+            try {
+                const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtxClass) {
+                    if (!globalAudioCtx) globalAudioCtx = new AudioCtxClass();
+                    if (globalAudioCtx.state === 'suspended') {
+                        globalAudioCtx.resume();
+                    }
+
+                    const now = globalAudioCtx.currentTime;
+                    const osc = globalAudioCtx.createOscillator();
+                    const gain = globalAudioCtx.createGain();
+
+                    osc.type = orderType === 'نداء ويتر' ? 'sawtooth' : 'triangle';
+                    const freq = orderType === 'نداء ويتر' ? 980 : (orderType.startsWith('طلب حساب') ? 1174 : 880);
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(1.0, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+
+                    osc.connect(gain);
+                    gain.connect(globalAudioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                }
+            } catch(e) {}
+        }
+
+        function startContinuousAlarm(order) {
+            activeAlarmOrder = order;
+
+            const banner = document.getElementById('urgentAlarmBanner');
+            const bannerText = document.getElementById('urgentAlarmText');
+            if (banner && bannerText) {
+                let orderLabel = 'أوردر مشروبات/مأكولات جديد';
+                if (order.status === 'نداء ويتر') orderLabel = '🔔 نداء الويتر عاجل';
+                else if (order.status && order.status.startsWith('طلب حساب')) orderLabel = '🧾 طلب الحساب والفاتورة';
+                bannerText.innerHTML = `🚨 ترابيزة رقم ${order.table_number}: ${orderLabel}!`;
+                banner.style.display = 'block';
+            }
+
+            // Animate and highlight bell button in navbar
+            const soundBtn = document.getElementById('soundToggleBtn');
+            const soundText = document.getElementById('soundText');
+            if (soundBtn && soundText) {
+                soundBtn.classList.add('alarm-ringing-btn');
+                soundText.innerHTML = `🚨 طلب ترابيزة ${order.table_number}`;
+            }
+
+            flashTabTitle(order.status);
+            playAlarmBurst(order.status);
+
+            if (!alarmIntervalTimer) {
+                alarmIntervalTimer = setInterval(() => {
+                    if (activeAlarmOrder && soundEnabled) {
+                        playAlarmBurst(activeAlarmOrder.status);
+                    }
+                }, 2400);
+            }
+        }
+
+        function stopContinuousAlarm() {
+            activeAlarmOrder = null;
+            if (alarmIntervalTimer) {
+                clearInterval(alarmIntervalTimer);
+                alarmIntervalTimer = null;
+            }
+            const banner = document.getElementById('urgentAlarmBanner');
+            if (banner) banner.style.display = 'none';
+
+            const soundBtn = document.getElementById('soundToggleBtn');
+            const soundText = document.getElementById('soundText');
+            if (soundBtn && soundText) {
+                soundBtn.classList.remove('alarm-ringing-btn');
+                soundText.textContent = soundEnabled ? 'الجرس مفعّل' : 'الجرس صامت';
+            }
+        }
+
+        function silenceCurrentAlarm() {
+            if (activeAlarmOrder) {
+                silencedOrderIds.add(activeAlarmOrder.id);
+            }
+            stopContinuousAlarm();
+        }
+
+        // Navigate directly to the urgent order card with high-visibility glow
+        function navigateToAlarmOrder() {
+            const allOrders = window.lastFetchedOrders || [];
+            const target = activeAlarmOrder || allOrders.find(o => 
+                o.status === 'نداء ويتر' || (o.status && o.status.startsWith('طلب حساب')) || o.status === 'جديد'
+            );
+            if (!target) return;
+            const targetId = target.id;
+
+            // 1. Silence the ringing sound as manager is attending to it
+            silenceCurrentAlarm();
+
+            // 2. Ensure Orders tab is active
+            const ordersTab = document.getElementById('tabOrders');
+            if (ordersTab && !ordersTab.classList.contains('active')) {
+                const ordersTabBtn = document.querySelector('.tab-btn[onclick*="orders"]');
+                if (ordersTabBtn) switchTab('orders', ordersTabBtn);
+            }
+
+            // 3. Reset filter to 'all' so card is guaranteed to be in DOM
+            setOrderFilter('all');
+
+            // 4. Scroll smoothly to the target card & pulse highlight
+            setTimeout(() => {
+                const cardEl = document.getElementById('order-card-' + targetId);
+                if (cardEl) {
+                    cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    cardEl.classList.add('highlight-target-order');
+                    setTimeout(() => {
+                        cardEl.classList.remove('highlight-target-order');
+                    }, 4000);
+                }
+            }, 180);
+        }
+
+        function activateAndTestSound() {
+            soundEnabled = true;
+            if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+                globalAudioCtx.resume();
+            }
+
+            // Play loud test burst
+            playAlarmBurst('جديد');
+
+            const bannerStatus = document.getElementById('soundBannerStatus');
+            const btn = document.getElementById('btnSoundTest');
+            const btnText = document.getElementById('btnSoundTestText');
+            const icon = document.getElementById('soundBannerIcon');
+
+            if (bannerStatus) bannerStatus.innerHTML = '<span style="color: #4CAF50; font-weight: 800;">✅ الصوت مفعّل بنظام الإنذار المستمر!</span> سيرن ويهز الشاشة عند أي أوردر أو نداء ويتر.';
+            if (btn) {
+                btn.style.background = 'linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%)';
+                btn.style.boxShadow = '0 4px 14px rgba(46,125,50,0.5)';
+            }
+            if (btnText) btnText.innerHTML = 'الجرس شغال (اضغط لتجربة الرنة 🔔)';
+            if (icon) {
+                icon.style.background = '#2E7D32';
+                icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+            }
+            const soundText = document.getElementById('soundText');
+            if (soundText) soundText.textContent = 'الجرس مفعّل';
+        }
+
+        // Backward compatibility
+        function playAttentionSound(type) {
+            playAlarmBurst(type);
+        }
+        function playChime() {
+            playAlarmBurst('جديد');
+        }
+
+        let originalTitle = document.title;
+        let titleFlashInterval = null;
+        function flashTabTitle(status) {
+            if (titleFlashInterval) clearInterval(titleFlashInterval);
+            let isAlt = false;
+            let count = 0;
+            const label = status === 'نداء ويتر' ? '🚨 نداء ويتر وارد!' : (status.startsWith('طلب حساب') ? '💵 طلب حساب ترابيزة!' : '🔔 أوردر جديد وارد!');
+            titleFlashInterval = setInterval(() => {
+                document.title = isAlt ? label : originalTitle;
+                isAlt = !isAlt;
+                count++;
+                if (count > 12) {
+                    clearInterval(titleFlashInterval);
+                    document.title = originalTitle;
+                }
+            }, 700);
+        }
+
+        function toggleSound() {
+            const allOrders = window.lastFetchedOrders || [];
+            const urgent = activeAlarmOrder || allOrders.find(o => 
+                o.status === 'نداء ويتر' || (o.status && o.status.startsWith('طلب حساب')) || o.status === 'جديد'
+            );
+            if (urgent) {
+                navigateToAlarmOrder();
+                return;
+            }
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundText').textContent = soundEnabled ? 'الجرس مفعّل' : 'الجرس صامت';
+            document.getElementById('soundToggleBtn').style.opacity = soundEnabled ? '1' : '0.6';
+            if (soundEnabled) {
+                playAlarmBurst('جديد');
+            }
+        }
+
+        function switchTab(tabName, btnEl) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btnEl.classList.add('active');
+
+            if (tabName === 'orders') {
+                document.getElementById('tabOrders').classList.add('active');
+            } else {
+                document.getElementById('tabMenu').classList.add('active');
+                loadAdminMenu();
+            }
+        }
+
+        let currentOrderFilter = 'all';
+
+        function setOrderFilter(filterType) {
+            currentOrderFilter = filterType;
+
+            // Highlight Stat Cards
+            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active-filter'));
+            if (filterType === 'all') document.getElementById('cardTotalOrders')?.classList.add('active-filter');
+            else if (filterType === 'sales') document.getElementById('cardSales')?.classList.add('active-filter');
+            else if (filterType === 'pending') document.getElementById('cardPending')?.classList.add('active-filter');
+            else if (filterType === 'delivered') document.getElementById('cardDelivered')?.classList.add('active-filter');
+
+            // Highlight Filter Pills
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+            const pillMap = {
+                'all': 'pill-all',
+                'new': 'pill-new',
+                'prep': 'pill-prep',
+                'pending': 'pill-prep',
+                'delivered': 'pill-delivered',
+                'sales': 'pill-sales'
+            };
+            const targetPillId = pillMap[filterType] || 'pill-all';
+            document.getElementById(targetPillId)?.classList.add('active');
+
+            // Update Alert Banner
+            const banner = document.getElementById('filterBanner');
+            const bannerText = document.getElementById('filterBannerText');
+            if (banner && bannerText) {
+                if (filterType !== 'all') {
+                    banner.style.display = 'flex';
+                    let desc = '';
+                    if (filterType === 'sales') desc = '<i class="fa-solid fa-coins" style="color: #2E7D32;"></i> عرض فواتير ومبيعات اليوم المكتملة والمحصلة';
+                    else if (filterType === 'pending') desc = '<i class="fa-solid fa-mug-hot" style="color: #E65100;"></i> عرض الطلبات التي يتم تحضيرها ونداءات الويتر';
+                    else if (filterType === 'new') desc = '<i class="fa-solid fa-bell fa-shake" style="color: #D04F00;"></i> عرض الطلبات الجديدة ونداءات الويتر العاجلة';
+                    else if (filterType === 'prep') desc = '<i class="fa-solid fa-fire-burner" style="color: #E65100;"></i> عرض الطلبات قيد التحضير في البار';
+                    else if (filterType === 'delivered') desc = '<i class="fa-solid fa-check-double" style="color: #2E7D32;"></i> عرض الطلبات التي تم تسليمها وتقديمها للترابيزة';
+                    bannerText.innerHTML = desc;
+                } else {
+                    banner.style.display = 'none';
+                }
+            }
+
+            // Ensure Orders Tab is active
+            const ordersTab = document.getElementById('tabOrders');
+            if (ordersTab && !ordersTab.classList.contains('active')) {
+                const ordersTabBtn = document.querySelector('.tab-btn[onclick*="orders"]');
+                if (ordersTabBtn) switchTab('orders', ordersTabBtn);
+            }
+
+            filterAndRenderOrders();
+        }
+
+        function filterAndRenderOrders() {
+            const allOrders = window.lastFetchedOrders || [];
+            let filtered = [];
+
+            if (currentOrderFilter === 'all') {
+                filtered = allOrders;
+            } else if (currentOrderFilter === 'pending') {
+                filtered = allOrders.filter(o => o.status === 'جديد' || o.status === 'جاري التحضير' || o.status === 'قيد التحضير' || o.status === 'نداء ويتر');
+            } else if (currentOrderFilter === 'delivered') {
+                filtered = allOrders.filter(o => o.status === 'تم التقديم');
+            } else if (currentOrderFilter === 'sales') {
+                filtered = allOrders.filter(o => o.status !== 'ملغي' && o.total_price > 0);
+            } else if (currentOrderFilter === 'new') {
+                filtered = allOrders.filter(o => o.status === 'جديد' || o.status === 'نداء ويتر');
+            } else if (currentOrderFilter === 'prep') {
+                filtered = allOrders.filter(o => o.status === 'جاري التحضير' || o.status === 'قيد التحضير');
+            }
+
+            renderOrders(filtered);
+        }
+
+        // Fetch Live Orders
+        async function fetchOrders() {
+            try {
+                const res = await fetch('/api/cezar/orders');
+                const data = await res.json();
+
+                // Update Stats
+                document.getElementById('statSales').textContent = `${data.stats.total_sales || 0} ج`;
+                document.getElementById('statTotalOrders').textContent = data.stats.total_orders || 0;
+                document.getElementById('statPendingOrders').textContent = data.stats.pending_orders || 0;
+                document.getElementById('statDeliveredOrders').textContent = data.stats.delivered_orders || 0;
+                document.getElementById('ordersCountBadge').textContent = data.stats.pending_orders || 0;
+
+                const orders = data.orders || [];
+                let hasNewArrival = false;
+
+                // Calculate detailed counts for pills
+                const countAll = orders.length;
+                const countNew = orders.filter(o => o.status === 'جديد' || o.status === 'نداء ويتر').length;
+                const countPrep = orders.filter(o => o.status === 'جاري التحضير' || o.status === 'قيد التحضير').length;
+                const countDeliv = orders.filter(o => o.status === 'تم التقديم').length;
+                const salesTotal = orders.filter(o => o.status !== 'ملغي').reduce((acc, o) => acc + (o.total_price || 0), 0);
+
+                if (document.getElementById('pillCountAll')) document.getElementById('pillCountAll').textContent = countAll;
+                if (document.getElementById('pillCountNew')) document.getElementById('pillCountNew').textContent = countNew;
+                if (document.getElementById('pillCountPrep')) document.getElementById('pillCountPrep').textContent = countPrep;
+                if (document.getElementById('pillCountDelivered')) document.getElementById('pillCountDelivered').textContent = countDeliv;
+                if (document.getElementById('pillCountSales')) document.getElementById('pillCountSales').textContent = `${salesTotal} ج`;
+
+                // Continuous Restaurant POS Alarm Logic:
+                const pendingUrgent = orders.filter(o => 
+                    (o.status === 'جديد' || o.status === 'نداء ويتر' || (o.status && o.status.startsWith('طلب حساب'))) &&
+                    !silencedOrderIds.has(o.id)
+                );
+
+                if (pendingUrgent.length > 0) {
+                    const mostRecent = pendingUrgent[0];
+                    if (!activeAlarmOrder || activeAlarmOrder.id !== mostRecent.id) {
+                        startContinuousAlarm(mostRecent);
+                    }
+                } else {
+                    if (activeAlarmOrder) {
+                        stopContinuousAlarm();
+                    }
+                }
+
+                lastKnownOrderIds = new Set(orders.map(o => o.id));
+                window.lastFetchedOrders = orders;
+                filterAndRenderOrders();
+            } catch (e) {}
+        }
+
+        function renderOrders(orders) {
+            const container = document.getElementById('ordersList');
+            if (orders.length === 0) {
+                let emptyMsg = 'لا توجد طلبات ترابيزات حالياً';
+                let emptySub = 'أي طلب جديد يطلبه الزبون من الـ QR Code سيظهر هنا فوراً مع صوت جرس التنبيه.';
+                if (currentOrderFilter === 'pending') {
+                    emptyMsg = 'لا توجد طلبات قيد التحضير حالياً';
+                    emptySub = 'جميع طلبات الترابيزات تم الانتهاء منها وتقديمها بنجاح ☕✨';
+                } else if (currentOrderFilter === 'delivered') {
+                    emptyMsg = 'لم يتم تقديم أي طلبات بعد';
+                    emptySub = 'الطلبات التي تضغط عليها "تقديم" ستظهر في هذا القسم كأرشيف للمشروبات المسلمة.';
+                } else if (currentOrderFilter === 'sales') {
+                    emptyMsg = 'لا توجد مبيعات مسجلة في هذا القسم حالياً';
+                    emptySub = 'أي طلب تم تقديمه يضاف حسابه إلى مبيعات اليوم مباشرة.';
+                }
+
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 50px 20px; color: var(--text-muted); background: white; border-radius: 16px; border: 1px dashed var(--border-color);">
+                        <i class="fa-solid fa-mug-hot fa-3x" style="color: var(--cezar-gold); opacity: 0.6; margin-bottom: 12px;"></i>
+                        <h3 style="font-size: 18px; font-weight: 800; color: var(--primary-espresso);">${emptyMsg}</h3>
+                        <p style="font-size: 13px; margin-top: 6px;">${emptySub}</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            orders.forEach(o => {
+                const card = document.createElement('div');
+                const isNew = o.status === 'جديد';
+                const isWaiterCall = o.status === 'نداء ويتر';
+                const isBillRequest = o.status && o.status.startsWith('طلب حساب');
+                const statusClass = isBillRequest ? 'status-طلب-حساب' : ('status-' + o.status.replace(/\s+/g, '-'));
+                card.className = `order-card ${isNew ? 'new-order' : ''} ${isWaiterCall ? 'waiter-call-active' : ''} ${isBillRequest ? 'bill-request-active' : ''}`;
+                card.id = `order-card-${o.id}`;
+
+                card.innerHTML = `
+                    <div class="order-header">
+                        <div class="table-badge" style="${isWaiterCall ? 'background: #E85D04;' : (isBillRequest ? 'background: #2E7D32;' : '')}">
+                            <i class="fa-solid fa-chair"></i>
+                            <span>ترابيزة رقم ${o.table_number}</span>
+                        </div>
+                        <span class="status-badge ${statusClass}">
+                            ${isWaiterCall ? '<i class="fa-solid fa-bell fa-shake"></i> ' : ''}
+                            ${isBillRequest ? '<i class="fa-solid fa-receipt"></i> ' : ''}
+                            ${o.status}
+                        </span>
+                    </div>
+                    <div class="order-summary" style="${isWaiterCall ? 'font-weight: 900; color: #D04F00; font-size: 16px;' : (isBillRequest ? 'font-weight: 900; color: #1B5E20; font-size: 16px;' : '')}">${o.items_summary}</div>
+                    ${o.notes ? `<div class="order-notes"><i class="fa-solid fa-note-sticky"></i> ${o.notes}</div>` : ''}
+                    <div class="order-footer">
+                        <div>
+                            <div class="order-total">${o.total_price > 0 ? o.total_price + ' جنيه' : '—'}</div>
+                            <span style="font-size: 11px; color: var(--text-muted);">${o.created_at}</span>
+                        </div>
+                        <div class="order-actions">
+                            ${!isWaiterCall ? `<button class="btn-status" style="background: #2B1810; color: white; border: 1px solid var(--cezar-gold);" onclick="printOrderSlip(${o.id})" title="${isBillRequest ? 'طباعة فاتورة الحساب للعميل' : 'طباعة بون للباريستا'}"><i class="fa-solid fa-print"></i> ${isBillRequest ? 'فاتورة' : 'بون'}</button>` : ''}
+                            ${isWaiterCall ? `<button class="btn-status btn-done" onclick="updateOrderStatus(${o.id}, 'تم التقديم')">✅ تم الحضور للترابيزة</button>` : ''}
+                            ${isBillRequest ? `<button class="btn-status btn-done" style="background: #2E7D32; color: white;" onclick="updateOrderStatus(${o.id}, 'تم التقديم')">✅ تم تسوية الحساب ${o.total_price > 0 ? `(${o.total_price} ج)` : ''}</button>` : ''}
+                            ${!isWaiterCall && !isBillRequest && o.status === 'جديد' ? `<button class="btn-status btn-prep" onclick="updateOrderStatus(${o.id}, 'جاري التحضير')">👨‍🍳 تحضير</button>` : ''}
+                            ${!isWaiterCall && !isBillRequest && o.status !== 'تم التقديم' && o.status !== 'ملغي' ? `<button class="btn-status btn-done" onclick="updateOrderStatus(${o.id}, 'تم التقديم')">✅ تقديم</button>` : ''}
+                            ${o.status !== 'ملغي' && !isBillRequest ? `<button class="btn-status btn-cancel" onclick="updateOrderStatus(${o.id}, 'ملغي')">❌ إلغاء</button>` : ''}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function printOrderSlip(orderId) {
+            const order = (window.lastFetchedOrders || []).find(x => x.id === orderId);
+            if (!order) return;
+
+            const printWin = window.open('', '_blank', 'width=380,height=550');
+            if (!printWin) {
+                alert('يرجى السماح بالنوافذ المنبثقة لطباعة البون');
+                return;
+            }
+
+            printWin.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>بون تجهيز - ترابيزة ${order.table_number}</title>
+                    <style>
+                        @page { size: 80mm auto; margin: 3mm; }
+                        body {
+                            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+                            width: 74mm;
+                            margin: 0 auto;
+                            padding: 8px 4px;
+                            color: #000;
+                            text-align: center;
+                        }
+                        .logo-title { font-size: 22px; font-weight: 900; letter-spacing: 1px; }
+                        .slip-type { font-size: 13px; font-weight: 800; border-bottom: 2px dashed #000; padding-bottom: 6px; margin-bottom: 8px; }
+                        .table-box {
+                            font-size: 26px;
+                            font-weight: 900;
+                            background: #000;
+                            color: #fff;
+                            padding: 8px 0;
+                            border-radius: 6px;
+                            margin: 8px 0;
+                        }
+                        .items-box {
+                            text-align: right;
+                            font-size: 15px;
+                            line-height: 1.8;
+                            font-weight: 800;
+                            white-space: pre-line;
+                            border-bottom: 1.5px dashed #000;
+                            padding-bottom: 8px;
+                            margin-bottom: 8px;
+                        }
+                        .notes-box {
+                            text-align: right;
+                            font-size: 13px;
+                            font-weight: bold;
+                            background: #f0f0f0;
+                            padding: 6px 8px;
+                            border-radius: 4px;
+                            margin-bottom: 8px;
+                            border: 1px solid #ccc;
+                        }
+                        .footer { font-size: 11px; margin-top: 10px; border-top: 1px dashed #000; padding-top: 6px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="logo-title">ceZar COFFEE</div>
+                    <div class="slip-type">بون تجهيز باريستا • كافيه سيزر</div>
+                    <div class="table-box">ترابيزة رقم ${order.table_number}</div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px; font-weight: bold;">
+                        <span>طلب #${order.id}</span>
+                        <span>${order.created_at || ''}</span>
+                    </div>
+                    <div class="items-box">${order.items_summary}</div>
+                    ${order.notes ? `<div class="notes-box">ملاحظات: ${order.notes}</div>` : ''}
+                    <div style="display: flex; justify-content: space-between; font-size: 17px; font-weight: 900; margin-top: 4px;">
+                        <span>الإجمالي:</span>
+                        <span>${order.total_price} ج</span>
+                    </div>
+                    <div class="footer">
+                        ceZar COFFEE • خدمة فاخرة وسريعة
+                    </div>
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(function(){ window.close(); }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+        }
+
+        async function clearAllOrders() {
+            if (!confirm('⚠️ تحذير: هل تريد بالتأكيد تصفير ومسح جميع طلبات الترابيزات لبدء وردية جديدة وحساب من 0 جنيه؟')) return;
+            try {
+                const res = await fetch('/api/orders/clear-all', { method: 'POST' });
+                const data = await res.json();
+                alert(data.message || 'تم تصفير جميع الطلبات بنجاح!');
+                fetchOrders();
+            } catch (e) {
+                alert('تعذر تصفير الطلبات!');
+            }
+        }
+
+        async function updateOrderStatus(orderId, newStatus) {
+            try {
+                silencedOrderIds.add(orderId);
+                if (activeAlarmOrder && activeAlarmOrder.id === orderId) {
+                    stopContinuousAlarm();
+                }
+                await fetch(`/api/cezar/orders/${orderId}/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                fetchOrders();
+            } catch (e) {}
+        }
+
+        // Menu Management Functions
+        async function loadAdminMenu() {
+            try {
+                const res = await fetch('/api/cezar/menu-items?all_items=true');
+                const data = await res.json();
+                adminMenuItems = [];
+                for (const items of Object.values(data.categories || {})) {
+                    adminMenuItems.push(...items);
+                }
+                renderAdminMenu(adminMenuItems);
+            } catch (e) {}
+        }
+
+        function renderAdminMenu(items) {
+            const tbody = document.getElementById('adminMenuTableBody');
+            tbody.innerHTML = '';
+
+            items.forEach(it => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight: 800; color: var(--primary-espresso);">${it.name}</td>
+                    <td><span style="background: #F1ECE6; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700;">${it.category}</span></td>
+                    <td>
+                        <input type="number" class="price-input" id="price-${it.id}" value="${it.price}" onchange="savePrice(${it.id})"> ج
+                    </td>
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox" ${it.is_available ? 'checked' : ''} onchange="toggleAvailability(${it.id}, this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                        <span style="font-size: 12px; font-weight: 700; margin-right: 6px; color: ${it.is_available ? '#28a745' : '#dc3545'};">
+                            ${it.is_available ? 'متوفر' : 'خلصان'}
+                        </span>
+                    </td>
+                    <td>
+                        <button onclick="deleteMenuItem(${it.id})" style="border: none; background: #FDE8E8; color: #E02424; width: 28px; height: 28px; border-radius: 6px; cursor: pointer;">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterAdminMenu() {
+            const q = document.getElementById('adminSearchInput').value.trim().toLowerCase();
+            if (!q) {
+                renderAdminMenu(adminMenuItems);
+                return;
+            }
+            const filtered = adminMenuItems.filter(it => 
+                it.name.toLowerCase().includes(q) || it.category.toLowerCase().includes(q)
+            );
+            renderAdminMenu(filtered);
+        }
+
+        async function savePrice(itemId) {
+            const newPrice = parseFloat(document.getElementById(`price-${itemId}`).value);
+            if (isNaN(newPrice) || newPrice < 0) return;
+
+            try {
+                await fetch(`/api/cezar/menu-items/${itemId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ price: newPrice })
+                });
+            } catch (e) {}
+        }
+
+        async function toggleAvailability(itemId, isAvailable) {
+            try {
+                await fetch(`/api/cezar/menu-items/${itemId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_available: isAvailable })
+                });
+                loadAdminMenu();
+            } catch (e) {}
+        }
+
+        async function deleteMenuItem(itemId) {
+            if (!confirm('هل أنت متأكد من حذف هذا الصنف نهائياً من المنيو؟')) return;
+            try {
+                await fetch(`/api/cezar/menu-items/${itemId}`, { method: 'DELETE' });
+                loadAdminMenu();
+            } catch (e) {}
+        }
+
+        function openAddItemModal() {
+            document.getElementById('addItemModal').style.display = 'flex';
+        }
+        function closeAddItemModal() {
+            document.getElementById('addItemModal').style.display = 'none';
+        }
+
+        async function submitNewItem() {
+            const name = document.getElementById('newItemName').value.trim();
+            const category = document.getElementById('newItemCat').value;
+            const price = parseFloat(document.getElementById('newItemPrice').value);
+            const desc = document.getElementById('newItemDesc').value.trim();
+
+            if (!name || isNaN(price)) {
+                alert('يرجى كتابة اسم الصنف وسعره بشكل صحيح.');
+                return;
+            }
+
+            try {
+                await fetch('/api/cezar/menu-items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, category, price, description: desc })
+                });
+                closeAddItemModal();
+                loadAdminMenu();
+            } catch (e) {}
+        }
+    </script>
+</body>
+</html>

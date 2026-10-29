@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ceZar COFFEE | سيزر كوفي - المنيو الإلكتروني</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-espresso: #2B1810;
+            --primary-dark: #190E09;
+            --cezar-orange: #E85D04;
+            --cezar-gold: #D4A373;
+            --bg-body: #F8F5F0;
+            --card-bg: #FFFFFF;
+            --text-main: #212529;
+            --text-muted: #6C757D;
+            --border-color: #E9ECEF;
+            --shadow-sm: 0 2px 8px rgba(43, 24, 16, 0.06);
+            --shadow-md: 0 6px 20px rgba(43, 24, 16, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding-bottom: 110px;
+        }
+
+        /* Top Header */
+        .brand-header {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-espresso) 100%);
+            color: white;
+            padding: 22px 18px 18px;
+            text-align: center;
+            border-bottom-left-radius: 28px;
+            border-bottom-right-radius: 28px;
+            box-shadow: 0 6px 24px rgba(25, 14, 9, 0.3);
+            position: relative;
+        }
+
+        .brand-logo-img {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--cezar-gold);
+            background: white;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+            margin-bottom: 8px;
+        }
+
+        .brand-title {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            color: #FFFFFF;
+        }
+
+        .brand-title span {
+            color: var(--cezar-orange);
+        }
+
+        .brand-subtitle {
+            font-size: 13px;
+            color: var(--cezar-gold);
+            margin-top: 2px;
+            font-weight: 600;
+        }
+
+        /* Table Selector Badge */
+        .table-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(232, 93, 4, 0.18);
+            border: 1px solid var(--cezar-orange);
+            color: #FFFFFF;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: transform 0.2s;
+        }
+
+        .table-pill:active {
+            transform: scale(0.96);
+        }
+
+        .btn-waiter-call {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: linear-gradient(135deg, #E85D04 0%, #D04F00 100%);
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            color: #FFFFFF;
+            padding: 7px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(232, 93, 4, 0.45);
+            transition: all 0.2s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-waiter-call:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 18px rgba(232, 93, 4, 0.6);
+        }
+
+        .btn-waiter-call:active {
+            transform: scale(0.95);
+        }
+
+        .btn-bill-call {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            color: #FFFFFF;
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(46, 125, 50, 0.4);
+            transition: all 0.2s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-bill-call:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 18px rgba(46, 125, 50, 0.55);
+        }
+
+        .btn-bill-call:active {
+            transform: scale(0.95);
+        }
+
+        .btn-cart-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: linear-gradient(135deg, var(--cezar-orange) 0%, #B7410E 100%);
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            color: #FFFFFF;
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(232, 93, 4, 0.4);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .btn-cart-header:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 18px rgba(232, 93, 4, 0.55);
+        }
+
+        .btn-cart-header:active {
+            transform: scale(0.95);
+        }
+
+        .header-cart-badge {
+            background: #FFFFFF;
+            color: var(--primary-espresso);
+            font-size: 11px;
+            font-weight: 900;
+            padding: 2px 7px;
+            border-radius: 12px;
+            min-width: 18px;
+            text-align: center;
+            display: inline-block;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .payment-choice-card {
+            background: #FDFBF7;
+            border: 2px solid #E2D9CF;
+            padding: 16px 10px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            text-align: center;
+        }
+
+        .payment-choice-card:hover {
+            border-color: #2E7D32;
+        }
+
+        .payment-choice-card.selected {
+            border-color: #2E7D32;
+            background: #E8F5E9;
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Sticky Search & Categories */
+        .nav-sticky-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(248, 245, 240, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 10px 16px 6px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 11px 42px 11px 16px;
+            border-radius: 20px;
+            border: 1px solid #E2D9CF;
+            background: #FFFFFF;
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--cezar-orange);
+            box-shadow: 0 0 0 3px rgba(232, 93, 4, 0.15);
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--cezar-gold);
+            font-size: 16px;
+        }
+
+        .categories-scroll {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            scrollbar-width: none;
+        }
+
+        .categories-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-tab {
+            white-space: nowrap;
+            padding: 8px 16px;
+            border-radius: 18px;
+            background: #EFE9E0;
+            color: var(--primary-espresso);
+            font-size: 13px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .category-tab.active {
+            background: linear-gradient(135deg, var(--primary-espresso) 0%, var(--primary-dark) 100%);
+            color: #FFFFFF;
+            box-shadow: 0 3px 10px rgba(43, 24, 16, 0.25);
+        }
+
+        /* Menu Section & Items */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 22px 0 14px;
+            padding-bottom: 6px;
+            border-bottom: 2px dashed var(--cezar-gold);
+        }
+
+        .section-header h2 {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--primary-espresso);
+        }
+
+        .section-header .count-badge {
+            background: var(--cezar-orange);
+            color: white;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .items-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .item-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .item-card:active {
+            transform: scale(0.99);
+        }
+
+        .item-info {
+            flex: 1;
+            padding-left: 12px;
+        }
+
+        .item-name {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--primary-espresso);
+            line-height: 1.3;
+        }
+
+        .item-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .item-price {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--cezar-orange);
+            margin-top: 6px;
+        }
+
+        .item-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, var(--cezar-orange) 0%, #D04F00 100%);
+            color: white;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(232, 93, 4, 0.3);
+            transition: transform 0.1s;
+        }
+
+        .btn-add:active {
+            transform: scale(0.9);
+        }
+
+        .qty-controls {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: #F4EFEA;
+            padding: 4px 6px;
+            border-radius: 14px;
+        }
+
+        .qty-controls.active {
+            display: flex;
+        }
+
+        .qty-btn {
+            background: white;
+            border: 1px solid #D6CCC2;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: var(--primary-espresso);
+            cursor: pointer;
+        }
+
+        .qty-number {
+            font-size: 14px;
+            font-weight: 900;
+            color: var(--primary-espresso);
+            min-width: 18px;
+            text-align: center;
+        }
+
+        /* Bottom Floating Cart Bar */
+        .floating-cart {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            max-width: 568px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-espresso) 100%);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 22px;
+            box-shadow: 0 10px 30px rgba(25, 14, 9, 0.4);
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 200;
+            cursor: pointer;
+            border: 1px solid rgba(212, 163, 115, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(60px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .cart-info-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cart-badge-count {
+            background: var(--cezar-orange);
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 15px;
+        }
+
+        .cart-total-text {
+            font-size: 16px;
+            font-weight: 900;
+            color: #FFFFFF;
+        }
+
+        .cart-total-text span {
+            color: var(--cezar-gold);
+            font-size: 13px;
+        }
+
+        .cart-btn-view {
+            background: var(--cezar-orange);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Order Review Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal-sheet {
+            background: white;
+            width: 100%;
+            max-width: 600px;
+            border-top-left-radius: 28px;
+            border-top-right-radius: 28px;
+            padding: 24px 20px 30px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.25);
+            animation: sheetUp 0.25s ease-out;
+        }
+
+        @keyframes sheetUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 14px;
+        }
+
+        .modal-header h3 {
+            font-size: 19px;
+            font-weight: 900;
+            color: var(--primary-espresso);
+        }
+
+        .btn-close-modal {
+            background: #F1ECE6;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 900;
+            color: var(--primary-espresso);
+        }
+
+        .cart-items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .cart-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed #EDE8E1;
+        }
+
+        .cart-item-row .name {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--primary-espresso);
+        }
+
+        .cart-item-row .price {
+            font-size: 14px;
+            font-weight: 900;
+            color: var(--cezar-orange);
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--primary-espresso);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid #DDD5CC;
+            font-size: 14px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .btn-confirm-order {
+            width: 100%;
+            background: linear-gradient(135deg, var(--cezar-orange) 0%, #D04F00 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(232, 93, 4, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* Success Dialog */
+        .success-box {
+            text-align: center;
+            padding: 20px 10px;
+        }
+
+        .success-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: #E8F5E9;
+            color: #2E7D32;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            margin: 0 auto 16px;
+        }
+
+        .btn-whatsapp-share {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #25D366;
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 14px;
+            margin-top: 14px;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header class="brand-header">
+        <img src="/static/images/cezar_logo.jpg" alt="ceZar Coffee Logo" class="brand-logo-img" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=150'">
+        <h1 class="brand-title">ce<span>Z</span>ar COFFEE</h1>
+        <p class="brand-subtitle">سيزر كوفي | متعة المذاق الفاخر</p>
+        
+        <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+            <div class="table-pill" onclick="openTableSelector()" style="margin-top: 0;">
+                <i class="fa-solid fa-chair"></i>
+                <span id="currentTableDisplay">ترابيزة رقم 1</span>
+                <i class="fa-solid fa-pen-to-square" style="font-size: 11px; opacity: 0.8;"></i>
+            </div>
+            <button onclick="sendWaiterCall()" class="btn-waiter-call" title="طلب حضور الويتر للترابيزة">
+                <i class="fa-solid fa-bell-concierge"></i>
+                <span>نداء الويتر</span>
+            </button>
+            <button onclick="openBillModal()" class="btn-bill-call" title="طلب الفاتورة والحساب للترابيزة">
+                <i class="fa-solid fa-receipt"></i>
+                <span>طلب الحساب</span>
+            </button>
+            <button onclick="openOrderModal()" class="btn-cart-header" id="headerCartBtn" title="عرض سلة المشتريات وتأكيد الطلب">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span>السلة</span>
+                <span class="header-cart-badge" id="headerCartBadge">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Sticky Nav & Search -->
+    <div class="nav-sticky-wrapper">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="ابحث عن مشروبك أو حلاك المفضل..." oninput="handleSearch()">
+        </div>
+        <div class="categories-scroll" id="categoriesScroll">
+            <!-- Dynamic Category Pills -->
+        </div>
+    </div>
+
+    <!-- Main Menu Container -->
+    <main class="container" id="menuContainer">
+        <div style="text-align: center; padding: 40px; color: var(--cezar-gold);">
+            <i class="fa-solid fa-mug-hot fa-spin fa-2x"></i>
+            <p style="margin-top: 10px; font-weight: 700;">جاري تحضير قائمة سيزر كوفي...</p>
+        </div>
+    </main>
+
+    <!-- Developer & Engineer Branding Footer -->
+    <footer style="text-align: center; padding: 30px 15px 40px; color: #8C827A; font-size: 12px;">
+        <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(43, 24, 16, 0.05); padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(43, 24, 16, 0.08); flex-wrap: wrap; justify-content: center;">
+            <i class="fa-solid fa-terminal" style="color: var(--cezar-orange);"></i>
+            <span>تطوير وبرمجة: <strong>م / محمد دباح (Eng. Mohamed Dabah)</strong></span>
+            <span style="color: #bbb;">•</span>
+            <a href="tel:01095744676" style="color: var(--primary-espresso); text-decoration: none; font-weight: 800; direction: ltr;">01095744676</a>
+        </div>
+        <p style="margin-top: 6px; font-size: 11px;">ceZar COFFEE © 2026 • All Rights Reserved</p>
+    </footer>
+
+    <!-- Floating Bottom Cart Bar -->
+    <div class="floating-cart" id="floatingCart" onclick="openOrderModal()">
+        <div class="cart-info-left">
+            <div class="cart-badge-count" id="cartBadgeCount">0</div>
+            <div class="cart-total-text" id="cartTotalText">
+                0 جنيه <span>(الحساب)</span>
+            </div>
+        </div>
+        <div class="cart-btn-view">
+            <span>إتمام الطلب</span>
+            <i class="fa-solid fa-arrow-left"></i>
+        </div>
+    </div>
+
+    <!-- Order Review Modal Sheet -->
+    <div class="modal-overlay" id="orderModal">
+        <div class="modal-sheet">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-receipt" style="color: var(--cezar-orange); margin-left: 6px;"></i> تأكيد طلبك</h3>
+                <button class="btn-close-modal" onclick="closeOrderModal()">&times;</button>
+            </div>
+
+            <div id="modalCartContent">
+                <!-- Previous Approved Table Orders -->
+                <div id="previousOrdersBox" style="display: none; background: #FAF7F2; border: 1.5px solid #E8DFD5; border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; text-align: right;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 13px; color: var(--primary-espresso); margin-bottom: 6px; border-bottom: 1px solid #EAE3DA; padding-bottom: 4px;">
+                        <span><i class="fa-solid fa-clock-rotate-left" style="color: var(--cezar-gold); margin-left: 5px;"></i> طلبات الترابيزة السابقة:</span>
+                        <span id="prevOrdersSubtotal" style="color: var(--primary-espresso); font-weight: 900;">0 ج</span>
+                    </div>
+                    <div id="previousOrdersList" style="font-size: 12px; color: #555; line-height: 1.6;"></div>
+                </div>
+
+                <!-- Header for new items if previous orders exist -->
+                <div id="currentCartHeader" style="display: none; font-weight: 800; font-size: 13px; color: var(--primary-espresso); margin: 8px 0 6px; text-align: right;">
+                    <i class="fa-solid fa-cart-plus" style="color: var(--cezar-orange); margin-left: 5px;"></i> الأصناف الجديدة المطلوبة:
+                </div>
+
+                <div class="cart-items-list" id="cartItemsList">
+                    <!-- Dynamic Cart Rows -->
+                </div>
+
+                <div class="form-group" id="tableSelectGroup">
+                    <label><i class="fa-solid fa-chair" style="color: var(--cezar-gold);"></i> رقم الترابيزة:</label>
+                    <select id="modalTableSelect" class="form-control" style="font-weight: 800; font-size: 15px;">
+                        <!-- Generated 1 to 25 tables -->
+                    </select>
+                </div>
+
+                <div class="form-group" id="orderNotesGroup">
+                    <label><i class="fa-solid fa-comment-dots" style="color: var(--cezar-gold);"></i> ملاحظات خاصة (سكر، إضافات):</label>
+                    <input type="text" id="orderNotes" class="form-control" placeholder="مثال: سكر زيادة، بدون مكسرات، ثلج إضافي...">
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 2px dashed #E2D9CF; margin-bottom: 16px;">
+                    <div>
+                        <div style="font-size: 15px; font-weight: 800; color: var(--primary-espresso);" id="modalTotalLabel">إجمالي الحساب:</div>
+                        <div style="font-size: 11px; color: var(--text-muted);" id="modalTotalBreakdown"></div>
+                    </div>
+                    <span style="font-size: 19px; font-weight: 900; color: var(--cezar-orange);" id="modalTotalDisplay">0 جنيه</span>
+                </div>
+
+                <button class="btn-confirm-order" id="btnSubmitCartOrder" onclick="submitTableOrder()">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span id="btnSubmitText">إرسال الطلب للباريستا فوراً</span>
+                </button>
+
+                <button id="btnQuickBillFromCart" onclick="closeOrderModal(); openBillModal();" class="btn-confirm-order" style="display: none; background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%); margin-top: 10px;">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span id="btnQuickBillText">طلب الحساب والفاتورة للترابيزة</span>
+                </button>
+            </div>
+
+            <!-- Success State -->
+            <div id="modalSuccessState" style="display: none;" class="success-box">
+                <div class="success-icon" style="background: #E8F5E9; color: #2E7D32; width: 75px; height: 75px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 16px;">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <h3 style="font-size: 22px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 8px;">تم استلام طلبك بنجاح!</h3>
+                <p style="font-size: 15px; color: var(--text-muted); line-height: 1.6; margin-bottom: 22px;" id="successMsgText">
+                    جاري تحضير مشروباتك الفاخرة في البار لترابيزة رقم 1. في الطريق إليك ☕✨
+                </p>
+                <button onclick="resetAndCloseOrder()" style="width: 100%; background: linear-gradient(135deg, var(--primary-espresso) 0%, var(--primary-dark) 100%); color: white; border: none; padding: 14px; border-radius: 16px; font-weight: 900; font-size: 15px; cursor: pointer; box-shadow: 0 4px 14px rgba(43,24,16,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-mug-hot"></i>
+                    <span>إغلاق والعودة للمنيو</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Selection Modal -->
+    <div class="modal-overlay" id="tableSelectorModal">
+        <div class="modal-sheet" style="text-align: center;">
+            <div class="modal-header">
+                <h3>اختر رقم ترابيزتك</h3>
+                <button class="btn-close-modal" onclick="closeTableSelector()">&times;</button>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">حدد رقم الترابيزة التي تجلس عليها لتوصيل الطلب إليها فوراً:</p>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
+                <!-- 25 Table Buttons -->
+                <script>
+                    for(let i=1; i<=25; i++) {
+                        document.write(`<button onclick="selectTable(${i})" class="form-control" style="font-weight: 900; padding: 12px 0; background: #FAF7F2; border-color: #E2D9CF;">${i}</button>`);
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bill Request Modal -->
+    <div class="modal-overlay" id="billModal">
+        <div class="modal-sheet" style="text-align: center; max-width: 440px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-receipt" style="color: #2E7D32; margin-left: 6px;"></i> كشف الحساب والفاتورة</h3>
+                <button class="btn-close-modal" onclick="closeBillModal()">&times;</button>
+            </div>
+            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;" id="billTableTitle">ترابيزة رقم 1</p>
+            
+            <!-- Live Table Bill Breakdown -->
+            <div id="billOrdersBreakdown" style="background: #FAF7F2; border: 1px solid #E8DFD5; border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; text-align: right; max-height: 200px; overflow-y: auto;">
+                <div style="font-size: 13px; color: var(--text-muted); text-align: center; padding: 10px;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> جاري فحص حساب الترابيزة...
+                </div>
+            </div>
+
+            <div style="font-size: 13px; font-weight: 800; color: var(--primary-espresso); margin-bottom: 10px; text-align: right;">
+                اختر طريقة الدفع المفضلة:
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                <div class="payment-choice-card selected" id="payMethodCash" onclick="selectPaymentMethod('كاش')">
+                    <i class="fa-solid fa-money-bill-wave" style="font-size: 28px; color: #2E7D32; margin-bottom: 8px;"></i>
+                    <div style="font-weight: 900; font-size: 15px; color: var(--primary-espresso);">نقداً (كاش)</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">دفع كاش للويتر</div>
+                </div>
+                <div class="payment-choice-card" id="payMethodCard" onclick="selectPaymentMethod('فيزا')">
+                    <i class="fa-solid fa-credit-card" style="font-size: 28px; color: #1565C0; margin-bottom: 8px;"></i>
+                    <div style="font-weight: 900; font-size: 15px; color: var(--primary-espresso);">بطاقة / فيزا</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">ماكينة POS للترابيزة</div>
+                </div>
+            </div>
+
+            <button onclick="confirmBillRequest()" class="btn-confirm-order" style="background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span id="btnConfirmBillText">إرسال طلب الحساب للكاشير فوراً</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let menuData = {};
+        let cart = {}; // { itemId: { item, qty } }
+        let currentTable = 1;
+
+        // Initialize table from URL query ?table=X
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramTable = parseInt(urlParams.get('table'));
+        if (paramTable && paramTable >= 1 && paramTable <= 25) {
+            currentTable = paramTable;
+        }
+
+        // Populate table selector select options (1-25)
+        const tableSelectEl = document.getElementById('modalTableSelect');
+        for (let i = 1; i <= 25; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = `ترابيزة رقم ${i}`;
+            if (i === currentTable) opt.selected = true;
+            tableSelectEl.appendChild(opt);
+        }
+
+        function updateTableDisplay() {
+            document.getElementById('currentTableDisplay').textContent = `ترابيزة رقم ${currentTable}`;
+            tableSelectEl.value = currentTable;
+        }
+        updateTableDisplay();
+
+        function openTableSelector() {
+            document.getElementById('tableSelectorModal').style.display = 'flex';
+        }
+        function closeTableSelector() {
+            document.getElementById('tableSelectorModal').style.display = 'none';
+        }
+        function selectTable(num) {
+            currentTable = num;
+            updateTableDisplay();
+            closeTableSelector();
+        }
+
+        let selectedPaymentMethod = 'كاش';
+        let currentTableBillData = null;
+
+        async function openBillModal() {
+            document.getElementById('billTableTitle').textContent = `ترابيزة رقم ${currentTable} • كشف حساب الطلبات الحالية:`;
+            const breakdownEl = document.getElementById('billOrdersBreakdown');
+            breakdownEl.innerHTML = `
+                <div style="font-size: 13px; color: var(--text-muted); text-align: center; padding: 12px;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> جاري فحص حساب ترابيزة ${currentTable}...
+                </div>
+            `;
+            document.getElementById('billModal').style.display = 'flex';
+
+            try {
+                const res = await fetch(`/api/tables/${currentTable}/bill`);
+                const data = await res.json();
+                currentTableBillData = data;
+
+                if (data.orders && data.orders.length > 0) {
+                    let ordersHtml = `<div style="font-weight: 800; font-size: 13px; color: var(--primary-espresso); margin-bottom: 8px; border-bottom: 1px solid #E8DFD5; padding-bottom: 4px;">الطلبات المسجلة على الترابيزة (${data.orders_count}):</div>`;
+                    data.orders.forEach((ord, idx) => {
+                        ordersHtml += `
+                            <div style="font-size: 12px; margin-bottom: 6px; padding: 6px 8px; background: white; border-radius: 8px; border: 1px solid #EFEAE3;">
+                                <div style="display: flex; justify-content: space-between; font-weight: 800; color: var(--primary-espresso);">
+                                    <span>طلب #${ord.id} (${ord.status})</span>
+                                    <span style="color: var(--cezar-orange);">${ord.total_price} ج</span>
+                                </div>
+                                <div style="color: #666; font-size: 11px; white-space: pre-line; margin-top: 3px;">${ord.items_summary}</div>
+                            </div>
+                        `;
+                    });
+
+                    ordersHtml += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 2px dashed #D4A373;">
+                            <span style="font-weight: 900; font-size: 15px; color: var(--primary-espresso);">إجمالي الحساب المطلوب:</span>
+                            <span style="font-weight: 900; font-size: 18px; color: #2E7D32;">${data.total_bill} جنيه</span>
+                        </div>
+                    `;
+                    breakdownEl.innerHTML = ordersHtml;
+                    document.getElementById('btnConfirmBillText').textContent = `إرسال طلب الحساب للكاشير (${data.total_bill} ج)`;
+                } else {
+                    breakdownEl.innerHTML = `
+                        <div style="text-align: center; padding: 10px; color: var(--text-muted); font-size: 13px;">
+                            <i class="fa-solid fa-mug-hot" style="font-size: 26px; color: #D5C9BE; margin-bottom: 6px; display: block;"></i>
+                            لا توجد طلبات مسجلة مسبقاً لهذه الترابيزة عبر المنيو.<br>
+                            <span style="font-size: 11px; color: #888;">سيتم إرسال إشعار للكاشير بالحضور لتحصيل الحساب.</span>
+                        </div>
+                    `;
+                    document.getElementById('btnConfirmBillText').textContent = `طلب حضور الويتر بالحساب`;
+                }
+            } catch (err) {
+                breakdownEl.innerHTML = `
+                    <div style="color: #C62828; font-size: 12px; text-align: center; padding: 10px;">
+                        تعذر فحص حساب الترابيزة حالياً. سيتم إرسال طلب الحساب للكاشير فوراً.
+                    </div>
+                `;
+            }
+        }
+
+        function closeBillModal() {
+            document.getElementById('billModal').style.display = 'none';
+        }
+
+        function selectPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            document.getElementById('payMethodCash').classList.toggle('selected', method === 'كاش');
+            document.getElementById('payMethodCard').classList.toggle('selected', method === 'فيزا');
+        }
+
+        async function confirmBillRequest() {
+            closeBillModal();
+            try {
+                const res = await fetch('/api/orders/request-bill', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table_number: currentTable,
+                        payment_method: selectedPaymentMethod
+                    })
+                });
+                const data = await res.json();
+                const icon = selectedPaymentMethod === 'كاش' ? '💵' : '💳';
+                const totalNote = data.total_bill ? `\nالإجمالي المطلوب: ${data.total_bill} جنيه` : '';
+                alert(`✅ تم إرسال طلب الحساب لترابيزة رقم ${currentTable} بنجاح!${totalNote}\nطريقة الدفع: ${selectedPaymentMethod} ${icon}\nالويتر في الطريق ومعه الفاتورة ☕✨`);
+            } catch (e) {
+                alert('حدث خطأ في الاتصال، يرجى المحاولة ثانية.');
+            }
+        }
+
+        async function sendWaiterCall() {
+            if (!confirm(`هل تود إرسال نداء للويتر لترابيزة رقم ${currentTable}؟`)) return;
+            try {
+                const res = await fetch('/api/orders/call-waiter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table_number: currentTable })
+                });
+                const data = await res.json();
+                alert(`🔔 تم إرسال نداء الويتر لترابيزة رقم ${currentTable} بنجاح!\nالويتر في الطريق إليك حالاً ☕✨`);
+            } catch (e) {
+                alert('حدث خطأ في الاتصال، يرجى المحاولة ثانية.');
+            }
+        }
+
+        // Fetch Menu Items from Server
+        async function loadMenu() {
+            try {
+                const res = await fetch('/api/cezar/menu-items');
+                const data = await res.json();
+                menuData = data.categories || {};
+                renderCategories();
+                renderMenu();
+            } catch (e) {
+                document.getElementById('menuContainer').innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #D04F00;">
+                        <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
+                        <p style="margin-top: 10px; font-weight: 700;">تعذر الاتصال بالسيرفر. يرجى إعادة المحاولة.</p>
+                    </div>`;
+            }
+        }
+
+        function getCategoryIcon(catName) {
+            if (catName.includes('أيس كوفي') || catName.includes('كوفي')) return 'fa-mug-hot';
+            if (catName.includes('شيك')) return 'fa-blender';
+            if (catName.includes('وافل')) return 'fa-stroopwafel';
+            if (catName.includes('بان كيك')) return 'fa-pancake';
+            if (catName.includes('فريش') || catName.includes('عصائر')) return 'fa-glass-water';
+            if (catName.includes('صودا') || catName.includes('موهيتو')) return 'fa-champagne-glasses';
+            if (catName.includes('أم على')) return 'fa-bowl-rice';
+            if (catName.includes('أيس كريم')) return 'fa-ice-cream';
+            if (catName.includes('فروت')) return 'fa-apple-whole';
+            if (catName.includes('غازية')) return 'fa-bottle-droplet';
+            if (catName.includes('شيشة')) return 'fa-fire-flame-curved';
+            return 'fa-utensils';
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('categoriesScroll');
+            container.innerHTML = '';
+
+            const allTab = document.createElement('button');
+            allTab.className = 'category-tab active';
+            allTab.innerHTML = `<i class="fa-solid fa-star"></i> الكل`;
+            allTab.onclick = () => filterCategory('all', allTab);
+            container.appendChild(allTab);
+
+            for (const cat of Object.keys(menuData)) {
+                const icon = getCategoryIcon(cat);
+                const btn = document.createElement('button');
+                btn.className = 'category-tab';
+                btn.innerHTML = `<i class="fa-solid ${icon}"></i> ${cat}`;
+                btn.onclick = () => filterCategory(cat, btn);
+                container.appendChild(btn);
+            }
+        }
+
+        function filterCategory(targetCat, btnEl) {
+            document.querySelectorAll('.category-tab').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+
+            if (targetCat === 'all') {
+                renderMenu();
+            } else {
+                const singleCatData = {};
+                if (menuData[targetCat]) {
+                    singleCatData[targetCat] = menuData[targetCat];
+                }
+                renderMenu(singleCatData);
+            }
+        }
+
+        function renderMenu(dataToRender = menuData) {
+            const container = document.getElementById('menuContainer');
+            container.innerHTML = '';
+
+            for (const [catName, items] of Object.entries(dataToRender)) {
+                const section = document.createElement('section');
+                section.className = 'menu-section';
+
+                const icon = getCategoryIcon(catName);
+                section.innerHTML = `
+                    <div class="section-header">
+                        <i class="fa-solid ${icon}" style="color: var(--cezar-orange); font-size: 18px;"></i>
+                        <h2>${catName}</h2>
+                        <span class="count-badge">${items.length}</span>
+                    </div>
+                    <div class="items-grid" id="grid-${catName}"></div>
+                `;
+
+                container.appendChild(section);
+                const grid = section.querySelector('.items-grid');
+
+                items.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'item-card';
+                    card.id = `item-card-${item.id}`;
+
+                    const qty = cart[item.id] ? cart[item.id].qty : 0;
+
+                    card.innerHTML = `
+                        <div class="item-info">
+                            <div class="item-name">${item.name}</div>
+                            ${item.description ? `<div class="item-desc">${item.description}</div>` : ''}
+                            <div class="item-price">${item.price} جنيه</div>
+                        </div>
+                        <div class="item-action">
+                            <button class="btn-add" id="btnAdd-${item.id}" onclick="addToCart(${item.id})" style="${qty > 0 ? 'display: none;' : ''}">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                            <div class="qty-controls ${qty > 0 ? 'active' : ''}" id="qtyCtrl-${item.id}">
+                                <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
+                                <span class="qty-number" id="qtyNum-${item.id}">${qty}</span>
+                                <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        function handleSearch() {
+            const q = document.getElementById('searchInput').value.trim().toLowerCase();
+            if (!q) {
+                renderMenu();
+                return;
+            }
+
+            const filtered = {};
+            for (const [cat, items] of Object.entries(menuData)) {
+                const matching = items.filter(it => 
+                    it.name.toLowerCase().includes(q) || 
+                    (it.description && it.description.toLowerCase().includes(q))
+                );
+                if (matching.length > 0) {
+                    filtered[cat] = matching;
+                }
+            }
+            renderMenu(filtered);
+        }
+
+        // Cart Management
+        function findItemById(id) {
+            for (const items of Object.values(menuData)) {
+                const found = items.find(it => it.id === id);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function addToCart(id) {
+            const item = findItemById(id);
+            if (!item) return;
+
+            if (!cart[id]) {
+                cart[id] = { item, qty: 1 };
+            } else {
+                cart[id].qty++;
+            }
+            updateItemCardUI(id);
+            updateCartFloatingBar();
+        }
+
+        function changeQty(id, delta) {
+            if (!cart[id]) return;
+            cart[id].qty += delta;
+            if (cart[id].qty <= 0) {
+                delete cart[id];
+            }
+            updateItemCardUI(id);
+            updateCartFloatingBar();
+        }
+
+        function updateItemCardUI(id) {
+            const btnAdd = document.getElementById(`btnAdd-${id}`);
+            const qtyCtrl = document.getElementById(`qtyCtrl-${id}`);
+            const qtyNum = document.getElementById(`qtyNum-${id}`);
+
+            const qty = cart[id] ? cart[id].qty : 0;
+
+            if (btnAdd && qtyCtrl && qtyNum) {
+                if (qty > 0) {
+                    btnAdd.style.display = 'none';
+                    qtyCtrl.classList.add('active');
+                    qtyNum.textContent = qty;
+                } else {
+                    btnAdd.style.display = 'flex';
+                    qtyCtrl.classList.remove('active');
+                    qtyNum.textContent = 0;
+                }
+            }
+        }
+
+        function updateCartFloatingBar() {
+            const floating = document.getElementById('floatingCart');
+            const badge = document.getElementById('cartBadgeCount');
+            const totalText = document.getElementById('cartTotalText');
+            const headerBadge = document.getElementById('headerCartBadge');
+
+            const itemsArray = Object.values(cart);
+            const totalCount = itemsArray.reduce((acc, c) => acc + c.qty, 0);
+            const totalPrice = itemsArray.reduce((acc, c) => acc + (c.item.price * c.qty), 0);
+
+            if (headerBadge) {
+                headerBadge.textContent = totalCount;
+                if (totalCount > 0) {
+                    headerBadge.style.background = '#FFFFFF';
+                    headerBadge.style.color = 'var(--cezar-orange)';
+                    headerBadge.style.boxShadow = '0 0 10px rgba(255,255,255,0.8)';
+                } else {
+                    headerBadge.style.background = 'rgba(255,255,255,0.25)';
+                    headerBadge.style.color = '#FFFFFF';
+                    headerBadge.style.boxShadow = 'none';
+                }
+            }
+
+            if (totalCount > 0) {
+                floating.style.display = 'flex';
+                badge.textContent = totalCount;
+                totalText.innerHTML = `${totalPrice} جنيه <span>(الحساب)</span>`;
+            } else {
+                floating.style.display = 'none';
+            }
+        }
+
+        // Cart Management & Modal Handling
+        async function fetchTableBillForCart() {
+            try {
+                const res = await fetch(`/api/tables/${currentTable}/bill`);
+                currentTableBillData = await res.json();
+            } catch (e) {
+                console.error('Error fetching table bill:', e);
+            }
+        }
+
+        function renderCartModal() {
+            const listEl = document.getElementById('cartItemsList');
+            const prevBox = document.getElementById('previousOrdersBox');
+            const prevList = document.getElementById('previousOrdersList');
+            const prevSubtotal = document.getElementById('prevOrdersSubtotal');
+            const currentHeader = document.getElementById('currentCartHeader');
+            const btnSubmit = document.getElementById('btnSubmitCartOrder');
+            const btnSubmitText = document.getElementById('btnSubmitText');
+            const btnQuickBill = document.getElementById('btnQuickBillFromCart');
+            const btnQuickBillText = document.getElementById('btnQuickBillText');
+            const totalDisplay = document.getElementById('modalTotalDisplay');
+            const totalBreakdown = document.getElementById('modalTotalBreakdown');
+            const orderNotesGroup = document.getElementById('orderNotesGroup');
+            const tableSelectGroup = document.getElementById('tableSelectGroup');
+
+            listEl.innerHTML = '';
+
+            // 1. Previous Table Orders (Without any status badges)
+            let prevTotal = 0;
+            if (currentTableBillData && currentTableBillData.orders && currentTableBillData.orders.length > 0) {
+                prevBox.style.display = 'block';
+                prevList.innerHTML = '';
+                currentTableBillData.orders.forEach(ord => {
+                    prevTotal += ord.total_price;
+                    const cleanItems = ord.items_summary.replace(/^- /gm, '• ').replace(/\n/g, '<br>');
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-start; padding: 5px 0; border-bottom: 1px dashed #EDE8E1; font-size: 12px;';
+                    row.innerHTML = `
+                        <div style="flex: 1; color: var(--primary-espresso); font-weight: 700; line-height: 1.4;">${cleanItems}</div>
+                        <div style="color: var(--primary-espresso); font-weight: 800; min-width: 52px; text-align: left;">${ord.total_price} ج</div>
+                    `;
+                    prevList.appendChild(row);
+                });
+                prevSubtotal.textContent = `${prevTotal} ج`;
+            } else {
+                prevBox.style.display = 'none';
+            }
+
+            // 2. Current Cart Items (New items added right now)
+            const itemsArray = Object.values(cart);
+            let newTotal = 0;
+
+            if (itemsArray.length > 0) {
+                if (prevTotal > 0) {
+                    currentHeader.style.display = 'block';
+                } else {
+                    currentHeader.style.display = 'none';
+                }
+
+                for (const { item, qty } of itemsArray) {
+                    const rowTotal = item.price * qty;
+                    newTotal += rowTotal;
+
+                    const row = document.createElement('div');
+                    row.className = 'cart-item-row';
+                    row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #EDE8E1;';
+                    row.innerHTML = `
+                        <div style="flex: 1; text-align: right; padding-left: 8px;">
+                            <div class="name" style="font-size: 14px; font-weight: 800; color: var(--primary-espresso);">${item.name}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">${item.price} ج للواحد</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="qty-controls active" style="margin: 0; padding: 2px 6px; display: flex; align-items: center; gap: 6px; background: #FAF7F2; border-radius: 10px; border: 1px solid #E2D9CF;">
+                                <button class="qty-btn" onclick="changeQtyFromCart(${item.id}, -1)" style="width: 24px; height: 24px; font-weight: 900; background: white; border: 1px solid #D4A373; border-radius: 6px; cursor: pointer;">-</button>
+                                <span class="qty-number" style="font-size: 13px; font-weight: 900; min-width: 16px; text-align: center;">${qty}</span>
+                                <button class="qty-btn" onclick="changeQtyFromCart(${item.id}, 1)" style="width: 24px; height: 24px; font-weight: 900; background: var(--cezar-orange); color: white; border: none; border-radius: 6px; cursor: pointer;">+</button>
+                            </div>
+                            <div class="price" style="min-width: 52px; text-align: left; font-size: 14px; font-weight: 900; color: var(--cezar-orange);">${rowTotal} ج</div>
+                            <button onclick="removeCartItem(${item.id})" style="background: none; border: none; color: #D32F2F; cursor: pointer; padding: 4px; font-size: 14px;" title="حذف الصنف">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    `;
+                    listEl.appendChild(row);
+                }
+
+                btnSubmit.style.display = 'flex';
+                btnSubmit.disabled = false;
+                btnSubmitText.textContent = prevTotal > 0 ? `إرسال الأصناف الجديدة للباريستا (${newTotal} ج)` : 'إرسال الطلب للباريستا فوراً';
+                if (orderNotesGroup) orderNotesGroup.style.display = 'block';
+                if (tableSelectGroup) tableSelectGroup.style.display = 'block';
+            } else {
+                currentHeader.style.display = 'none';
+                if (prevTotal > 0) {
+                    listEl.innerHTML = `
+                        <div style="text-align: center; padding: 12px 6px; color: var(--text-muted); font-size: 13px; background: #FFFDF9; border-radius: 12px; border: 1px dashed #E2D9CF; margin-bottom: 10px;">
+                            <i class="fa-solid fa-plus-circle" style="color: var(--cezar-orange); font-size: 18px; margin-bottom: 4px; display: block;"></i>
+                            لا توجد أصناف جديدة مضافة في السلة حالياً.<br>
+                            <span style="font-size: 11px; color: #888;">تصفح المنيو لإضافة طلبات جديدة، أو اطلب الحساب إن انتهيت.</span>
+                        </div>
+                    `;
+                    btnSubmit.style.display = 'none';
+                    if (orderNotesGroup) orderNotesGroup.style.display = 'none';
+                    if (tableSelectGroup) tableSelectGroup.style.display = 'none';
+                } else {
+                    listEl.innerHTML = `
+                        <div style="text-align: center; padding: 25px 10px; color: var(--text-muted);">
+                            <i class="fa-solid fa-basket-shopping" style="font-size: 40px; color: #D5C9BE; margin-bottom: 12px; display: block;"></i>
+                            <div style="font-weight: 800; font-size: 15px; color: var(--primary-espresso); margin-bottom: 4px;">سلتك فارغة حالياً</div>
+                            <span style="font-size: 12px;">تصفح المنيو واضغط على (+) لإضافة مشروباتك المفضلة ☕</span>
+                        </div>
+                    `;
+                    btnSubmit.style.display = 'flex';
+                    btnSubmit.disabled = true;
+                    btnSubmitText.textContent = 'إرسال الطلب للباريستا فوراً';
+                    if (orderNotesGroup) orderNotesGroup.style.display = 'block';
+                    if (tableSelectGroup) tableSelectGroup.style.display = 'block';
+                }
+            }
+
+            // 3. Grand Total Calculation (Previous Table Orders + New Cart Items)
+            const grandTotal = prevTotal + newTotal;
+            totalDisplay.textContent = `${grandTotal} جنيه`;
+
+            if (prevTotal > 0 && newTotal > 0) {
+                totalBreakdown.textContent = `(طلبات سابقة: ${prevTotal} ج + جديد: ${newTotal} ج)`;
+            } else if (prevTotal > 0) {
+                totalBreakdown.textContent = `(حساب الترابيزة حتى الآن)`;
+            } else {
+                totalBreakdown.textContent = '';
+            }
+
+            // Quick Bill Button from Cart
+            if (prevTotal > 0 || grandTotal > 0) {
+                btnQuickBill.style.display = 'flex';
+                btnQuickBillText.textContent = `طلب الحساب والفاتورة للترابيزة (${grandTotal} ج)`;
+            } else {
+                btnQuickBill.style.display = 'none';
+            }
+        }
+
+        function changeQtyFromCart(id, delta) {
+            changeQty(id, delta);
+            renderCartModal();
+        }
+
+        function removeCartItem(id) {
+            if (cart[id]) {
+                delete cart[id];
+                updateItemCardUI(id);
+                updateCartFloatingBar();
+                renderCartModal();
+            }
+        }
+
+        async function openOrderModal() {
+            document.getElementById('modalTableSelect').value = currentTable;
+            document.getElementById('modalCartContent').style.display = 'block';
+            document.getElementById('modalSuccessState').style.display = 'none';
+            document.getElementById('orderModal').style.display = 'flex';
+
+            renderCartModal();
+            await fetchTableBillForCart();
+            renderCartModal();
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+
+        async function submitTableOrder() {
+            const selectedTable = parseInt(document.getElementById('modalTableSelect').value) || currentTable;
+            const notes = document.getElementById('orderNotes').value.trim();
+
+            const itemsPayload = Object.values(cart).map(c => ({
+                id: c.item.id,
+                name: c.item.name,
+                price: c.item.price,
+                quantity: c.qty
+            }));
+
+            if (itemsPayload.length === 0) return;
+
+            const btnConfirm = document.querySelector('.btn-confirm-order');
+            btnConfirm.disabled = true;
+            btnConfirm.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...`;
+
+            try {
+                const res = await fetch('/api/cezar/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table_number: selectedTable,
+                        items: itemsPayload,
+                        notes: notes
+                    })
+                });
+
+                const result = await res.json();
+                if (result.status === 'success') {
+                    // Show success
+                    document.getElementById('modalCartContent').style.display = 'none';
+                    document.getElementById('modalSuccessState').style.display = 'block';
+                    document.getElementById('successMsgText').textContent = 
+                        `تم إرسال طلبك للباريستا لترابيزة رقم ${selectedTable} بنجاح! جاري التجهيز في البار فوراً ☕✨`;
+
+                    // Clear Cart
+                    cart = {};
+                    updateCartFloatingBar();
+                    await fetchTableBillForCart();
+                    Object.keys(menuData).forEach(cat => {
+                        menuData[cat].forEach(it => updateItemCardUI(it.id));
+                    });
+                } else {
+                    alert('حدث خطأ أثناء إرسال الطلب، برجاء المحاولة مجدداً.');
+                }
+            } catch (err) {
+                alert('تعذر الاتصال بالسيرفر. تأكد من اتصالك بالإنترنت.');
+            } finally {
+                btnConfirm.disabled = false;
+                btnConfirm.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>إرسال الطلب للباريستا فوراً</span>`;
+            }
+        }
+
+        function resetAndCloseOrder() {
+            closeOrderModal();
+        }
+
+        // Start
+        loadMenu();
+    </script>
+</body>
+</html>
