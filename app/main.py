@@ -532,3 +532,14 @@ def change_credentials(data: ChangeCredentialsRequest, db: Session = Depends(get
         "message": "تم تحديث بيانات الدخول بنجاح!",
         "username": account.username
     }
+
+
+# ==========================================
+# WSGI Compatibility (PythonAnywhere Support)
+# ==========================================
+try:
+    from a2wsgi import ASGIMiddleware
+    application = ASGIMiddleware(app)
+except Exception:
+    application = app
+
