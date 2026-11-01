@@ -215,6 +215,11 @@
             <p>كروت جاهزة للطباعة على استاندات الأكريليك الفاخرة لكافيه ceZar COFFEE | إعداد: <strong>م / محمد دباح</strong> (01095744676)</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div style="background: rgba(255,255,255,0.12); padding: 5px 12px; border-radius: 12px; display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 12px; font-weight: 800; color: var(--cezar-gold);"><i class="fa-solid fa-link"></i> رابط الكروت:</label>
+                <input id="qrHostInput" type="text" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; direction: ltr; font-weight: bold; width: 250px;" placeholder="https://Deboo.pythonanywhere.com">
+                <button onclick="renderAllCards()" style="background: var(--cezar-orange); color: white; border: none; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold;">تطبيق</button>
+            </div>
             <a href="/admin" target="_blank" style="background: rgba(255,255,255,0.15); color: white; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-sliders"></i> لوحة التحكم
             </a>
@@ -239,8 +244,15 @@
 
         function renderAllCards() {
             cardsGrid.innerHTML = '';
-            // التعرف التلقائي الذكي على الرابط سواء كان أونلاين أو شبكة داخلية
-            const baseUrl = window.location.origin;
+            const hostInput = document.getElementById('qrHostInput');
+            let baseUrl = hostInput && hostInput.value.trim() ? hostInput.value.trim().replace(/\/$/, '') : window.location.origin;
+            if (baseUrl.includes('127.0.0.1') || baseUrl.includes('localhost')) {
+                // اقتراح الرابط السحابي افتراضياً إذا كان محلياً لضمان عمل الكروت المطبوعة على الموبايل
+                if (hostInput && !hostInput.value.trim()) {
+                    baseUrl = 'https://Deboo.pythonanywhere.com';
+                    hostInput.value = baseUrl;
+                }
+            }
 
             for (let t = 1; t <= TOTAL_TABLES; t++) {
                 const card = document.createElement('div');
