@@ -332,6 +332,7 @@ def application(environ, start_response):
                     "items_summary": o.items_summary,
                     "total_price": o.total_price,
                     "status": o.status,
+                    "notes": o.notes or "",
                     "created_at": o.created_at.strftime("%I:%M %p") if o.created_at else "",
                 }
                 for o in active_orders
@@ -342,6 +343,60 @@ def application(environ, start_response):
                 "orders_count": len(active_orders),
                 "orders": orders_list,
             })
+
+    # تتبع طلبات ترابيزة
+    if (path.startswith("/api/tables/") or path.startswith("/api/cezar/tables/")) and path.endswith("/track") and method == "GET":
+        parts = path.split("/")
+        tbl = int(parts[-2])
+        with SessionLocal() as db:
+            orders = db.query(TableOrder).filter(
+                TableOrder.table_number == tbl,
+                ~TableOrder.items_summary.like("%طلب الحساب%"),
+                ~TableOrder.items_summary.like("%نداء الويتر%"),
+                TableOrder.total_price > 0,
+            ).order_by(desc(TableOrder.id)).limit(25).all()
+
+            orders_list = [
+                {
+                    "id": o.id,
+                    "items_summary": o.items_summary,
+                    "total_price": o.total_price,
+                    "status": o.status,
+                    "notes": o.notes or "",
+                    "created_at": o.created_at.strftime("%I:%M %p") if o.created_at else "",
+                }
+                for o in orders
+            ]
+            active_count = sum(1 for o in orders if o.status in ["جديد", "جاري التحضير", "قيد التحضير"])
+
+            return json_response(start_response, 200, {
+                "status": "success",
+                "table_number": tbl,
+                "orders_count": len(orders_list),
+                "active_count": active_count,
+                "orders": orders_list,
+            })
+
+    # تتبع طلب برقم ID
+    if (path.startswith("/api/orders/") or path.startswith("/api/cezar/orders/")) and not path.endswith("/status") and not path.endswith("/clear-all") and not path.endswith("/call-waiter") and not path.endswith("/request-bill") and method == "GET":
+        try:
+            order_id = int(path.split("/")[-1])
+            with SessionLocal() as db:
+                order = db.query(TableOrder).filter(TableOrder.id == order_id).first()
+                if not order:
+                    return json_response(start_response, 404, {"status": "error", "detail": "الطلب غير موجود"})
+                return json_response(start_response, 200, {
+                    "status": "success",
+                    "id": order.id,
+                    "table_number": order.table_number,
+                    "items_summary": order.items_summary,
+                    "total_price": order.total_price,
+                    "status": order.status,
+                    "notes": order.notes or "",
+                    "created_at": order.created_at.strftime("%I:%M %p") if order.created_at else "",
+                })
+        except Exception:
+            pass
 
     # تصفير الطلبات
     if path in ["/api/orders/clear-all", "/api/cezar/orders/clear-all"] and method == "POST":
