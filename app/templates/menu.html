@@ -216,6 +216,518 @@
             transform: translateY(-2px);
         }
 
+        /* Order Tracking Styles */
+        .btn-track-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: linear-gradient(135deg, #0288D1 0%, #01579B 100%);
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            color: #FFFFFF;
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(2, 136, 209, 0.4);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .btn-track-header:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 18px rgba(2, 136, 209, 0.6);
+        }
+
+        .btn-track-header:active {
+            transform: scale(0.95);
+        }
+
+        .header-track-badge {
+            background: #FFD54F;
+            color: #212121;
+            font-size: 11px;
+            font-weight: 900;
+            padding: 2px 7px;
+            border-radius: 12px;
+            min-width: 18px;
+            text-align: center;
+            display: inline-block;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+            animation: pulseTrackBadge 2s infinite;
+        }
+
+        @keyframes pulseTrackBadge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.18); }
+        }
+
+        .live-pulse-dot {
+            width: 9px;
+            height: 9px;
+            background-color: #00E676;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7);
+            animation: pulseLiveDot 1.5s infinite;
+        }
+
+        @keyframes pulseLiveDot {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 7px rgba(0, 230, 118, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(0, 230, 118, 0);
+            }
+        }
+
+        .btn-refresh-track {
+            background: white;
+            border: 1px solid #C0DBEE;
+            color: #0288D1;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-refresh-track:hover {
+            background: #E1F5FE;
+            border-color: #0288D1;
+        }
+
+        .floating-track-banner {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #01579B 0%, #0288D1 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 6px 22px rgba(1, 87, 155, 0.45);
+            z-index: 985;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            animation: bounceInBanner 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90%;
+            text-align: center;
+            white-space: nowrap;
+            transition: bottom 0.3s ease;
+        }
+
+        @keyframes bounceInBanner {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        /* Order Cards in Tracking Modal */
+        .order-track-card {
+            background: #FFFFFF;
+            border: 1.5px solid #EBE4DC;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 3px 10px rgba(43, 24, 16, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .order-track-card:hover {
+            border-color: #0288D1;
+            box-shadow: 0 5px 16px rgba(2, 136, 209, 0.12);
+        }
+
+        .track-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #F0EAE1;
+        }
+
+        .track-order-id {
+            font-size: 15px;
+            font-weight: 900;
+            color: var(--primary-espresso);
+            margin-left: 6px;
+        }
+
+        .track-order-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .track-status-pill {
+            font-size: 12px;
+            font-weight: 900;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .track-status-pill.status-new {
+            background: #FFF3E0;
+            color: #E65100;
+            border: 1px solid #FFE0B2;
+        }
+
+        .track-status-pill.status-prep {
+            background: #E1F5FE;
+            color: #0277BD;
+            border: 1px solid #B3E5FC;
+        }
+
+        .track-status-pill.status-delivered {
+            background: #E8F5E9;
+            color: #2E7D32;
+            border: 1px solid #C8E6C9;
+        }
+
+        .track-status-pill.status-cancelled {
+            background: #FFEBEE;
+            color: #C62828;
+            border: 1px solid #FFCDD2;
+        }
+
+        /* Stepper Styles */
+        .track-stepper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 14px 4px 12px;
+            position: relative;
+        }
+
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            z-index: 2;
+            flex: 1;
+        }
+
+        .step-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #F0ECE6;
+            color: #A39B92;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 900;
+            margin-bottom: 6px;
+            transition: all 0.3s ease;
+            border: 2px solid #E2DCD5;
+        }
+
+        .step-item.completed .step-circle {
+            background: #2E7D32;
+            color: #FFFFFF;
+            border-color: #2E7D32;
+            box-shadow: 0 3px 10px rgba(46, 125, 50, 0.35);
+        }
+
+        .step-item.active .step-circle {
+            background: linear-gradient(135deg, #0288D1 0%, #01579B 100%);
+            color: #FFFFFF;
+            border-color: #0288D1;
+            box-shadow: 0 0 0 4px rgba(2, 136, 209, 0.25);
+            animation: pulseStepCircle 1.8s infinite;
+        }
+
+        @keyframes pulseStepCircle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .step-line {
+            height: 4px;
+            flex: 1.2;
+            background: #E2DCD5;
+            margin: -24px 4px 0;
+            border-radius: 4px;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        .step-line.completed {
+            background: #2E7D32;
+        }
+
+        .step-line.active-pulse {
+            background: linear-gradient(90deg, #2E7D32, #0288D1);
+        }
+
+        .step-title {
+            font-size: 11px;
+            font-weight: 800;
+            color: #555;
+            line-height: 1.2;
+        }
+
+        .step-item.active .step-title {
+            color: #0288D1;
+            font-weight: 900;
+        }
+
+        .step-item.completed .step-title {
+            color: #2E7D32;
+        }
+
+        .step-sub {
+            font-size: 9px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .track-hint-banner {
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            line-height: 1.4;
+            font-weight: 700;
+        }
+
+        .track-hint-banner.hint-new {
+            background: #FFF8E1;
+            color: #F57F17;
+            border: 1px dashed #FFE082;
+        }
+
+        .track-hint-banner.hint-prep {
+            background: #E1F5FE;
+            color: #0277BD;
+            border: 1px dashed #81D4FA;
+        }
+
+        .track-hint-banner.hint-delivered {
+            background: #E8F5E9;
+            color: #2E7D32;
+            border: 1px dashed #A5D6A7;
+        }
+
+        .track-hint-banner.hint-cancelled {
+            background: #FFEBEE;
+            color: #C62828;
+            border: 1px dashed #EF9A9A;
+        }
+
+        .track-items-summary {
+            background: #FAF7F2;
+            border: 1px solid #ECE4DA;
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #4A4A4A;
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+
+        .track-notes-box {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #8C6D48;
+            background: #FFFBF2;
+            border: 1px dashed #EAD8C3;
+            border-radius: 8px;
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .track-total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed #E2D9CF;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--primary-espresso);
+        }
+
+        .track-price-val {
+            font-size: 15px;
+            font-weight: 900;
+            color: var(--cezar-orange);
+        }
+
+        /* Mobile Sticky Tracking Button (Next to Search) */
+        .sticky-track-btn {
+            background: linear-gradient(135deg, #0288D1 0%, #01579B 100%);
+            color: #FFFFFF;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 18px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 3px 10px rgba(2, 136, 209, 0.35);
+            white-space: nowrap;
+            position: relative;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .sticky-track-btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 14px rgba(2, 136, 209, 0.5);
+        }
+
+        .sticky-track-btn:active {
+            transform: scale(0.96);
+        }
+
+        .sticky-track-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #00E676;
+            border-radius: 50%;
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            border: 2px solid #FFFFFF;
+            animation: pulseLiveDot 1.5s infinite;
+        }
+
+        /* Fixed Bottom Navigation Bar for Mobile */
+        .mobile-bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1.5px solid #EBE4DC;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+            z-index: 980;
+            box-shadow: 0 -4px 20px rgba(43, 24, 16, 0.08);
+        }
+
+        .mbar-btn {
+            background: none;
+            border: none;
+            color: #6C757D;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            position: relative;
+            flex: 1;
+            max-width: 90px;
+        }
+
+        .mbar-btn:active {
+            transform: scale(0.92);
+        }
+
+        .mbar-icon-wrap {
+            position: relative;
+            font-size: 19px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mbar-btn.track-btn {
+            color: #0288D1;
+        }
+
+        .mbar-btn.track-btn.has-active {
+            color: #01579B;
+            font-weight: 900;
+        }
+
+        .mbar-btn.track-btn.has-active .mbar-icon-wrap i {
+            animation: pulseTrackIcon 1.8s infinite;
+        }
+
+        @keyframes pulseTrackIcon {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.25); color: #0288D1; }
+        }
+
+        .mbar-badge {
+            position: absolute;
+            top: -4px;
+            right: -8px;
+            background: #E85D04;
+            color: #FFFFFF;
+            font-size: 10px;
+            font-weight: 900;
+            padding: 1px 5px;
+            border-radius: 10px;
+            min-width: 16px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+        }
+
+        .mbar-badge.track-badge {
+            background: #0288D1;
+        }
+
+        .mbar-cart-btn {
+            color: var(--cezar-orange);
+        }
+
+        /* Prevent content from hiding behind mobile bottom bar */
+        body {
+            padding-bottom: 85px !important;
+        }
+
+        .floating-cart {
+            bottom: 74px !important;
+        }
+
+        .floating-track-banner {
+            bottom: 74px !important;
+        }
+
         /* Sticky Search & Categories */
         .nav-sticky-wrapper {
             position: sticky;
@@ -678,6 +1190,11 @@
                 <i class="fa-solid fa-receipt"></i>
                 <span>طلب الحساب</span>
             </button>
+            <button onclick="openTrackingModal()" class="btn-track-header" id="headerTrackBtn" title="متابعة حالة طلباتي للترابيزة">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>متابعة الطلب</span>
+                <span class="header-track-badge" id="headerTrackBadge" style="display: none;">0</span>
+            </button>
             <button onclick="openOrderModal()" class="btn-cart-header" id="headerCartBtn" title="عرض سلة المشتريات وتأكيد الطلب">
                 <i class="fa-solid fa-cart-shopping"></i>
                 <span>السلة</span>
@@ -688,9 +1205,16 @@
 
     <!-- Sticky Nav & Search -->
     <div class="nav-sticky-wrapper">
-        <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="searchInput" placeholder="ابحث عن مشروبك أو حلاك المفضل..." oninput="handleSearch()">
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+            <div class="search-box" style="flex: 1; margin-bottom: 0;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="ابحث عن مشروبك أو حلاك المفضل..." oninput="handleSearch()">
+            </div>
+            <button onclick="openTrackingModal()" class="sticky-track-btn" id="stickyTrackBtn" title="متابعة حالة الطلبات المباشرة">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>متابعة الطلب</span>
+                <span class="sticky-track-dot" id="stickyTrackDot" style="display: none;"></span>
+            </button>
         </div>
         <div class="categories-scroll" id="categoriesScroll">
             <!-- Dynamic Category Pills -->
@@ -715,6 +1239,36 @@
         </div>
         <p style="margin-top: 6px; font-size: 11px;">ceZar COFFEE © 2026 • All Rights Reserved</p>
     </footer>
+
+    <!-- Mobile Bottom Navigation Bar (شريط خدمات الزبون السفلي الثابت) -->
+    <nav class="mobile-bottom-bar" id="mobileBottomBar">
+        <button class="mbar-btn track-btn" onclick="openTrackingModal()" id="mbarTrackBtn" title="متابعة حالة طلباتي للترابيزة">
+            <div class="mbar-icon-wrap">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span class="mbar-badge track-badge" id="mbarTrackBadge" style="display: none;">0</span>
+            </div>
+            <span>متابعة الطلب</span>
+        </button>
+        <button class="mbar-btn" onclick="openBillModal()" title="طلب الفاتورة والحساب للترابيزة">
+            <div class="mbar-icon-wrap">
+                <i class="fa-solid fa-receipt" style="color: #2E7D32;"></i>
+            </div>
+            <span>طلب الحساب</span>
+        </button>
+        <button class="mbar-btn" onclick="sendWaiterCall()" title="نداء الويتر للترابيزة">
+            <div class="mbar-icon-wrap">
+                <i class="fa-solid fa-bell-concierge" style="color: #E85D04;"></i>
+            </div>
+            <span>نداء الويتر</span>
+        </button>
+        <button class="mbar-btn mbar-cart-btn" onclick="openOrderModal()" id="mbarCartBtn" title="عرض السلة وتأكيد الطلب">
+            <div class="mbar-icon-wrap">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span class="mbar-badge" id="mbarCartBadge" style="display: none;">0</span>
+            </div>
+            <span>السلة</span>
+        </button>
+    </nav>
 
     <!-- Floating Bottom Cart Bar -->
     <div class="floating-cart" id="floatingCart" onclick="openOrderModal()">
@@ -798,6 +1352,10 @@
                 <p style="font-size: 15px; color: var(--text-muted); line-height: 1.6; margin-bottom: 22px;" id="successMsgText">
                     جاري تحضير مشروباتك الفاخرة في البار لترابيزة رقم 1. في الطريق إليك ☕✨
                 </p>
+                <button onclick="closeOrderModal(); openTrackingModal();" style="width: 100%; background: linear-gradient(135deg, #0288D1 0%, #01579B 100%); color: white; border: none; padding: 14px; border-radius: 16px; font-weight: 900; font-size: 15px; cursor: pointer; box-shadow: 0 4px 14px rgba(2, 136, 209, 0.35); display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>متابعة حالة طلبك الآن</span>
+                </button>
                 <button onclick="resetAndCloseOrder()" style="width: 100%; background: linear-gradient(135deg, var(--primary-espresso) 0%, var(--primary-dark) 100%); color: white; border: none; padding: 14px; border-radius: 16px; font-weight: 900; font-size: 15px; cursor: pointer; box-shadow: 0 4px 14px rgba(43,24,16,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <i class="fa-solid fa-mug-hot"></i>
                     <span>إغلاق والعودة للمنيو</span>
@@ -848,6 +1406,64 @@
         </div>
     </div>
 
+    <!-- Floating Bottom Order Tracker Banner -->
+    <div class="floating-track-banner" id="floatingTrackBanner" onclick="openTrackingModal()">
+        <span class="live-pulse-dot" style="background: #FFD54F;"></span>
+        <span id="floatingTrackText">طلبك قيد التحضير في البار ☕✨ • اضغط للمتابعة</span>
+        <i class="fa-solid fa-chevron-left" style="font-size: 11px;"></i>
+    </div>
+
+    <!-- Order Tracking Modal Sheet -->
+    <div class="modal-overlay" id="trackingModal" style="display: none;">
+        <div class="modal-sheet" style="max-width: 480px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="background: #E1F5FE; color: #0288D1; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 17px; font-weight: 900; color: var(--primary-espresso);">متابعة حالة الطلبات</h3>
+                        <div style="font-size: 11px; color: var(--text-muted);" id="trackingSubtitle">تتبع مباشر وحي مع الباريستا</div>
+                    </div>
+                </div>
+                <button class="btn-close-modal" onclick="closeTrackingModal()">&times;</button>
+            </div>
+
+            <!-- Table Info & Live Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #F0F7FB; border: 1.5px solid #D0E5F5; border-radius: 14px; padding: 10px 14px; margin-bottom: 14px; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="live-pulse-dot"></span>
+                    <span id="trackingTableLabel" style="font-weight: 900; font-size: 13px; color: var(--primary-espresso);">ترابيزة رقم 1</span>
+                    <span id="trackingActiveCountPill" style="display: none; background: #0288D1; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 800;">1 جاري</span>
+                </div>
+                <button onclick="fetchTrackingOrders(true)" id="btnRefreshTrack" class="btn-refresh-track" title="تحديث يدوي فوري">
+                    <i class="fa-solid fa-rotate" id="refreshTrackIcon"></i>
+                    <span>تحديث الآن</span>
+                </button>
+            </div>
+
+            <!-- Orders Container (Scrollable) -->
+            <div id="trackingOrdersList" style="flex: 1; overflow-y: auto; padding: 2px 4px 6px;">
+                <div style="text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 13px;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: #0288D1; margin-bottom: 8px; display: block;"></i>
+                    جاري فحص حالة طلباتك في البار...
+                </div>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div style="display: flex; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #EAE3DA; flex-shrink: 0;">
+                <button onclick="closeTrackingModal()" style="flex: 1; background: #FAF7F2; border: 1.5px solid #E2D9CF; color: var(--primary-espresso); padding: 11px; border-radius: 14px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>طلب مشروبات إضافية</span>
+                </button>
+                <button onclick="closeTrackingModal(); openBillModal();" style="flex: 1; background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%); border: none; color: white; padding: 11px; border-radius: 14px; font-weight: 800; font-size: 13px; cursor: pointer; box-shadow: 0 4px 10px rgba(46, 125, 50, 0.3); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span>طلب الحساب</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // State
         let menuData = {};
@@ -868,6 +1484,8 @@
             if (lockedBadge) lockedBadge.innerHTML = `<i class="fa-solid fa-lock" style="font-size: 10px; margin-left: 4px; color: var(--cezar-gold);"></i> ترابيزة ${currentTable}`;
             const selectEl = document.getElementById('modalTableSelect');
             if (selectEl) selectEl.value = currentTable;
+            const trackingTable = document.getElementById('trackingTableLabel');
+            if (trackingTable) trackingTable.textContent = `ترابيزة رقم ${currentTable}`;
         }
         updateTableDisplay();
 
@@ -1198,6 +1816,14 @@
             } else {
                 floating.style.display = 'none';
             }
+
+            const mbarCartBadge = document.getElementById('mbarCartBadge');
+            if (mbarCartBadge) {
+                mbarCartBadge.textContent = totalCount;
+                mbarCartBadge.style.display = totalCount > 0 ? 'inline-block' : 'none';
+            }
+
+            updateFloatingBannerPosition();
         }
 
         // Cart Management & Modal Handling
@@ -1410,6 +2036,7 @@
                     cart = {};
                     updateCartFloatingBar();
                     await fetchTableBillForCart();
+                    await fetchTrackingOrders();
                     Object.keys(menuData).forEach(cat => {
                         menuData[cat].forEach(it => updateItemCardUI(it.id));
                     });
@@ -1428,8 +2055,308 @@
             closeOrderModal();
         }
 
+        // ==========================================
+        // Live Order Tracking Logic (متابعة الطلب الحية)
+        // ==========================================
+        let trackingPollInterval = null;
+
+        function updateFloatingBannerPosition() {
+            const floatingCart = document.getElementById('floatingCart');
+            const banner = document.getElementById('floatingTrackBanner');
+            if (!banner) return;
+            const isCartVisible = floatingCart && floatingCart.style.display === 'flex';
+            banner.style.bottom = isCartVisible ? '88px' : '20px';
+        }
+
+        async function fetchTrackingOrders(manualClick = false) {
+            const refreshIcon = document.getElementById('refreshTrackIcon');
+            if (manualClick && refreshIcon) {
+                refreshIcon.classList.add('fa-spin');
+            }
+
+            try {
+                const res = await fetch(`/api/tables/${currentTable}/track`);
+                const data = await res.json();
+
+                // 1. Update Header Badge
+                const headerBadge = document.getElementById('headerTrackBadge');
+                if (headerBadge) {
+                    if (data.active_count > 0) {
+                        headerBadge.style.display = 'inline-block';
+                        headerBadge.textContent = data.active_count;
+                        headerBadge.style.background = '#FFD54F';
+                        headerBadge.style.color = '#212121';
+                    } else if (data.orders_count > 0) {
+                        headerBadge.style.display = 'inline-block';
+                        headerBadge.textContent = data.orders_count;
+                        headerBadge.style.background = 'rgba(255, 255, 255, 0.25)';
+                        headerBadge.style.color = '#FFFFFF';
+                    } else {
+                        headerBadge.style.display = 'none';
+                    }
+                }
+
+                // Update Sticky Search Tracking Dot
+                const stickyDot = document.getElementById('stickyTrackDot');
+                if (stickyDot) {
+                    stickyDot.style.display = data.active_count > 0 ? 'inline-block' : 'none';
+                }
+
+                // Update Mobile Bottom Bar Tracking Badge & Pulse
+                const mbarBadge = document.getElementById('mbarTrackBadge');
+                const mbarBtn = document.getElementById('mbarTrackBtn');
+                if (mbarBadge) {
+                    if (data.active_count > 0) {
+                        mbarBadge.style.display = 'inline-block';
+                        mbarBadge.textContent = data.active_count;
+                        mbarBadge.style.background = '#0288D1';
+                    } else if (data.orders_count > 0) {
+                        mbarBadge.style.display = 'inline-block';
+                        mbarBadge.textContent = data.orders_count;
+                        mbarBadge.style.background = '#888';
+                    } else {
+                        mbarBadge.style.display = 'none';
+                    }
+                }
+                if (mbarBtn) {
+                    if (data.active_count > 0) {
+                        mbarBtn.classList.add('has-active');
+                    } else {
+                        mbarBtn.classList.remove('has-active');
+                    }
+                }
+
+                // 2. Update Floating Banner
+                const banner = document.getElementById('floatingTrackBanner');
+                const bannerText = document.getElementById('floatingTrackText');
+                if (banner) {
+                    if (data.active_count > 0) {
+                        banner.style.display = 'inline-flex';
+                        updateFloatingBannerPosition();
+                        if (bannerText) {
+                            const prepOrders = (data.orders || []).filter(o => o.status === 'جاري التحضير' || o.status === 'قيد التحضير');
+                            if (prepOrders.length > 0) {
+                                bannerText.textContent = `طلبك قيد التحضير في البار ☕✨ • اضغط للمتابعة`;
+                            } else {
+                                bannerText.textContent = `تم استلام طلبك وبانتظار الباريستا ⏳ • اضغط للمتابعة`;
+                            }
+                        }
+                    } else {
+                        banner.style.display = 'none';
+                    }
+                }
+
+                // 3. Render Tracking Modal Content
+                renderTrackingList(data);
+
+            } catch (err) {
+                console.error('Error tracking orders:', err);
+                const container = document.getElementById('trackingOrdersList');
+                if (container && manualClick) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 25px 10px; color: #C62828; font-size: 13px;">
+                            <i class="fa-solid fa-triangle-exclamation" style="font-size: 26px; margin-bottom: 8px; display: block;"></i>
+                            تعذر تحديث حالة الطلبات حالياً. يرجى المحاولة بعد لحظات.
+                        </div>
+                    `;
+                }
+            } finally {
+                if (manualClick && refreshIcon) {
+                    setTimeout(() => {
+                        refreshIcon.classList.remove('fa-spin');
+                    }, 600);
+                }
+            }
+        }
+
+        function renderTrackingList(data) {
+            const container = document.getElementById('trackingOrdersList');
+            const tableLabel = document.getElementById('trackingTableLabel');
+            const activePill = document.getElementById('trackingActiveCountPill');
+
+            if (tableLabel) tableLabel.textContent = `ترابيزة رقم ${currentTable}`;
+            if (activePill) {
+                if (data.active_count > 0) {
+                    activePill.style.display = 'inline-block';
+                    activePill.textContent = `${data.active_count} قيد التنفيذ`;
+                } else {
+                    activePill.style.display = 'none';
+                }
+            }
+
+            if (!container) return;
+
+            if (!data.orders || data.orders.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 15px; color: var(--text-muted);">
+                        <div style="width: 70px; height: 70px; border-radius: 50%; background: #FAF7F2; border: 2px dashed #D5C9BE; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; color: #BDBDBD; font-size: 28px;">
+                            <i class="fa-solid fa-mug-hot"></i>
+                        </div>
+                        <div style="font-weight: 800; font-size: 16px; color: var(--primary-espresso); margin-bottom: 6px;">لا توجد طلبات مسجلة لهذه الترابيزة بعد</div>
+                        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 320px; margin: 0 auto;">
+                            اختر مشروباتك وحلوياتك المفضلة من المنيو واضغط على "إرسال الطلب للباريستا" وستتمكن من متابعتها هنا لحظة بلحظة ☕✨
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            data.orders.forEach(ord => {
+                const st = (ord.status || '').trim();
+                let step1Class = 'completed';
+                let line1Class = '';
+                let step2Class = '';
+                let line2Class = '';
+                let step3Class = '';
+                let statusPillClass = 'status-new';
+                let statusPillText = st || 'جديد';
+                let hintClass = 'hint-new';
+                let hintIcon = 'fa-hourglass-start';
+                let hintText = 'تم استلام طلبك في النظام وجاري تحويله للباريستا في البار فوراً.';
+                let step2Icon = 'fa-fire-burner';
+                let step3Icon = 'fa-circle-check';
+
+                if (st === 'جديد') {
+                    step1Class = 'completed';
+                    line1Class = 'active-pulse';
+                    step2Class = '';
+                    line2Class = '';
+                    step3Class = '';
+                    statusPillClass = 'status-new';
+                    statusPillText = 'جديد (بانتظار الباريستا)';
+                    hintClass = 'hint-new';
+                    hintIcon = 'fa-clock';
+                    hintText = 'طلبك وصل للباريستا وبانتظار البدء في تحضيره خلال لحظات ⏳';
+                } else if (st === 'جاري التحضير' || st === 'قيد التحضير') {
+                    step1Class = 'completed';
+                    line1Class = 'completed';
+                    step2Class = 'active';
+                    line2Class = 'active-pulse';
+                    step3Class = '';
+                    statusPillClass = 'status-prep';
+                    statusPillText = 'جاري التحضير في البار ☕';
+                    hintClass = 'hint-prep';
+                    hintIcon = 'fa-mug-hot fa-bounce';
+                    hintText = 'الباريستا يحضر طلبك الآن في البار بكل حب وإتقان! دقائق ويكون عندك ☕✨';
+                    step2Icon = 'fa-mug-hot';
+                } else if (st === 'تم التقديم' || st === 'تمت التسوية') {
+                    step1Class = 'completed';
+                    line1Class = 'completed';
+                    step2Class = 'completed';
+                    line2Class = 'completed';
+                    step3Class = 'completed';
+                    statusPillClass = 'status-delivered';
+                    statusPillText = 'تم التقديم بالهناء والشفاء 🎉';
+                    hintClass = 'hint-delivered';
+                    hintIcon = 'fa-circle-check';
+                    hintText = 'تم تقديم طلبك على الترابيزة! استمتع بمشروبك وبالهناء والشفاء ✨';
+                } else if (st === 'ملغي') {
+                    step1Class = 'completed';
+                    line1Class = '';
+                    step2Class = '';
+                    line2Class = '';
+                    step3Class = '';
+                    statusPillClass = 'status-cancelled';
+                    statusPillText = 'ملغي ❌';
+                    hintClass = 'hint-cancelled';
+                    hintIcon = 'fa-ban';
+                    hintText = 'تم إلغاء هذا الطلب من قبل الإدارة.';
+                } else {
+                    statusPillClass = 'status-new';
+                }
+
+                const cleanItems = (ord.items_summary || '').replace(/^- /gm, '• ').replace(/\n/g, '<br>');
+                const notesHtml = ord.notes ? `
+                    <div class="track-notes-box">
+                        <i class="fa-solid fa-comment-dots" style="color: var(--cezar-gold);"></i>
+                        <span>ملاحظاتك: <strong>${ord.notes}</strong></span>
+                    </div>
+                ` : '';
+
+                html += `
+                    <div class="order-track-card">
+                        <div class="track-card-header">
+                            <div>
+                                <span class="track-order-id">طلب #${ord.id}</span>
+                                <span class="track-order-time"><i class="fa-regular fa-clock" style="margin-right: 3px;"></i> ${ord.created_at || ''}</span>
+                            </div>
+                            <span class="track-status-pill ${statusPillClass}">${statusPillText}</span>
+                        </div>
+
+                        ${st !== 'ملغي' ? `
+                        <div class="track-stepper">
+                            <div class="step-item ${step1Class}">
+                                <div class="step-circle"><i class="fa-solid fa-check"></i></div>
+                                <div class="step-title">تم الاستلام</div>
+                                <div class="step-sub">في النظام</div>
+                            </div>
+                            <div class="step-line ${line1Class}"></div>
+                            <div class="step-item ${step2Class}">
+                                <div class="step-circle"><i class="fa-solid ${step2Icon}"></i></div>
+                                <div class="step-title">جاري التحضير</div>
+                                <div class="step-sub">في البار</div>
+                            </div>
+                            <div class="step-line ${line2Class}"></div>
+                            <div class="step-item ${step3Class}">
+                                <div class="step-circle"><i class="fa-solid ${step3Icon}"></i></div>
+                                <div class="step-title">تم التقديم</div>
+                                <div class="step-sub">بالهناء والشفاء</div>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <div class="track-hint-banner ${hintClass}">
+                            <i class="fa-solid ${hintIcon}"></i>
+                            <span>${hintText}</span>
+                        </div>
+
+                        <div class="track-items-summary">
+                            <div style="font-weight: 800; font-size: 11px; color: var(--primary-espresso); margin-bottom: 4px;">الأصناف المطلوبة:</div>
+                            ${cleanItems}
+                        </div>
+
+                        ${notesHtml}
+
+                        <div class="track-total-row">
+                            <span>إجمالي الطلب:</span>
+                            <span class="track-price-val">${ord.total_price} جنيه</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function openTrackingModal() {
+            document.getElementById('trackingModal').style.display = 'flex';
+            await fetchTrackingOrders();
+            if (trackingPollInterval) clearInterval(trackingPollInterval);
+            trackingPollInterval = setInterval(() => {
+                fetchTrackingOrders();
+            }, 6000);
+        }
+
+        function closeTrackingModal() {
+            document.getElementById('trackingModal').style.display = 'none';
+            if (trackingPollInterval) {
+                clearInterval(trackingPollInterval);
+                trackingPollInterval = null;
+            }
+        }
+
         // Start
         loadMenu();
+        fetchTrackingOrders();
+
+        // Background poller every 15s to keep badge & floating tracker in sync
+        setInterval(() => {
+            const trackModal = document.getElementById('trackingModal');
+            if (!trackModal || trackModal.style.display !== 'flex') {
+                fetchTrackingOrders();
+            }
+        }, 15000);
     </script>
 </body>
 </html>

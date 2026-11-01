@@ -348,6 +348,7 @@ def get_table_bill(table_number: int, db: Session = Depends(get_db)):
             "items_summary": o.items_summary,
             "total_price": o.total_price,
             "status": o.status,
+            "notes": o.notes or "",
             "created_at": o.created_at.strftime("%I:%M %p") if o.created_at else ""
         }
         for o in active_orders
@@ -358,6 +359,59 @@ def get_table_bill(table_number: int, db: Session = Depends(get_db)):
         "total_bill": round(total_bill, 2),
         "orders_count": len(active_orders),
         "orders": orders_list
+    }
+
+
+@app.get("/api/tables/{table_number}/track")
+@app.get("/api/cezar/tables/{table_number}/track")
+def track_table_orders(table_number: int, db: Session = Depends(get_db)):
+    """استرجاع جميع طلبات الترابيزة الحالية لتتبع حالتها الحية والمباشرة."""
+    orders = db.query(TableOrder).filter(
+        TableOrder.table_number == table_number,
+        ~TableOrder.items_summary.like("%طلب الحساب%"),
+        ~TableOrder.items_summary.like("%نداء الويتر%"),
+        TableOrder.total_price > 0
+    ).order_by(desc(TableOrder.id)).limit(25).all()
+
+    orders_list = [
+        {
+            "id": o.id,
+            "items_summary": o.items_summary,
+            "total_price": o.total_price,
+            "status": o.status,
+            "notes": o.notes or "",
+            "created_at": o.created_at.strftime("%I:%M %p") if o.created_at else ""
+        }
+        for o in orders
+    ]
+
+    active_count = sum(1 for o in orders if o.status in ["جديد", "جاري التحضير", "قيد التحضير"])
+
+    return {
+        "status": "success",
+        "table_number": table_number,
+        "orders_count": len(orders_list),
+        "active_count": active_count,
+        "orders": orders_list
+    }
+
+
+@app.get("/api/orders/{order_id}")
+@app.get("/api/cezar/orders/{order_id}")
+def get_order_by_id(order_id: int, db: Session = Depends(get_db)):
+    """استرجاع تفاصيل طلب محدد برقم الـ ID."""
+    order = db.query(TableOrder).filter(TableOrder.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="الطلب غير موجود")
+    return {
+        "status": "success",
+        "id": order.id,
+        "table_number": order.table_number,
+        "items_summary": order.items_summary,
+        "total_price": order.total_price,
+        "status": order.status,
+        "notes": order.notes or "",
+        "created_at": order.created_at.strftime("%I:%M %p") if order.created_at else ""
     }
 
 

@@ -240,8 +240,9 @@
         const hostInput = document.getElementById('serverHostInput');
         const TOTAL_TABLES = 25;
 
-        // الرابط السحابي المباشر الدائم لكافيه سيزر
-        const ONLINE_MENU_BASE = 'https://mohameddabah769-debug.github.io/AI_Restaurant';
+        // الرابط السحابي أو المحلي المباشر لكافيه سيزر
+        const isHttp = window.location.protocol.startsWith('http') && !window.location.host.includes('github.io');
+        const ONLINE_MENU_BASE = isHttp ? window.location.origin : 'https://mohameddabah769-debug.github.io/ceZar_Coffee/Web_Digital_Menu';
         hostInput.value = ONLINE_MENU_BASE;
 
         function renderAllCards() {
