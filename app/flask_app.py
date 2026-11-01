@@ -14,9 +14,11 @@ from .seed import seed_menu
 Base.metadata.create_all(bind=engine)
 with SessionLocal() as db:
     seed_menu(db)
-    if db.query(ManagerAccount).count() == 0:
+    if db.query(ManagerAccount).filter(ManagerAccount.username == "admin").count() == 0:
         db.add(ManagerAccount(username="admin", password="123", manager_name="مدير سيزر كوفي"))
-        db.commit()
+    if db.query(ManagerAccount).filter(ManagerAccount.username == "cezar").count() == 0:
+        db.add(ManagerAccount(username="cezar", password="0000", manager_name="كافيه سيزر"))
+    db.commit()
 
 app = Flask(
     __name__,
