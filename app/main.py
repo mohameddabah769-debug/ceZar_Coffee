@@ -17,7 +17,7 @@ except Exception:
     pass
 
 import qrcode
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, UploadFile, File
 from fastapi.responses import HTMLResponse, Response, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal, get_db
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem
 from .seed import seed_menu
 
 # إنشاء الجداول تلقائياً
@@ -1075,8 +1075,6 @@ def close_shift(req: ShiftCloseRequest, db: Session = Depends(get_db)):
             "cash_sales": cash_sales,
             "visa_sales": visa_sales,
             "total_expenses": total_expenses,
-        "total_salaries": total_salaries,
-        "total_waste": total_waste,
             "expected_cash": round(expected_cash, 2),
             "actual_cash": req.actual_cash,
             "difference": round(difference, 2)
@@ -2604,4 +2602,313 @@ async def sync_offline_orders(request: Request, db: Session = Depends(get_db)):
         "synced_count": len(synced),
         "order_ids": [o.id for o in synced],
         "message": f"تمت مزامنة {len(synced)} طلبات أوفلاين بنجاح مع السيرفر"
+    }
+
+
+# ==========================================
+# 10. تقرير تقفيل الشيفت الحراري (Z-Report)
+# ==========================================
+
+@app.get("/api/shifts/{shift_id}/z-report")
+@app.get("/api/cezar/shifts/{shift_id}/z-report")
+def get_shift_z_report(shift_id: int, db: Session = Depends(get_db)):
+    shift = db.query(Shift).filter(Shift.id == shift_id).first()
+    if not shift:
+        raise HTTPException(status_code=404, detail="الوردية غير موجودة")
+
+    orders = db.query(TableOrder).filter(
+        TableOrder.shift_id == shift.id,
+        TableOrder.status != "ملغي",
+        ~TableOrder.status.like("طلب حساب%"),
+        TableOrder.status != "نداء ويتر"
+    ).all()
+
+    total_orders = len(orders)
+    cash_sales = sum(o.total_price for o in orders if (o.payment_method or "كاش") == "كاش")
+    visa_sales = sum(o.total_price for o in orders if (o.payment_method or "") == "فيزا")
+    total_sales = cash_sales + visa_sales
+
+    expenses = db.query(Expense).filter(Expense.shift_id == shift.id).all()
+    expenses_list = [{"title": e.title, "amount": e.amount, "category": e.category or "عام"} for e in expenses]
+    total_expenses = sum(e.amount for e in expenses)
+
+    wastes = db.query(InventoryWaste).filter(InventoryWaste.date == (shift.start_time.strftime("%Y-%m-%d") if shift.start_time else "")).all()
+    total_waste_loss = sum(w.cost_loss or 0.0 for w in wastes)
+
+    expected_cash = (shift.starting_cash or 0.0) + cash_sales - total_expenses
+    actual_cash = shift.actual_cash if shift.actual_cash is not None else expected_cash
+    diff = round((actual_cash or 0.0) - expected_cash, 2)
+
+    return {
+        "status": "success",
+        "z_report": {
+            "shift_id": shift.id,
+            "cashier_name": shift.cashier_name or "كاشير سيزر",
+            "status": shift.status,
+            "start_time": shift.start_time.strftime("%Y-%m-%d %I:%M %p") if shift.start_time else "-",
+            "end_time": shift.end_time.strftime("%Y-%m-%d %I:%M %p") if shift.end_time else "جارية حتى الآن",
+            "starting_cash": shift.starting_cash or 0.0,
+            "total_orders": total_orders,
+            "total_sales": round(total_sales, 2),
+            "cash_sales": round(cash_sales, 2),
+            "visa_sales": round(visa_sales, 2),
+            "expenses": expenses_list,
+            "total_expenses": round(total_expenses, 2),
+            "total_waste_loss": round(total_waste_loss, 2),
+            "expected_cash": round(expected_cash, 2),
+            "actual_cash": round(actual_cash, 2),
+            "difference": diff,
+            "notes": shift.notes or ""
+        }
+    }
+
+
+# ==========================================
+# 11. النسخ الاحتياطي واسترجاع البيانات (Database Backup & Restore)
+# ==========================================
+
+@app.get("/api/backup/download")
+@app.get("/api/cezar/backup/download")
+def download_database_backup():
+    db_path = "cezar_coffee.db"
+    if not os.path.exists(db_path):
+        raise HTTPException(status_code=404, detail="ملف قاعدة البيانات غير موجود")
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+    filename = f"cezar_coffee_backup_{timestamp}.db"
+    return FileResponse(
+        path=db_path,
+        filename=filename,
+        media_type="application/octet-stream"
+    )
+
+
+@app.post("/api/backup/restore")
+@app.post("/api/cezar/backup/restore")
+async def restore_database_backup(file: UploadFile = File(...)):
+    if not file.filename.endswith(".db"):
+        raise HTTPException(status_code=400, detail="يجب رفع ملف قاعدة بيانات بصيغة .db فقط")
+
+    content = await file.read()
+    if len(content) < 100 or not content.startswith(b"SQLite format 3"):
+        raise HTTPException(status_code=400, detail="الملف المرفوع ليس ملف قاعدة بيانات SQLite صالح")
+
+    backup_path = f"cezar_coffee_before_restore_{int(datetime.now().timestamp())}.db"
+    if os.path.exists("cezar_coffee.db"):
+        import shutil
+        shutil.copyfile("cezar_coffee.db", backup_path)
+
+    with open("cezar_coffee.db", "wb") as f:
+        f.write(content)
+
+    return {
+        "status": "success",
+        "message": "تم استرجاع قاعدة البيانات بنجاح! يرجى إعادة تحميل الصفحة."
+    }
+
+
+# ==========================================
+# 12. الموردين وفواتير الشراء والتوريد (Suppliers & Purchases)
+# ==========================================
+
+@app.get("/api/suppliers")
+@app.get("/api/cezar/suppliers")
+def get_suppliers(db: Session = Depends(get_db)):
+    suppliers = db.query(Supplier).order_by(Supplier.name).all()
+    total_balance = sum(s.current_balance or 0.0 for s in suppliers)
+    return {
+        "status": "success",
+        "suppliers": [
+            {
+                "id": s.id,
+                "name": s.name,
+                "company_name": s.company_name or "-",
+                "phone": s.phone or "-",
+                "current_balance": round(s.current_balance or 0.0, 2),
+                "notes": s.notes or "",
+                "created_at": s.created_at.strftime("%Y-%m-%d") if s.created_at else ""
+            }
+            for s in suppliers
+        ],
+        "summary": {
+            "total_suppliers": len(suppliers),
+            "total_debt_balance": round(total_balance, 2)
+        }
+    }
+
+
+@app.post("/api/suppliers")
+@app.post("/api/cezar/suppliers")
+async def add_supplier(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    name = (data.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="اسم المورد مطلوب")
+
+    supplier = Supplier(
+        name=name,
+        company_name=(data.get("company_name") or "").strip(),
+        phone=(data.get("phone") or "").strip(),
+        current_balance=float(data.get("current_balance") or 0.0),
+        notes=(data.get("notes") or "").strip()
+    )
+    db.add(supplier)
+    db.commit()
+    db.refresh(supplier)
+    return {"status": "success", "message": f"تمت إضافة المورد ({supplier.name}) بنجاح!", "id": supplier.id}
+
+
+@app.delete("/api/suppliers/{supplier_id}")
+@app.delete("/api/cezar/suppliers/{supplier_id}")
+def delete_supplier(supplier_id: int, db: Session = Depends(get_db)):
+    s = db.query(Supplier).filter(Supplier.id == supplier_id).first()
+    if not s:
+        raise HTTPException(status_code=404, detail="المورد غير موجود")
+    db.delete(s)
+    db.commit()
+    return {"status": "success", "message": "تم حذف المورد بنجاح"}
+
+
+@app.get("/api/purchases")
+@app.get("/api/cezar/purchases")
+def get_purchases(month: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(PurchaseInvoice)
+    if month and month.strip():
+        query = query.filter(PurchaseInvoice.date.like(f"{month.strip()}%"))
+
+    invoices = query.order_by(desc(PurchaseInvoice.id)).all()
+    total_purchases = sum(i.total_amount or 0.0 for i in invoices)
+    total_paid = sum(i.paid_amount or 0.0 for i in invoices)
+    total_remaining = sum(i.remaining_amount or 0.0 for i in invoices)
+
+    res = []
+    for inv in invoices:
+        supp = db.query(Supplier).filter(Supplier.id == inv.supplier_id).first() if inv.supplier_id else None
+        items = db.query(PurchaseInvoiceItem).filter(PurchaseInvoiceItem.purchase_invoice_id == inv.id).all()
+        items_desc = ", ".join([f"{it.quantity} {it.unit} {it.item_name}" for it in items]) or "توريد عام"
+        res.append({
+            "id": inv.id,
+            "invoice_number": inv.invoice_number or f"PUR-{inv.id}",
+            "supplier_id": inv.supplier_id,
+            "supplier_name": supp.name if supp else "مورد غير محدد",
+            "date": inv.date,
+            "total_amount": round(inv.total_amount or 0.0, 2),
+            "paid_amount": round(inv.paid_amount or 0.0, 2),
+            "remaining_amount": round(inv.remaining_amount or 0.0, 2),
+            "payment_method": inv.payment_method or "كاش",
+            "items_summary": items_desc,
+            "notes": inv.notes or ""
+        })
+
+    return {
+        "status": "success",
+        "purchases": res,
+        "summary": {
+            "total_purchases_amount": round(total_purchases, 2),
+            "total_paid_amount": round(total_paid, 2),
+            "total_remaining_debt": round(total_remaining, 2),
+            "total_invoices_count": len(invoices)
+        }
+    }
+
+
+@app.post("/api/purchases")
+@app.post("/api/cezar/purchases")
+async def add_purchase_invoice(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    items = data.get("items") or []
+    if not items:
+        raise HTTPException(status_code=400, detail="يجب إضافة صنف واحد على الأقل في فاتورة الشراء")
+
+    total_amount = float(data.get("total_amount") or 0.0)
+    paid_amount = float(data.get("paid_amount") or 0.0)
+    remaining_amount = max(0.0, total_amount - paid_amount)
+    supp_id = data.get("supplier_id")
+    pay_method = (data.get("payment_method") or "كاش من الدرج").strip()
+    inv_date = (data.get("date") or "").strip() or datetime.now().strftime("%Y-%m-%d")
+
+    invoice = PurchaseInvoice(
+        supplier_id=supp_id if supp_id else None,
+        invoice_number=(data.get("invoice_number") or "").strip() or f"PUR-{int(datetime.now().timestamp())}",
+        date=inv_date,
+        total_amount=total_amount,
+        paid_amount=paid_amount,
+        remaining_amount=remaining_amount,
+        payment_method=pay_method,
+        notes=(data.get("notes") or "").strip()
+    )
+    db.add(invoice)
+    db.flush()
+
+    # Process items and auto-increase stock
+    for it in items:
+        item_name = (it.get("item_name") or "").strip()
+        qty = float(it.get("quantity") or 1.0)
+        unit = (it.get("unit") or "كجم").strip()
+        cost = float(it.get("unit_cost") or 0.0)
+        line_total = qty * cost
+
+        inv_item = None
+        if it.get("inventory_item_id"):
+            inv_item = db.query(InventoryItem).filter(InventoryItem.id == it.get("inventory_item_id")).first()
+        if not inv_item and item_name:
+            inv_item = db.query(InventoryItem).filter(InventoryItem.name == item_name).first()
+
+        # If inventory item exists, auto-increase stock & update cost
+        if inv_item:
+            inv_item.current_stock = (inv_item.current_stock or 0.0) + qty
+            if cost > 0:
+                inv_item.cost_per_unit = cost
+            unit = inv_item.unit
+        elif item_name:
+            # Create new inventory item automatically
+            inv_item = InventoryItem(
+                name=item_name,
+                unit=unit,
+                current_stock=qty,
+                min_alert_stock=3.0,
+                cost_per_unit=cost
+            )
+            db.add(inv_item)
+            db.flush()
+
+        pi_item = PurchaseInvoiceItem(
+            purchase_invoice_id=invoice.id,
+            inventory_item_id=inv_item.id if inv_item else None,
+            item_name=item_name or (inv_item.name if inv_item else "خامة"),
+            quantity=qty,
+            unit=unit,
+            unit_cost=cost,
+            total_cost=line_total
+        )
+        db.add(pi_item)
+
+    # Update supplier balance if remaining > 0
+    if supp_id and remaining_amount > 0:
+        supplier = db.query(Supplier).filter(Supplier.id == supp_id).first()
+        if supplier:
+            supplier.current_balance = (supplier.current_balance or 0.0) + remaining_amount
+
+    # If paid cash from current shift drawer, record as Expense
+    if pay_method == "كاش من الدرج" and paid_amount > 0:
+        current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
+        if current_shift:
+            supp_name = "مورد"
+            if supp_id:
+                s_obj = db.query(Supplier).filter(Supplier.id == supp_id).first()
+                if s_obj: supp_name = s_obj.name
+            exp = Expense(
+                shift_id=current_shift.id,
+                title=f"شراء خامات: {supp_name} (فاتورة {invoice.invoice_number})",
+                amount=paid_amount,
+                category="مشتريات خامات"
+            )
+            db.add(exp)
+
+    db.commit()
+    db.refresh(invoice)
+
+    return {
+        "status": "success",
+        "message": f"تم تسجيل فاتورة الشراء والتوريد رقم ({invoice.invoice_number}) وتحديث رصيد المخزن تلقائياً!",
+        "invoice_id": invoice.id
     }

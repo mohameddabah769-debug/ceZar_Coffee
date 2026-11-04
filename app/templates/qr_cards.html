@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ceZar COFFEE | كروت الـ QR للترابيزات الـ 25</title>
+    <title>ceZar COFFEE | كروت واستاندات الـ QR للترابيزات</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,6 +17,7 @@
             --primary-dark: #190E09;
             --cezar-orange: #E85D04;
             --cezar-gold: #D4A373;
+            --cezar-gold-light: #FDF8F3;
         }
 
         * {
@@ -27,7 +28,7 @@
         }
 
         body {
-            background-color: #F0ECE4;
+            background-color: #F4EFEA;
             color: #333;
             padding: 20px;
         }
@@ -36,27 +37,32 @@
         .no-print-bar {
             background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-espresso) 100%);
             color: white;
-            padding: 16px 24px;
-            border-radius: 18px;
-            max-width: 1100px;
+            padding: 18px 24px;
+            border-radius: 20px;
+            max-width: 1200px;
             margin: 0 auto 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 14px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+            border: 1px solid rgba(212, 163, 115, 0.3);
         }
 
         .bar-title h1 {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .bar-title p {
             font-size: 13px;
             color: var(--cezar-gold);
-            font-weight: 600;
+            font-weight: 700;
+            margin-top: 4px;
         }
 
         .btn-print {
@@ -79,30 +85,47 @@
             transform: scale(0.97);
         }
 
+        .filter-select {
+            padding: 7px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--cezar-gold);
+            font-size: 12px;
+            font-weight: 800;
+            background: white;
+            color: var(--primary-espresso);
+            outline: none;
+        }
+
         /* Cards Grid */
         .cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 24px;
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
-        /* Individual Table Stand Card */
+        /* Individual Table Stand Card (Acrylic Style) */
         .table-card {
             background: white;
-            border-radius: 20px;
-            padding: 22px 18px;
+            border-radius: 22px;
+            padding: 24px 20px;
             text-align: center;
-            border: 2px solid #E2D9CF;
-            box-shadow: 0 4px 16px rgba(43, 24, 16, 0.08);
+            border: 2.5px solid var(--primary-espresso);
+            box-shadow: 0 8px 24px rgba(43, 24, 16, 0.12);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
             position: relative;
             overflow: hidden;
-            aspect-ratio: 1 / 1.45;
+            aspect-ratio: 1 / 1.5;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .table-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(43, 24, 16, 0.18);
         }
 
         .card-top-decoration {
@@ -110,24 +133,37 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 8px;
-            background: linear-gradient(90deg, var(--primary-espresso) 0%, var(--cezar-orange) 50%, var(--cezar-gold) 100%);
+            height: 10px;
+            background: linear-gradient(90deg, var(--primary-espresso) 0%, var(--cezar-gold) 50%, var(--cezar-orange) 100%);
         }
 
+        .card-corner-border {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--cezar-gold);
+        }
+        .corner-tl { top: 16px; left: 16px; border-right: none; border-bottom: none; border-radius: 6px 0 0 0; }
+        .corner-tr { top: 16px; right: 16px; border-left: none; border-bottom: none; border-radius: 0 6px 0 0; }
+        .corner-bl { bottom: 16px; left: 16px; border-right: none; border-top: none; border-radius: 0 0 0 6px; }
+        .corner-br { bottom: 16px; right: 16px; border-left: none; border-top: none; border-radius: 0 0 6px 0; }
+
         .card-logo {
-            width: 65px;
-            height: 65px;
+            width: 68px;
+            height: 68px;
             border-radius: 50%;
             border: 2px solid var(--cezar-gold);
             object-fit: cover;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
         .card-brand-name {
-            font-size: 17px;
+            font-size: 19px;
             font-weight: 900;
             color: var(--primary-espresso);
             line-height: 1.1;
+            letter-spacing: 0.5px;
         }
 
         .card-brand-name span {
@@ -137,42 +173,46 @@
         .card-table-pill {
             background: linear-gradient(135deg, var(--primary-espresso) 0%, var(--primary-dark) 100%);
             color: white;
-            padding: 6px 20px;
-            border-radius: 12px;
-            font-size: 17px;
+            padding: 8px 24px;
+            border-radius: 14px;
+            font-size: 18px;
             font-weight: 900;
-            margin: 10px 0;
-            box-shadow: 0 3px 8px rgba(43, 24, 16, 0.2);
-            border: 1px solid var(--cezar-gold);
+            margin: 8px 0;
+            box-shadow: 0 4px 12px rgba(43, 24, 16, 0.25);
+            border: 1.5px solid var(--cezar-gold);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .card-qr-box {
             background: #FFFFFF;
-            padding: 8px;
-            border-radius: 14px;
-            border: 1px solid #E2D9CF;
+            padding: 10px;
+            border-radius: 18px;
+            border: 2px solid var(--cezar-gold);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
             display: inline-block;
-            margin: 4px 0;
+            margin: 6px 0;
         }
 
         .card-qr-img {
-            width: 140px;
-            height: 140px;
+            width: 145px;
+            height: 145px;
             display: block;
         }
 
         .card-instruction {
-            font-size: 12px;
+            font-size: 12.5px;
             font-weight: 800;
             color: var(--primary-espresso);
             line-height: 1.4;
-            margin-top: 6px;
+            margin-top: 4px;
         }
 
         .card-footer {
-            font-size: 10px;
+            font-size: 10.5px;
             color: var(--cezar-gold);
-            font-weight: 700;
+            font-weight: 800;
             margin-top: 4px;
             letter-spacing: 0.5px;
         }
@@ -194,11 +234,12 @@
                 gap: 20px;
                 max-width: 100%;
                 margin: 0;
+                padding: 10px;
             }
 
             .table-card {
                 border: 2px solid #2B1810;
-                box-shadow: none;
+                box-shadow: none !important;
                 page-break-inside: avoid;
                 break-inside: avoid;
                 margin-bottom: 20px;
@@ -211,24 +252,34 @@
     <!-- Top Action Bar -->
     <div class="no-print-bar">
         <div class="bar-title">
-            <h1><i class="fa-solid fa-qrcode" style="color: var(--cezar-gold); margin-left: 8px;"></i> كروت الـ QR للترابيزات الـ 25</h1>
-            <p>كروت جاهزة للطباعة على استاندات الأكريليك الفاخرة لكافيه ceZar COFFEE | إعداد: <strong>م / محمد دباح</strong> (01095744676)</p>
+            <h1><i class="fa-solid fa-qrcode" style="color: var(--cezar-gold);"></i> كروت واستاندات الـ QR للترابيزات</h1>
+            <p>تصميم فاخر جاهز للطباعة والتركيب في استاندات الأكريليك لكافيه ceZar COFFEE</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.12); padding: 5px 12px; border-radius: 12px;">
+                <label style="font-size: 12px; font-weight: 800; color: var(--cezar-gold);"><i class="fa-solid fa-filter"></i> تصفية:</label>
+                <select id="tableFilterSelect" onchange="renderAllCards()" class="filter-select">
+                    <option value="all">كل الترابيزات (1 إلى 25)</option>
+                    <script>
+                        for(let i=1; i<=25; i++) {
+                            document.write('<option value="'+i+'">ترابيزة رقم '+i+' فقط</option>');
+                        }
+                    </script>
+                </select>
+            </div>
+
             <div style="background: rgba(255,255,255,0.12); padding: 5px 12px; border-radius: 12px; display: flex; align-items: center; gap: 8px;">
-                <label style="font-size: 12px; font-weight: 800; color: var(--cezar-gold);"><i class="fa-solid fa-link"></i> رابط الكروت:</label>
-                <input id="qrHostInput" type="text" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; direction: ltr; font-weight: bold; width: 250px;" placeholder="https://Deboo.pythonanywhere.com">
+                <label style="font-size: 12px; font-weight: 800; color: var(--cezar-gold);"><i class="fa-solid fa-link"></i> الرابط:</label>
+                <input id="qrHostInput" type="text" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; direction: ltr; font-weight: bold; width: 220px;" placeholder="https://Deboo.pythonanywhere.com">
                 <button onclick="renderAllCards()" style="background: var(--cezar-orange); color: white; border: none; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold;">تطبيق</button>
             </div>
+
             <a href="/admin" target="_blank" style="background: rgba(255,255,255,0.15); color: white; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-sliders"></i> لوحة التحكم
             </a>
-            <a href="/menu?table=1" target="_blank" style="background: rgba(255,255,255,0.15); color: white; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-eye"></i> معاينة المنيو
-            </a>
             <button class="btn-print" onclick="window.print()">
                 <i class="fa-solid fa-print"></i>
-                <span>طباعة جميع الكروت (25 ترابيزة)</span>
+                <span>طباعة الكروت</span>
             </button>
         </div>
     </div>
@@ -245,33 +296,41 @@
         function renderAllCards() {
             cardsGrid.innerHTML = '';
             const hostInput = document.getElementById('qrHostInput');
+            const filterVal = document.getElementById('tableFilterSelect')?.value || 'all';
+
             let baseUrl = hostInput && hostInput.value.trim() ? hostInput.value.trim().replace(/\/$/, '') : window.location.origin;
             if (baseUrl.includes('127.0.0.1') || baseUrl.includes('localhost')) {
-                // اقتراح الرابط السحابي افتراضياً إذا كان محلياً لضمان عمل الكروت المطبوعة على الموبايل
                 if (hostInput && !hostInput.value.trim()) {
                     baseUrl = 'https://Deboo.pythonanywhere.com';
                     hostInput.value = baseUrl;
                 }
             }
 
-            for (let t = 1; t <= TOTAL_TABLES; t++) {
+            const tablesToRender = filterVal === 'all' 
+                ? Array.from({length: TOTAL_TABLES}, (_, i) => i + 1)
+                : [parseInt(filterVal)];
+
+            tablesToRender.forEach(t => {
                 const card = document.createElement('div');
                 card.className = 'table-card';
 
-                // الرابط النهائي المشفر بداخل الباركود
                 const fullMenuUrl = `${baseUrl}/menu?table=${t}`;
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=6&data=${encodeURIComponent(fullMenuUrl)}`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=8&data=${encodeURIComponent(fullMenuUrl)}`;
 
                 card.innerHTML = `
                     <div class="card-top-decoration"></div>
+                    <div class="card-corner-border corner-tl"></div>
+                    <div class="card-corner-border corner-tr"></div>
+                    <div class="card-corner-border corner-bl"></div>
+                    <div class="card-corner-border corner-br"></div>
                     
-                    <div>
+                    <div style="margin-top: 4px;">
                         <img src="/static/images/cezar_logo.jpg" alt="Logo" class="card-logo" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=100'">
                         <div class="card-brand-name">ce<span>Z</span>ar COFFEE</div>
                     </div>
 
                     <div class="card-table-pill">
-                        <i class="fa-solid fa-chair" style="font-size: 14px; margin-left: 6px;"></i>
+                        <i class="fa-solid fa-chair" style="color: var(--cezar-gold);"></i>
                         ترابيزة رقم ${t}
                     </div>
 
@@ -279,17 +338,17 @@
                         <img src="${qrUrl}" alt="QR Code Table ${t}" class="card-qr-img">
                     </div>
 
-                    <div>
+                    <div style="margin-bottom: 4px;">
                         <p class="card-instruction">
                             امسح الكود بكاميرا الموبايل<br>
-                            واطلب وتابع حالة طلبك في ثواني ☕✨
+                            واطلب مشروبك مباشرة من الترابيزة ☕✨
                         </p>
                         <div class="card-footer">ceZar COFFEE • Luxury Coffee Experience</div>
                     </div>
                 `;
 
                 cardsGrid.appendChild(card);
-            }
+            });
         }
 
         renderAllCards();

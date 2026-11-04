@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem
 from .seed import seed_menu
 
 Base.metadata.create_all(bind=engine)
@@ -2036,5 +2036,139 @@ def reset_analytics_data_flask():
             "deleted_count": deleted_count,
             "message": f"تم تصفير بيانات التقارير والمبيعات بنجاح ({deleted_count} طلب)."
         })
+    finally:
+        db.close()
+
+
+# ==========================================
+# 10. تقرير تقفيل الشيفت الحراري (Z-Report - Flask)
+# ==========================================
+
+@app.route("/api/shifts/<int:shift_id>/z-report", methods=["GET"])
+def get_shift_z_report_flask(shift_id):
+    db = SessionLocal()
+    try:
+        shift = db.query(Shift).filter(Shift.id == shift_id).first()
+        if not shift:
+            return jsonify({"detail": "الوردية غير موجودة"}), 404
+
+        orders = db.query(TableOrder).filter(
+            TableOrder.shift_id == shift.id,
+            TableOrder.status != "ملغي",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر"
+        ).all()
+
+        total_orders = len(orders)
+        cash_sales = sum(o.total_price for o in orders if (o.payment_method or "كاش") == "كاش")
+        visa_sales = sum(o.total_price for o in orders if (o.payment_method or "") == "فيزا")
+        total_sales = cash_sales + visa_sales
+
+        expenses = db.query(Expense).filter(Expense.shift_id == shift.id).all()
+        expenses_list = [{"title": e.title, "amount": e.amount, "category": e.category or "عام"} for e in expenses]
+        total_expenses = sum(e.amount for e in expenses)
+
+        expected_cash = (shift.starting_cash or 0.0) + cash_sales - total_expenses
+        actual_cash = shift.actual_cash if shift.actual_cash is not None else expected_cash
+        diff = round((actual_cash or 0.0) - expected_cash, 2)
+
+        return jsonify({
+            "status": "success",
+            "z_report": {
+                "shift_id": shift.id,
+                "cashier_name": shift.cashier_name or "كاشير سيزر",
+                "status": shift.status,
+                "start_time": shift.start_time.strftime("%Y-%m-%d %I:%M %p") if shift.start_time else "-",
+                "end_time": shift.end_time.strftime("%Y-%m-%d %I:%M %p") if shift.end_time else "جارية حتى الآن",
+                "starting_cash": shift.starting_cash or 0.0,
+                "total_orders": total_orders,
+                "total_sales": round(total_sales, 2),
+                "cash_sales": round(cash_sales, 2),
+                "visa_sales": round(visa_sales, 2),
+                "expenses": expenses_list,
+                "total_expenses": round(total_expenses, 2),
+                "expected_cash": round(expected_cash, 2),
+                "actual_cash": round(actual_cash, 2),
+                "difference": diff,
+                "notes": shift.notes or ""
+            }
+        })
+    finally:
+        db.close()
+
+
+# ==========================================
+# 11. النسخ الاحتياطي (Backup - Flask)
+# ==========================================
+
+@app.route("/api/backup/download", methods=["GET"])
+def download_database_backup_flask():
+    db_path = "cezar_coffee.db"
+    if not os.path.exists(db_path):
+        return jsonify({"detail": "ملف قاعدة البيانات غير موجود"}), 404
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+    filename = f"cezar_coffee_backup_{timestamp}.db"
+    with open(db_path, "rb") as f:
+        data = f.read()
+    return Response(
+        data,
+        mimetype="application/octet-stream",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+# ==========================================
+# 12. الموردين وفواتير الشراء (Suppliers & Purchases - Flask)
+# ==========================================
+
+@app.route("/api/suppliers", methods=["GET"])
+def get_suppliers_flask():
+    db = SessionLocal()
+    try:
+        suppliers = db.query(Supplier).order_by(Supplier.name).all()
+        total_balance = sum(s.current_balance or 0.0 for s in suppliers)
+        return jsonify({
+            "status": "success",
+            "suppliers": [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "company_name": s.company_name or "-",
+                    "phone": s.phone or "-",
+                    "current_balance": round(s.current_balance or 0.0, 2),
+                    "notes": s.notes or "",
+                    "created_at": s.created_at.strftime("%Y-%m-%d") if s.created_at else ""
+                }
+                for s in suppliers
+            ],
+            "summary": {
+                "total_suppliers": len(suppliers),
+                "total_debt_balance": round(total_balance, 2)
+            }
+        })
+    finally:
+        db.close()
+
+
+@app.route("/api/suppliers", methods=["POST"])
+def add_supplier_flask():
+    db = SessionLocal()
+    try:
+        data = request.get_json(silent=True) or {}
+        name = (data.get("name") or "").strip()
+        if not name:
+            return jsonify({"detail": "اسم المورد مطلوب"}), 400
+
+        supplier = Supplier(
+            name=name,
+            company_name=(data.get("company_name") or "").strip(),
+            phone=(data.get("phone") or "").strip(),
+            current_balance=float(data.get("current_balance") or 0.0),
+            notes=(data.get("notes") or "").strip()
+        )
+        db.add(supplier)
+        db.commit()
+        db.refresh(supplier)
+        return jsonify({"status": "success", "message": f"تمت إضافة المورد ({supplier.name}) بنجاح!", "id": supplier.id}), 201
     finally:
         db.close()

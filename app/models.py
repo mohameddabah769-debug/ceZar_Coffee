@@ -231,3 +231,45 @@ class InventoryWaste(Base):
     reason = Column(Text, nullable=True)
     date = Column(String(20), nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class Supplier(Base):
+    """إدارة بيانات وحسابات موردي المواد الخام لكافيه سيزر."""
+    __tablename__ = "suppliers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), nullable=False, index=True)  # اسم المورد / مندوب التوريد
+    company_name = Column(String(120), nullable=True)  # اسم الشركة / المطحنة / المصنع
+    phone = Column(String(30), nullable=True)
+    current_balance = Column(Float, default=0.0)  # المديونية / الرصيد المستحق له
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class PurchaseInvoice(Base):
+    """فواتير شراء وتوريد المواد الخام والمخزون للكافيه."""
+    __tablename__ = "purchase_invoices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=True, index=True)
+    invoice_number = Column(String(80), nullable=True)  # رقم فاتورة التوريد
+    date = Column(String(20), nullable=False, index=True)  # YYYY-MM-DD
+    total_amount = Column(Float, nullable=False, default=0.0)
+    paid_amount = Column(Float, default=0.0)  # المسدد
+    remaining_amount = Column(Float, default=0.0)  # المتبقي آجل
+    payment_method = Column(String(40), default="كاش من الدرج")  # كاش من الدرج | آجل | تحويل بنكي | فيزا
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class PurchaseInvoiceItem(Base):
+    """أصناف وخامات فاتورة التوريد لزيادة رصيد المخزن تلقائياً."""
+    __tablename__ = "purchase_invoice_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    purchase_invoice_id = Column(Integer, ForeignKey("purchase_invoices.id"), nullable=False, index=True)
+    inventory_item_id = Column(Integer, ForeignKey("inventory_items.id"), nullable=True, index=True)
+    item_name = Column(String(120), nullable=False)
+    quantity = Column(Float, nullable=False, default=1.0)
+    unit = Column(String(30), default="كجم")
+    unit_cost = Column(Float, nullable=False, default=0.0)
+    total_cost = Column(Float, nullable=False, default=0.0)

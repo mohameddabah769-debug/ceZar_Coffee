@@ -687,6 +687,12 @@
 
         <div class="nav-actions">
             <!-- Active Shift Badge -->
+            <!-- Live Chime & Sound Alerts Toggle -->
+            <button id="btnSoundToggle" onclick="toggleAudioAlerts()" class="nav-btn" style="background: rgba(74, 222, 128, 0.15); border-color: rgba(74, 222, 128, 0.3);" title="تفعيل أو كتم التنبيهات الصوتية الحية">
+                <i class="fa-solid fa-volume-high" id="soundIcon" style="color: #4ADE80;"></i>
+                <span id="soundText">الأصوات: مفعّلة</span>
+            </button>
+
             <!-- Network Online / Offline / Cloud Sync Badge -->
             <div id="navNetworkBadge" onclick="triggerManualSync()" style="background: rgba(40, 167, 69, 0.25); border: 1px solid #28a745; color: #86EFAC; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; cursor: pointer;" title="حالة الاتصال بالسيرفر والمزامنة السحابية (اضغط للمزامنة اليدوية)">
                 <i class="fa-solid fa-cloud" id="navNetworkIcon" style="color: #4ADE80;"></i>
@@ -1126,6 +1132,10 @@
             <button id="btnSubTabWaste" class="subtab-pill" onclick="switchInventorySubTab('waste')" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 13px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; background: #F3F4F6; color: #4B5563; transition: all 0.2s;">
                 <i class="fa-solid fa-trash-can"></i> إدارة الهالك والعجز والجرد
                 <span id="wasteCountBadge" style="background: #EF4444; color: white; border-radius: 8px; padding: 1px 7px; font-size: 11px; font-weight: 900; display: none;">0</span>
+            </button>
+            <button id="btnSubTabPurchases" class="subtab-pill" onclick="switchInventorySubTab('purchases')" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 13px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; background: #F3F4F6; color: #4B5563; transition: all 0.2s;">
+                <i class="fa-solid fa-truck-moving"></i> الموردين وفواتير الشراء
+                <span id="purchasesCountBadge" style="background: #2563EB; color: white; border-radius: 8px; padding: 1px 7px; font-size: 11px; font-weight: 900; display: none;">0</span>
             </button>
         </div>
 
@@ -2230,6 +2240,12 @@
                     <button class="pin-btn" onclick="downloadDbBackup()" style="background: #4F46E5; font-size: 13px;">
                         <i class="fa-solid fa-cloud-arrow-down"></i> تحميل ملف قاعدة البيانات (.db)
                     </button>
+                    <div style="margin-top: 10px;">
+                        <input type="file" id="dbRestoreFileInput" accept=".db" style="display: none;" onchange="submitRestoreBackup()">
+                        <button class="pin-btn" onclick="document.getElementById('dbRestoreFileInput').click()" style="background: #DC2626; font-size: 13px; margin: 0;">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> استرجاع نسخة احتياطية (Restore DB)
+                        </button>
+                    </div>
                 </div>
 
                 <!-- CSV Export -->
@@ -2890,6 +2906,134 @@
         </div>
     </div>
 
+    <!-- 14. Record Purchase Invoice Modal -->
+    <div class="pin-modal-overlay" id="recordPurchaseModal" style="display: none;">
+        <div class="pin-card" style="max-width: 520px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 900; color: #2563EB;">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> تسجيل فاتورة توريد / شراء جديدة
+                </h3>
+                <button onclick="closeModal('recordPurchaseModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">المورد / المطحنة:</label>
+                    <select id="purSupplierSelect" class="form-control">
+                        <option value="">-- اختر مورد مسجل --</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">رقم الفاتورة (أو المرجع):</label>
+                    <input type="text" id="purInvoiceNumber" placeholder="مثال: INV-1042" class="form-control">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">طريقة السداد:</label>
+                    <select id="purPaymentMethod" class="form-control">
+                        <option value="كاش من الدرج">كاش من الدرج (يخصم كمصروف شيفت)</option>
+                        <option value="آجل">آجل (يسجل كمديونية للمورد)</option>
+                        <option value="تحويل بنكي / فيزا">تحويل بنكي / فيزا</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">تاريخ الفاتورة:</label>
+                    <input type="date" id="purDateInput" class="form-control">
+                </div>
+            </div>
+
+            <!-- Item Entry Box -->
+            <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+                <div style="font-size: 12px; font-weight: 900; color: #1E293B; margin-bottom: 6px;">بيانات الخامة الموردة (لزيادة المخزن تلقائياً):</div>
+                <div style="margin-bottom: 8px;">
+                    <select id="purItemSelect" onchange="onPurItemSelected()" class="form-control" style="margin-bottom: 4px;">
+                        <option value="">-- اختر من خامات المخزن الحالية --</option>
+                    </select>
+                    <input type="text" id="purItemCustomName" placeholder="أو اكتب اسم المادة لو خامة جديدة" class="form-control">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                    <div>
+                        <label style="font-size: 11px; font-weight: 800;">الكمية الموردة:</label>
+                        <input type="number" step="0.1" id="purQtyInput" value="10" oninput="calcPurTotalPreview()" class="form-control">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: 800;">الوحدة:</label>
+                        <input type="text" id="purUnitInput" value="كجم" class="form-control">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: 800;">سعر شراء الوحدة:</label>
+                        <input type="number" step="0.5" id="purUnitCostInput" value="300" oninput="calcPurTotalPreview()" class="form-control">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">إجمالي الفاتورة (ج):</label>
+                    <input type="number" step="0.5" id="purTotalAmountInput" value="3000" class="form-control" style="font-weight: 900; color: #1D4ED8;" readonly>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">المبلغ المدفوع كاش (ج):</label>
+                    <input type="number" step="0.5" id="purPaidAmountInput" value="3000" class="form-control" style="font-weight: 900; color: #15803D;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="font-size: 12px; font-weight: 800;">ملاحظات الفاتورة:</label>
+                <input type="text" id="purNotesInput" placeholder="مثال: دفعة بن برازيلي + كراتين حليب مراعي" class="form-control">
+            </div>
+
+            <button class="pin-btn" onclick="submitNewPurchaseInvoice()" style="background: #2563EB; font-weight: 900;">
+                <i class="fa-solid fa-check"></i> حفظ الفاتورة وتحديث رصيد المخزن فوراً
+            </button>
+        </div>
+    </div>
+
+    <!-- 15. Add Supplier Modal -->
+    <div class="pin-modal-overlay" id="addSupplierModal" style="display: none;">
+        <div class="pin-card" style="max-width: 440px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 900; color: #4B5563;">
+                    <i class="fa-solid fa-user-plus"></i> إضافة مورد خامات جديد
+                </h3>
+                <button onclick="closeModal('addSupplierModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: 800;">اسم المورد / المندوب:</label>
+                <input type="text" id="supNameInput" placeholder="مثال: أحمد عبد الله (مندوب شركة بن النجار)" class="form-control">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">اسم الشركة / المطحنة:</label>
+                    <input type="text" id="supCompanyInput" placeholder="مثال: مطاحن الأهرام للبن" class="form-control">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">رقم الهاتف:</label>
+                    <input type="text" id="supPhoneInput" placeholder="01xxxxxxxxx" class="form-control">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: 800;">رصيد البداية المستحق له (المديونية الحالية إن وجدت):</label>
+                <input type="number" step="1" id="supBalanceInput" value="0" class="form-control">
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="font-size: 12px; font-weight: 800;">ملاحظات:</label>
+                <input type="text" id="supNotesInput" placeholder="ملاحظات مواعيد التوريد أو التعامل" class="form-control">
+            </div>
+
+            <button class="pin-btn" onclick="submitNewSupplier()" style="background: #4B5563; font-weight: 900;">
+                <i class="fa-solid fa-check"></i> حفظ المورد
+            </button>
+        </div>
+    </div>
+
+
     <!-- 12. Add Promo Code Modal -->
     <div class="pin-modal-overlay" id="addPromoModal" style="display: none;">
         <div class="pin-card" style="max-width: 420px;">
@@ -3258,6 +3402,25 @@
                 const res = await fetch('/api/orders');
                 const data = await res.json();
                 allOrders = data.orders || [];
+
+                // Audio Chime Triggers
+                const newOrdersList = data.orders || [];
+                if (window._prevOrdersMap) {
+                    if (newOrdersList.length > (window._prevOrdersCount || 0)) {
+                        playChimeSound('order');
+                    }
+                    newOrdersList.forEach(o => {
+                        const prevStatus = window._prevOrdersMap[o.id];
+                        if (prevStatus && prevStatus !== o.status) {
+                            if (o.status && o.status.includes('طلب حساب')) playChimeSound('bill');
+                            else if (o.status && o.status.includes('نداء ويتر')) playChimeSound('waiter');
+                        }
+                    });
+                }
+                window._prevOrdersCount = newOrdersList.length;
+                window._prevOrdersMap = {};
+                newOrdersList.forEach(o => { window._prevOrdersMap[o.id] = o.status; });
+    
 
                 // Stats
                 document.getElementById('statTotalOrders').textContent = data.stats.total_orders || 0;
@@ -4745,21 +4908,32 @@
         function switchInventorySubTab(sub) {
             const btnStock = document.getElementById('btnSubTabStock');
             const btnWaste = document.getElementById('btnSubTabWaste');
+            const btnPurchases = document.getElementById('btnSubTabPurchases');
             const secStock = document.getElementById('sectionInventoryStock');
             const secWaste = document.getElementById('sectionInventoryWaste');
+            const secPurchases = document.getElementById('sectionInventoryPurchases');
+
+            // Reset all buttons and sections
+            [btnStock, btnWaste, btnPurchases].forEach(b => {
+                if (b) { b.style.background = '#F3F4F6'; b.style.color = '#4B5563'; }
+            });
+            [secStock, secWaste, secPurchases].forEach(s => {
+                if (s) s.style.display = 'none';
+            });
 
             if (sub === 'stock') {
                 if (btnStock) { btnStock.style.background = 'var(--cezar-orange)'; btnStock.style.color = 'white'; }
-                if (btnWaste) { btnWaste.style.background = '#F3F4F6'; btnWaste.style.color = '#4B5563'; }
                 if (secStock) secStock.style.display = 'block';
-                if (secWaste) secWaste.style.display = 'none';
                 fetchInventory();
-            } else {
+            } else if (sub === 'waste') {
                 if (btnWaste) { btnWaste.style.background = '#DC2626'; btnWaste.style.color = 'white'; }
-                if (btnStock) { btnStock.style.background = '#F3F4F6'; btnStock.style.color = '#4B5563'; }
-                if (secStock) secStock.style.display = 'none';
                 if (secWaste) secWaste.style.display = 'block';
                 fetchWasteRecords();
+            } else if (sub === 'purchases') {
+                if (btnPurchases) { btnPurchases.style.background = '#2563EB'; btnPurchases.style.color = 'white'; }
+                if (secPurchases) secPurchases.style.display = 'block';
+                fetchPurchases();
+                fetchSuppliers();
             }
         }
 
@@ -5417,6 +5591,464 @@
         // PROMO CODES MANAGEMENT LOGIC
         // ====================================================
         
+        
+        // ====================================================
+        // LIVE CHIME & SOUND ALERTS SYNTHESIZER
+        // ====================================================
+        var soundAlertsEnabled = true;
+
+        function playChimeSound(type) {
+            if (!soundAlertsEnabled) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const now = ctx.currentTime;
+
+                if (type === 'order') {
+                    // Pleasant ascending chime (D5 -> A5 -> D6)
+                    const osc1 = ctx.createOscillator();
+                    const osc2 = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc1.type = 'sine';
+                    osc2.type = 'triangle';
+                    osc1.frequency.setValueAtTime(587.33, now);
+                    osc1.frequency.setValueAtTime(880.00, now + 0.12);
+                    osc2.frequency.setValueAtTime(1174.66, now + 0.22);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                    osc1.connect(gain);
+                    osc2.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc1.start(now);
+                    osc2.start(now + 0.12);
+                    osc1.stop(now + 0.6);
+                    osc2.stop(now + 0.6);
+                } else if (type === 'waiter') {
+                    // Double Alert Bell
+                    [0, 0.18].forEach(delay => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(987.77, now + delay);
+                        gain.gain.setValueAtTime(0.35, now + delay);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.15);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + delay);
+                        osc.stop(now + delay + 0.15);
+                    });
+                } else if (type === 'bill') {
+                    // Cash Register Success Chord
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + (idx * 0.04));
+                        gain.gain.setValueAtTime(0.25, now + (idx * 0.04));
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.04) + 0.5);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + (idx * 0.04));
+                        osc.stop(now + (idx * 0.04) + 0.5);
+                    });
+                }
+            } catch(e) {}
+        }
+
+        function toggleAudioAlerts() {
+            soundAlertsEnabled = !soundAlertsEnabled;
+            const icon = document.getElementById('soundIcon');
+            const text = document.getElementById('soundText');
+            if (soundAlertsEnabled) {
+                if (icon) { icon.className = 'fa-solid fa-volume-high'; icon.style.color = '#4ADE80'; }
+                if (text) text.textContent = 'الأصوات: مفعّلة';
+                playChimeSound('order');
+            } else {
+                if (icon) { icon.className = 'fa-solid fa-volume-xmark'; icon.style.color = '#EF4444'; }
+                if (text) text.textContent = 'الأصوات: صامت';
+            }
+        }
+
+        // ====================================================
+        // Z-REPORT PRINT ENGINE (تقرير تقفيل الشيفت المعتمد)
+        // ====================================================
+        async function printZReport(shiftId) {
+            try {
+                const res = await fetch(`/api/shifts/${shiftId}/z-report`);
+                const data = await res.json();
+                if (!res.ok || data.status !== 'success') {
+                    alert('تعذر جلب تقرير الوردية');
+                    return;
+                }
+                const s = data.z_report;
+                const printWindow = window.open('', '_blank', 'width=380,height=650');
+
+                let expensesHtml = '';
+                if (s.expenses && s.expenses.length > 0) {
+                    expensesHtml = s.expenses.map(e => `
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#555;">
+                            <span>- ${e.title}</span>
+                            <span>${e.amount} ج</span>
+                        </div>
+                    `).join('');
+                } else {
+                    expensesHtml = '<div style="font-size:11px; color:#888;">لا توجد مصروفات مسجلة</div>';
+                }
+
+                const diffColor = s.difference < 0 ? '#b91c1c' : (s.difference > 0 ? '#15803d' : '#000');
+                const diffText = s.difference < 0 ? `عجز (-${Math.abs(s.difference)} ج)` : (s.difference > 0 ? `زيادة (+${s.difference} ج)` : 'متطابق تماماً (0 ج)');
+
+                const receiptHtml = `
+                    <!DOCTYPE html>
+                    <html dir="rtl" lang="ar">
+                    <head>
+                        <meta charset="utf-8">
+                        <title>تقرير تقفيل وردية (Z-REPORT) - #${s.shift_id}</title>
+                        <style>
+                            body { font-family: 'Courier New', monospace, sans-serif; width: 290px; margin: 0 auto; padding: 12px; font-size: 12px; color: #000; text-align: center; }
+                            .line { border-bottom: 1px dashed #000; margin: 8px 0; }
+                            .row { display: flex; justify-content: space-between; margin: 4px 0; }
+                            .bold { font-weight: 900; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2 style="margin: 0; font-size: 18px;">☕ سيزر كافيه (ceZar Coffee)</h2>
+                        <p style="margin: 2px 0; font-weight: bold; font-size: 13px;">تقرير تقفيل وردية معتمد (Z-REPORT)</p>
+                        <div class="line"></div>
+                        <div class="row"><span>رقم الوردية:</span> <span class="bold">#${s.shift_id}</span></div>
+                        <div class="row"><span>الكاشير:</span> <span class="bold">${s.cashier_name}</span></div>
+                        <div class="row"><span>بدء الوردية:</span> <span>${s.start_time}</span></div>
+                        <div class="row"><span>نهاية الوردية:</span> <span>${s.end_time}</span></div>
+                        <div class="row"><span>عدد الطلبات:</span> <span class="bold">${s.total_orders} طلب</span></div>
+                        <div class="line"></div>
+                        <div class="row"><span>عهدة بداية الشيفت:</span> <span class="bold">${s.starting_cash} ج</span></div>
+                        <div class="row"><span>مبيعات كاش (+):</span> <span class="bold" style="color:#15803d;">+${s.cash_sales} ج</span></div>
+                        <div class="row"><span>مبيعات فيزا:</span> <span>${s.visa_sales} ج</span></div>
+                        <div class="row bold" style="font-size: 13px;"><span>إجمالي المبيعات:</span> <span>${s.total_sales} ج</span></div>
+                        <div class="line"></div>
+                        <div style="text-align: right; font-weight: bold; margin-bottom: 4px;">المصروفات الخارجة من الدرج (-):</div>
+                        ${expensesHtml}
+                        <div class="row bold" style="color:#b91c1c; margin-top: 4px;"><span>إجمالي المصروفات:</span> <span>-${s.total_expenses} ج</span></div>
+                        <div class="line"></div>
+                        <div class="row bold" style="font-size: 13px;"><span>الكاش المتوقع بالدرج:</span> <span>${s.expected_cash} ج</span></div>
+                        <div class="row bold" style="font-size: 14px;"><span>الكاش الفعلي المحسوب:</span> <span>${s.actual_cash} ج</span></div>
+                        <div class="line"></div>
+                        <div class="row bold" style="font-size: 14px; color:${diffColor};">
+                            <span>حالة الدرج (الفارق):</span>
+                            <span>${diffText}</span>
+                        </div>
+                        ${s.notes ? `<div style="text-align:right; font-size:11px; margin-top:6px;">ملاحظات: ${s.notes}</div>` : ''}
+                        <div class="line"></div>
+                        <div style="display:flex; justify-content:space-between; margin-top:30px; font-size:11px;">
+                            <div>توقيع الكاشير: ..........</div>
+                            <div>توقيع الإدارة: ..........</div>
+                        </div>
+                    </body>
+                    </html>
+                `;
+                printWindow.document.write(receiptHtml);
+                printWindow.document.close();
+                setTimeout(() => { printWindow.focus(); printWindow.print(); }, 400);
+            } catch(err) {
+                alert('حدث خطأ أثناء إعداد تقرير الـ Z-Report');
+            }
+        }
+
+        // ====================================================
+        // DATABASE RESTORE
+        // ====================================================
+        async function submitRestoreBackup() {
+            const fileInput = document.getElementById('dbRestoreFileInput');
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
+            const file = fileInput.files[0];
+            if (!confirm(`⚠️ تحذير هام: هل أنت متأكد من استرجاع قاعدة البيانات من الملف (${file.name})؟\nسيتم استبدال البيانات الحالية بالكامل بالنسخة المسترجعة.`)) {
+                fileInput.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const res = await fetch('/api/backup/restore', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert('✅ ' + data.message);
+                    window.location.reload();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر استرجاع النسخة الاحتياطية'));
+                }
+            } catch(e) {
+                alert('حدث خطأ أثناء رفع النسخة الاحتياطية');
+            }
+        }
+
+        // ====================================================
+        // SUPPLIERS & PURCHASES LOGIC
+        // ====================================================
+        var allSuppliers = [];
+        var allPurchases = [];
+
+        async function fetchSuppliers() {
+            try {
+                const res = await fetch('/api/suppliers');
+                const data = await res.json();
+                if (!res.ok || data.status !== 'success') return;
+                allSuppliers = data.suppliers || [];
+
+                if (document.getElementById('kpiSuppliersCount')) {
+                    document.getElementById('kpiSuppliersCount').textContent = `${allSuppliers.length} مورد`;
+                }
+
+                const tbody = document.getElementById('suppliersTableBody');
+                if (tbody) {
+                    if (allSuppliers.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #888;">لا يوجد موردين مسجلين حالياً</td></tr>';
+                    } else {
+                        tbody.innerHTML = allSuppliers.map(s => `
+                            <tr>
+                                <td style="font-weight: 900; color: var(--primary-espresso);">${s.name}</td>
+                                <td>${s.company_name}</td>
+                                <td>${s.phone}</td>
+                                <td style="font-weight: 900; color: ${s.current_balance > 0 ? '#b91c1c' : '#15803d'};">${s.current_balance} ج</td>
+                                <td style="font-size: 12px; color: #666;">${s.notes || '-'}</td>
+                                <td>
+                                    <button onclick="deleteSupplier(${s.id})" style="border: none; background: #fee2e2; color: #dc2626; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+            } catch(e) {}
+        }
+
+        async function fetchPurchases() {
+            try {
+                const res = await fetch('/api/purchases');
+                const data = await res.json();
+                if (!res.ok || data.status !== 'success') return;
+                allPurchases = data.purchases || [];
+                const s = data.summary || {};
+
+                if (document.getElementById('kpiPurchasesTotalAmount')) {
+                    document.getElementById('kpiPurchasesTotalAmount').textContent = `${(s.total_purchases_amount || 0).toFixed(2)} ج`;
+                }
+                if (document.getElementById('kpiPurchasesTotalPaid')) {
+                    document.getElementById('kpiPurchasesTotalPaid').textContent = `${(s.total_paid_amount || 0).toFixed(2)} ج`;
+                }
+                if (document.getElementById('kpiPurchasesTotalDebt')) {
+                    document.getElementById('kpiPurchasesTotalDebt').textContent = `${(s.total_remaining_debt || 0).toFixed(2)} ج`;
+                }
+                const badge = document.getElementById('purchasesCountBadge');
+                if (badge) {
+                    if (allPurchases.length > 0) {
+                        badge.style.display = 'inline-block';
+                        badge.textContent = allPurchases.length;
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+
+                const tbody = document.getElementById('purchasesTableBody');
+                if (tbody) {
+                    if (allPurchases.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #888;">لا توجد فواتير شراء مسجلة حالياً</td></tr>';
+                    } else {
+                        tbody.innerHTML = allPurchases.map(p => `
+                            <tr>
+                                <td style="font-weight: 800; color: #555;">${p.date}</td>
+                                <td style="font-weight: 900; color: var(--primary-espresso);">${p.invoice_number}</td>
+                                <td>${p.supplier_name}</td>
+                                <td style="font-size: 12px; color: #333;">${p.items_summary}</td>
+                                <td style="font-weight: 900; color: #1d4ed8;">${p.total_amount} ج</td>
+                                <td style="color: #15803d; font-weight: 800;">${p.paid_amount} ج</td>
+                                <td style="color: ${p.remaining_amount > 0 ? '#b91c1c' : '#888'}; font-weight: 900;">${p.remaining_amount} ج</td>
+                                <td><span style="background: #f1f5f9; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800;">${p.payment_method}</span></td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function openAddSupplierModal() {
+            openModal('addSupplierModal');
+        }
+
+        async function submitNewSupplier() {
+            const name = document.getElementById('supNameInput')?.value.trim();
+            const company = document.getElementById('supCompanyInput')?.value.trim();
+            const phone = document.getElementById('supPhoneInput')?.value.trim();
+            const balance = parseFloat(document.getElementById('supBalanceInput')?.value || 0);
+            const notes = document.getElementById('supNotesInput')?.value.trim();
+
+            if (!name) {
+                alert('يرجى إدخال اسم المورد');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/suppliers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        company_name: company,
+                        phone: phone,
+                        current_balance: balance,
+                        notes: notes
+                    })
+                });
+                const d = await res.json();
+                if (res.ok && d.status === 'success') {
+                    closeModal('addSupplierModal');
+                    alert('✅ ' + d.message);
+                    fetchSuppliers();
+                } else {
+                    alert('خطأ: ' + (d.detail || 'تعذر إضافة المورد'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function deleteSupplier(id) {
+            if (!confirm('هل تريد حذف هذا المورد؟')) return;
+            try {
+                await fetch(`/api/suppliers/${id}`, { method: 'DELETE' });
+                fetchSuppliers();
+            } catch(e) {}
+        }
+
+        async function openRecordPurchaseModal() {
+            if (!allSuppliers || allSuppliers.length === 0) {
+                await fetchSuppliers();
+            }
+            if (!inventoryItems || inventoryItems.length === 0) {
+                await fetchInventory();
+            }
+
+            const supSelect = document.getElementById('purSupplierSelect');
+            if (supSelect) {
+                supSelect.innerHTML = '<option value="">-- اختر مورد مسجل --</option>' +
+                    allSuppliers.map(s => `<option value="${s.id}">${s.name} (${s.company_name})</option>`).join('');
+            }
+
+            const itemSelect = document.getElementById('purItemSelect');
+            if (itemSelect) {
+                itemSelect.innerHTML = '<option value="">-- اختر من خامات المخزن الحالية --</option>' +
+                    inventoryItems.map(it => `<option value="${it.id}" data-name="${it.name}" data-unit="${it.unit}" data-cost="${it.cost_per_unit}">${it.name} (تكلفة سابقة: ${it.cost_per_unit} ج)</option>`).join('');
+            }
+
+            const dateInp = document.getElementById('purDateInput');
+            if (dateInp) dateInp.value = new Date().toISOString().split('T')[0];
+
+            calcPurTotalPreview();
+            openModal('recordPurchaseModal');
+        }
+
+        function onPurItemSelected() {
+            const select = document.getElementById('purItemSelect');
+            const customInput = document.getElementById('purItemCustomName');
+            const unitInput = document.getElementById('purUnitInput');
+            const costInput = document.getElementById('purUnitCostInput');
+
+            if (!select || !select.value) return;
+            const opt = select.options[select.selectedIndex];
+            if (opt) {
+                if (customInput) customInput.value = opt.getAttribute('data-name') || '';
+                if (unitInput) unitInput.value = opt.getAttribute('data-unit') || 'كجم';
+                if (costInput) costInput.value = opt.getAttribute('data-cost') || '0';
+            }
+            calcPurTotalPreview();
+        }
+
+        function calcPurTotalPreview() {
+            const qty = parseFloat(document.getElementById('purQtyInput')?.value || 0);
+            const cost = parseFloat(document.getElementById('purUnitCostInput')?.value || 0);
+            const total = Math.round(qty * cost * 100) / 100;
+            const totInp = document.getElementById('purTotalAmountInput');
+            const paidInp = document.getElementById('purPaidAmountInput');
+            if (totInp) totInp.value = total;
+            if (paidInp && !paidInp.getAttribute('data-user-modified')) paidInp.value = total;
+        }
+
+        async function submitNewPurchaseInvoice() {
+            const select = document.getElementById('purItemSelect');
+            const customName = document.getElementById('purItemCustomName')?.value.trim();
+            const opt = select && select.value ? select.options[select.selectedIndex] : null;
+
+            let itemName = '';
+            let invItemId = null;
+            if (opt && select.value) {
+                invItemId = parseInt(select.value);
+                itemName = opt.getAttribute('data-name') || '';
+            } else if (customName) {
+                itemName = customName;
+            }
+
+            if (!itemName) {
+                alert('يرجى اختيار خامة أو كتابة اسم المادة الموردة');
+                return;
+            }
+
+            const qty = parseFloat(document.getElementById('purQtyInput')?.value || 0);
+            const unit = document.getElementById('purUnitInput')?.value.trim() || 'كجم';
+            const unitCost = parseFloat(document.getElementById('purUnitCostInput')?.value || 0);
+            const totalAmount = parseFloat(document.getElementById('purTotalAmountInput')?.value || (qty * unitCost));
+            const paidAmount = parseFloat(document.getElementById('purPaidAmountInput')?.value || 0);
+            const suppId = document.getElementById('purSupplierSelect')?.value || null;
+            const invNum = document.getElementById('purInvoiceNumber')?.value.trim();
+            const payMethod = document.getElementById('purPaymentMethod')?.value || 'كاش من الدرج';
+            const invDate = document.getElementById('purDateInput')?.value;
+            const notes = document.getElementById('purNotesInput')?.value.trim();
+
+            const payload = {
+                supplier_id: suppId ? parseInt(suppId) : null,
+                invoice_number: invNum,
+                date: invDate,
+                total_amount: totalAmount,
+                paid_amount: paidAmount,
+                payment_method: payMethod,
+                notes: notes,
+                items: [
+                    {
+                        inventory_item_id: invItemId,
+                        item_name: itemName,
+                        quantity: qty,
+                        unit: unit,
+                        unit_cost: unitCost
+                    }
+                ]
+            };
+
+            try {
+                const res = await fetch('/api/purchases', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const d = await res.json();
+                if (res.ok && d.status === 'success') {
+                    closeModal('recordPurchaseModal');
+                    alert('✅ ' + d.message);
+                    fetchPurchases();
+                    fetchSuppliers();
+                    fetchInventory();
+                    if (typeof fetchCurrentShift === 'function') fetchCurrentShift();
+                } else {
+                    alert('خطأ: ' + (d.detail || d.message || 'تعذر حفظ الفاتورة'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
         async function resetAnalyticsData() {
             if (!confirm('⚠️ تحذير: هل أنت متأكد من تصفير بيانات التقارير وإحصائيات الأصناف الأكثر مبيعاً؟\nسيتم حذف سجلات المبيعات القديمة لتصفير العدادات والبدء من الصفر.')) {
                 return;
