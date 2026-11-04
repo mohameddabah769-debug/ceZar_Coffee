@@ -1346,11 +1346,23 @@
 
         <!-- SubTab 2: Payroll & Salary Advances -->
         <div id="subTabPayroll" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fa-solid fa-money-bill-transfer"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #666; font-weight: 800;">إجمالي المنصرف (رواتب وسلف)</div>
+                        <div style="font-size: 18px; font-weight: 900; color: #059669;" id="payrollTotalPaid">0 ج</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                 <div style="font-size: 14px; font-weight: 900; color: var(--primary-espresso);">
                     <i class="fa-solid fa-receipt" style="color: var(--cezar-orange);"></i> سجل صرف الرواتب والسلف والمكافآت والخصومات
                 </div>
-                <button class="pin-btn" onclick="openRecordSalaryModal()" style="margin: 0; width: auto; padding: 7px 16px; background: #059669; font-size: 12px;">
+                <button class="pin-btn" onclick="openRecordSalaryModal()" style="margin: 0; width: auto; padding: 8px 18px; background: #059669; font-size: 12px;">
                     <i class="fa-solid fa-plus"></i> تسجيل صرف راتب / سلفة
                 </button>
             </div>
@@ -1888,7 +1900,7 @@
     <div class="pin-modal-overlay" id="addEmployeeModal" style="display: none;">
         <div class="pin-card" style="max-width: 440px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="font-size: 17px; font-weight: 900; color: var(--primary-espresso);" id="modalEmpHeader">
+                <h3 style="font-size: 17px; font-weight: 900; color: var(--primary-espresso);" id="modalEmployeeHeader">
                     <i class="fa-solid fa-user-plus" style="color: var(--cezar-orange);"></i> إضافة موظف جديد
                 </h3>
                 <button onclick="closeModal('addEmployeeModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
@@ -1960,14 +1972,14 @@
             <form onsubmit="event.preventDefault(); submitSalaryPaymentForm();">
                 <div style="margin-bottom: 10px;">
                     <label style="font-size: 12px; font-weight: 800;">الموظف:</label>
-                    <select id="salaryEmpSelect" class="form-control" required onchange="onSalaryEmployeeChange()">
+                    <select id="salEmpSelect" class="form-control" required onchange="autoFillSalaryAmount()">
                         <!-- Loaded by JS -->
                     </select>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
                     <div>
                         <label style="font-size: 12px; font-weight: 800;">نوع الصرف:</label>
-                        <select id="salaryType" class="form-control" required>
+                        <select id="salPaymentType" class="form-control" required>
                             <option value="راتب شهري">راتب شهري كامل</option>
                             <option value="سلفة">سلفة على الراتب</option>
                             <option value="مكافأة">مكافأة وبونص</option>
@@ -1976,16 +1988,16 @@
                     </div>
                     <div>
                         <label style="font-size: 12px; font-weight: 800;">المبلغ (ج):</label>
-                        <input type="number" id="salaryAmount" class="form-control" placeholder="المبلغ" min="1" step="10" required>
+                        <input type="number" id="salAmount" class="form-control" placeholder="المبلغ" min="1" step="10" required>
                     </div>
                 </div>
                 <div style="margin-bottom: 10px;">
                     <label style="font-size: 12px; font-weight: 800;">عن شهر:</label>
-                    <input type="month" id="salaryMonth" class="form-control" required>
+                    <input type="month" id="salMonth" class="form-control" required>
                 </div>
                 <div style="margin-bottom: 14px;">
                     <label style="font-size: 12px; font-weight: 800;">ملاحظات:</label>
-                    <input type="text" id="salaryNotes" class="form-control" placeholder="ملاحظات الصرف">
+                    <input type="text" id="salNotes" class="form-control" placeholder="ملاحظات الصرف">
                 </div>
                 <button type="submit" class="pin-btn" style="background: #059669;">
                     <i class="fa-solid fa-check"></i> تأكيد وحفظ الصرف
@@ -4196,23 +4208,37 @@
 
         function switchStaffSubTab(sub) {
             document.querySelectorAll('#tabStaff .filter-pill').forEach(b => b.classList.remove('active'));
-            document.getElementById('subTabEmployees').style.display = 'none';
-            document.getElementById('subTabPayroll').style.display = 'none';
-            document.getElementById('subTabUsers').style.display = 'none';
+            const subEmp = document.getElementById('subTabEmployees');
+            const subPay = document.getElementById('subTabPayroll');
+            const subUsr = document.getElementById('subTabUsers');
+            if (subEmp) subEmp.style.display = 'none';
+            if (subPay) subPay.style.display = 'none';
+            if (subUsr) subUsr.style.display = 'none';
 
             if (sub === 'employees') {
-                document.getElementById('pillStaffEmployees').classList.add('active');
-                document.getElementById('subTabEmployees').style.display = 'block';
+                const p = document.getElementById('pillStaffEmployees');
+                if (p) p.classList.add('active');
+                if (subEmp) subEmp.style.display = 'block';
                 fetchEmployees();
             } else if (sub === 'payroll') {
-                document.getElementById('pillStaffPayroll').classList.add('active');
-                document.getElementById('subTabPayroll').style.display = 'block';
+                const p = document.getElementById('pillStaffPayroll');
+                if (p) p.classList.add('active');
+                if (subPay) subPay.style.display = 'block';
                 fetchSalaries();
             } else if (sub === 'users') {
-                document.getElementById('pillStaffUsers').classList.add('active');
-                document.getElementById('subTabUsers').style.display = 'block';
+                const p = document.getElementById('pillStaffUsers');
+                if (p) p.classList.add('active');
+                if (subUsr) subUsr.style.display = 'block';
                 fetchSystemUsers();
             }
+        }
+
+        function onSalaryEmployeeChange() {
+            autoFillSalaryAmount();
+        }
+
+        function deleteSalaryItem(id) {
+            deleteSalarySlip(id);
         }
 
         async function fetchEmployees() {
@@ -4262,26 +4288,28 @@
         }
 
         function openAddEmployeeModal() {
-            document.getElementById('empEditId').value = '';
-            document.getElementById('modalEmployeeHeader').innerHTML = '<i class="fa-solid fa-user-plus" style="color: var(--cezar-orange);"></i> إضافة موظف جديد';
-            document.getElementById('empName').value = '';
-            document.getElementById('empPhone').value = '';
-            document.getElementById('empSalary').value = '4000';
-            document.getElementById('empNotes').value = '';
+            if (document.getElementById('empEditId')) document.getElementById('empEditId').value = '';
+            const h = document.getElementById('modalEmployeeHeader') || document.getElementById('modalEmpHeader');
+            if (h) h.innerHTML = '<i class="fa-solid fa-user-plus" style="color: var(--cezar-orange);"></i> إضافة موظف جديد';
+            if (document.getElementById('empName')) document.getElementById('empName').value = '';
+            if (document.getElementById('empPhone')) document.getElementById('empPhone').value = '';
+            if (document.getElementById('empSalary')) document.getElementById('empSalary').value = '4000';
+            if (document.getElementById('empNotes')) document.getElementById('empNotes').value = '';
             openModal('addEmployeeModal');
         }
 
         function openEditEmployee(id) {
-            const emp = allEmployees.find(e => e.id === id);
+            const emp = (allEmployees || []).find(e => e.id === id);
             if (!emp) return;
-            document.getElementById('empEditId').value = emp.id;
-            document.getElementById('modalEmployeeHeader').innerHTML = '<i class="fa-solid fa-pen" style="color: #0284C7;"></i> تعديل بيانات الموظف';
-            document.getElementById('empName').value = emp.name;
-            document.getElementById('empRole').value = emp.role;
-            document.getElementById('empPhone').value = emp.phone || '';
-            document.getElementById('empSalary').value = emp.salary;
-            document.getElementById('empStatus').value = emp.status;
-            document.getElementById('empNotes').value = emp.notes || '';
+            if (document.getElementById('empEditId')) document.getElementById('empEditId').value = emp.id;
+            const h = document.getElementById('modalEmployeeHeader') || document.getElementById('modalEmpHeader');
+            if (h) h.innerHTML = '<i class="fa-solid fa-pen" style="color: #0284C7;"></i> تعديل بيانات الموظف';
+            if (document.getElementById('empName')) document.getElementById('empName').value = emp.name;
+            if (document.getElementById('empRole')) document.getElementById('empRole').value = emp.role;
+            if (document.getElementById('empPhone')) document.getElementById('empPhone').value = emp.phone || '';
+            if (document.getElementById('empSalary')) document.getElementById('empSalary').value = emp.salary;
+            if (document.getElementById('empStatus')) document.getElementById('empStatus').value = emp.status;
+            if (document.getElementById('empNotes')) document.getElementById('empNotes').value = emp.notes || '';
             openModal('addEmployeeModal');
         }
 
@@ -4375,11 +4403,19 @@
         }
 
         async function openRecordSalaryModal() {
-            // Load employee options
-            if (allEmployees.length === 0) await fetchEmployees();
-            const selectEl = document.getElementById('salEmpSelect');
-            selectEl.innerHTML = allEmployees.map(e => `<option value="${e.id}" data-salary="${e.salary}">${e.name} (${e.role}) - ${e.salary} ج</option>`).join('');
+            if (!allEmployees || allEmployees.length === 0) await fetchEmployees();
+            const selectEl = document.getElementById('salEmpSelect') || document.getElementById('salaryEmpSelect');
+            if (selectEl) {
+                selectEl.innerHTML = (allEmployees || []).map(e => `<option value="${e.id}" data-salary="${e.salary}">${e.name} (${e.role}) - ${e.salary} ج</option>`).join('');
+            }
             autoFillSalaryAmount();
+            const monthEl = document.getElementById('salMonth') || document.getElementById('salaryMonth');
+            if (monthEl && !monthEl.value) {
+                const now = new Date();
+                const yr = now.getFullYear();
+                const mo = String(now.getMonth() + 1).padStart(2, '0');
+                monthEl.value = `${yr}-${mo}`;
+            }
             openModal('recordSalaryModal');
         }
 
@@ -4392,11 +4428,13 @@
         }
 
         function autoFillSalaryAmount() {
-            const selectEl = document.getElementById('salEmpSelect');
+            const selectEl = document.getElementById('salEmpSelect') || document.getElementById('salaryEmpSelect');
+            if (!selectEl || selectEl.selectedIndex < 0) return;
             const selectedOpt = selectEl.options[selectEl.selectedIndex];
             if (selectedOpt) {
                 const s = selectedOpt.getAttribute('data-salary');
-                document.getElementById('salAmount').value = s || 4000;
+                const amtEl = document.getElementById('salAmount') || document.getElementById('salaryAmount');
+                if (amtEl) amtEl.value = s || 4000;
             }
         }
 
