@@ -867,7 +867,6 @@ def call_waiter_endpoint(req: CallWaiterRequest, db: Session = Depends(get_db)):
         status="نداء ويتر"
     )
     db.add(order)
-    deduct_inventory_for_order(order_data.items, db)
     db.commit()
     db.refresh(order)
     return {"status": "success", "message": f"تم إرسال نداء الويتر لترابيزة {req.table_number} فوراً!"}
@@ -1492,13 +1491,21 @@ def get_analytics(db: Session = Depends(get_db)):
         t = o.order_type or "صالة"
         sales_by_type[t] = sales_by_type.get(t, 0.0) + o.total_price
 
-    # Calculate Food Cost (COGS) and Net Profit
-    gross_sales = sum(o.total_price for o in orders)
-    # Estimate COGS based on sold items (approx 32% food cost)
-    total_cogs = round(gross_sales * 0.32, 2)
-    total_expenses = db.query(func.sum(Expense.amount)).scalar() or 0.0
-    total_salaries = db.query(func.sum(SalaryPayment.amount)).scalar() or 0.0
-    net_profit = round(max(0.0, gross_sales - total_cogs - total_expenses - total_salaries), 2)
+    # Calculate Real Food Cost (COGS) from sold items cost_price and Net Profit
+    gross_sales = round(sum(o.total_price for o in orders), 2)
+    menu_costs = {item.name: (item.cost_price or (item.price * 0.32)) for item in db.query(MenuItem).all()}
+    calc_cogs = 0.0
+    for name, qty in item_counter.items():
+        unit_cost = menu_costs.get(name)
+        if unit_cost is not None and unit_cost > 0:
+            calc_cogs += unit_cost * qty
+        else:
+            calc_cogs += ((gross_sales / max(1, len(orders))) * 0.32 * qty) if gross_sales > 0 else 0.0
+
+    total_cogs = round(calc_cogs if calc_cogs > 0 else (gross_sales * 0.32), 2)
+    total_expenses = round(float(db.query(func.sum(Expense.amount)).scalar() or 0.0), 2)
+    total_salaries = round(float(db.query(func.sum(SalaryPayment.amount)).scalar() or 0.0), 2)
+    net_profit = round(gross_sales - total_cogs - total_expenses - total_salaries, 2)
     profit_margin_pct = round((net_profit / gross_sales) * 100, 1) if gross_sales > 0 else 0.0
 
     by_channel = {"صالة": sales_by_type.get("صالة", 0.0), "تيك أواي": sales_by_type.get("تيك أواي", 0.0), "دليفري": sales_by_type.get("دليفري", 0.0)}

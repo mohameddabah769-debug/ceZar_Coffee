@@ -625,15 +625,18 @@
     </div>
 
     <!-- Urgent Order Alarm Sticky Banner -->
-    <div class="urgent-alarm-banner" id="urgentAlarmBanner">
-        <div class="urgent-alarm-content">
-            <div style="display: flex; align-items: center; gap: 10px;">
+    <div class="urgent-alarm-banner" id="urgentAlarmBanner" style="display: none;">
+        <div class="urgent-alarm-content" style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" onclick="openUrgentOrderAction()" title="اضغط لمعاينة وفتح تفاصيل الطلب">
                 <i class="fa-solid fa-bell-concierge fa-shake" style="font-size: 22px;"></i>
-                <span id="urgentAlarmText">🚨 أوردر جديد يحتاج الانتباه!</span>
+                <span id="urgentAlarmText" style="font-weight: 900; font-size: 14px; text-decoration: underline;">🚨 أوردر جديد يحتاج الانتباه! (اضغط هنا للعرض)</span>
             </div>
             <div style="display: flex; gap: 8px;">
-                <button onclick="silenceActiveAlarm()" style="background: white; color: #dc3545; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 900; font-size: 12px; cursor: pointer;">
-                    <i class="fa-solid fa-volume-xmark"></i> كتم الصوت مؤقتاً
+                <button onclick="openUrgentOrderAction()" style="background: white; color: #b02a37; border: 2px solid white; padding: 6px 16px; border-radius: 8px; font-weight: 900; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                    <i class="fa-solid fa-eye"></i> عرض وتفاصيل الطلب
+                </button>
+                <button onclick="silenceActiveAlarm()" style="background: rgba(255,255,255,0.25); color: white; border: 1.5px solid white; padding: 6px 14px; border-radius: 8px; font-weight: 900; font-size: 12px; cursor: pointer;">
+                    <i class="fa-solid fa-volume-xmark"></i> كتم / إغلاق
                 </button>
             </div>
         </div>
@@ -1167,23 +1170,27 @@
 
         <!-- Net Profit & Cost Summary (Executive Financial KPI) -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px;">
-            <div style="background: white; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                <div style="font-size: 11px; font-weight: 800; color: #888; margin-bottom: 4px;"><i class="fa-solid fa-sack-dollar"></i> إجمالي المبيعات (Revenue)</div>
+            <div style="background: white; padding: 14px; border-radius: 14px; border: 1.5px solid #E2D9CF; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size: 11px; font-weight: 800; color: #666; margin-bottom: 4px;"><i class="fa-solid fa-sack-dollar" style="color: #0284C7;"></i> إجمالي المبيعات (Revenue)</div>
                 <div style="font-size: 20px; font-weight: 900; color: var(--primary-espresso);" id="kpiGrossSales">0 ج</div>
             </div>
-            <div style="background: white; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+            <div style="background: white; padding: 14px; border-radius: 14px; border: 1.5px solid #FCA5A5; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size: 11px; font-weight: 800; color: #DC2626; margin-bottom: 4px;"><i class="fa-solid fa-boxes-stacked"></i> تكلفة الخامات (Food Cost)</div>
                 <div style="font-size: 20px; font-weight: 900; color: #DC2626;" id="kpiTotalCogs">0 ج</div>
             </div>
-            <div style="background: white; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+            <div style="background: white; padding: 14px; border-radius: 14px; border: 1.5px solid #FCD34D; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size: 11px; font-weight: 800; color: #D97706; margin-bottom: 4px;"><i class="fa-solid fa-receipt"></i> المصروفات اليومية</div>
                 <div style="font-size: 20px; font-weight: 900; color: #D97706;" id="kpiTotalExpenses">0 ج</div>
             </div>
-            <div style="background: #F0FDF4; padding: 14px; border-radius: 14px; border: 2px solid #22C55E; text-align: center; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);">
+            <div style="background: white; padding: 14px; border-radius: 14px; border: 1.5px solid #C7D2FE; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size: 11px; font-weight: 800; color: #4F46E5; margin-bottom: 4px;"><i class="fa-solid fa-users-gear"></i> رواتب وسلف الموظفين</div>
+                <div style="font-size: 20px; font-weight: 900; color: #4F46E5;" id="kpiTotalSalaries">0 ج</div>
+            </div>
+            <div id="kpiNetCard" style="background: #F0FDF4; padding: 14px; border-radius: 14px; border: 2px solid #22C55E; text-align: center; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);">
                 <div style="font-size: 11px; font-weight: 900; color: #15803D; margin-bottom: 4px;"><i class="fa-solid fa-chart-line"></i> صافي الربح الفعلي (Net Profit)</div>
                 <div style="font-size: 22px; font-weight: 900; color: #16A34A;" id="kpiNetProfit">0 ج</div>
             </div>
-            <div style="background: #FAF5FF; padding: 14px; border-radius: 14px; border: 1px solid #D8B4FE; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+            <div style="background: #FAF5FF; padding: 14px; border-radius: 14px; border: 1.5px solid #D8B4FE; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size: 11px; font-weight: 800; color: #7E22CE; margin-bottom: 4px;"><i class="fa-solid fa-percent"></i> نسبة هامش الربح</div>
                 <div style="font-size: 20px; font-weight: 900; color: #6B21A8;" id="kpiProfitMargin">0%</div>
             </div>
@@ -2761,9 +2768,12 @@
                         lastKnownOrderIds.add(o.id);
                         if (o.status === 'جديد' || o.status === 'نداء ويتر' || (o.status && o.status.startsWith('طلب حساب'))) {
                             hasNewUrgent = true;
+                            lastUrgentOrder = o;
                             playAlarmBurst(o.status);
-                            document.getElementById('urgentAlarmText').textContent = `🚨 طلب جديد: ${o.order_type} (${o.customer_name})!`;
-                            document.getElementById('urgentAlarmBanner').style.display = 'block';
+                            const bannerText = document.getElementById('urgentAlarmText');
+                            if (bannerText) bannerText.textContent = `🚨 طلب جديد: ${o.order_type} (${o.customer_name})! (اضغط هنا للعرض فوراً)`;
+                            const banner = document.getElementById('urgentAlarmBanner');
+                            if (banner) banner.style.display = 'block';
                         }
                     }
                 }
@@ -2802,6 +2812,7 @@
 
             list.forEach(o => {
                 const card = document.createElement('div');
+                card.id = `orderCard_${o.id}`;
                 const isUrgent = (o.status === 'جديد' || o.status === 'نداء ويتر' || (o.status && o.status.startsWith('طلب حساب')));
                 const typeClass = o.order_type === 'تيك أواي' ? 'takeaway' : (o.order_type === 'دليفري' ? 'delivery' : 'hall');
                 card.className = `order-card ${typeClass} ${isUrgent ? 'urgent' : ''}`;
@@ -5047,6 +5058,37 @@
                 }
             } catch(e) {
                 alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+
+    
+        var lastUrgentOrder = null;
+
+        function openUrgentOrderAction() {
+            silenceActiveAlarm();
+
+            if (!lastUrgentOrder) {
+                switchTab('orders', document.querySelector('[data-tab=orders]'));
+                return;
+            }
+
+            const tblNum = lastUrgentOrder.table_number;
+            if (tblNum && tblNum > 0) {
+                switchTab('tables', document.querySelector('[data-tab=tables]'));
+                if (typeof openTableDetails === 'function') {
+                    openTableDetails(tblNum);
+                }
+            } else {
+                switchTab('orders', document.querySelector('[data-tab=orders]'));
+                setTimeout(() => {
+                    const card = document.getElementById(`orderCard_${lastUrgentOrder.id}`);
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        card.style.outline = '4px solid var(--cezar-orange)';
+                        card.style.boxShadow = '0 0 20px rgba(232, 93, 4, 0.6)';
+                    }
+                }, 300);
             }
         }
 
