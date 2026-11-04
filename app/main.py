@@ -1696,6 +1696,18 @@ def get_analytics(db: Session = Depends(get_db)):
     }
 
 
+
+@app.post("/api/analytics/reset")
+@app.post("/api/cezar/analytics/reset")
+def reset_analytics_data(db: Session = Depends(get_db)):
+    deleted_count = db.query(TableOrder).delete()
+    db.commit()
+    return {
+        "status": "success",
+        "deleted_count": deleted_count,
+        "message": f"تم تصفير بيانات التقارير والمبيعات بنجاح ({deleted_count} طلب)."
+    }
+
 @app.get("/api/export/sales-csv")
 @app.get("/api/cezar/export/sales-csv")
 def export_sales_csv(db: Session = Depends(get_db)):

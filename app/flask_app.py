@@ -2023,3 +2023,18 @@ def sync_offline_orders_flask():
         })
     finally:
         db.close()
+
+
+@app.route("/api/analytics/reset", methods=["POST"])
+def reset_analytics_data_flask():
+    db = SessionLocal()
+    try:
+        deleted_count = db.query(TableOrder).delete()
+        db.commit()
+        return jsonify({
+            "status": "success",
+            "deleted_count": deleted_count,
+            "message": f"تم تصفير بيانات التقارير والمبيعات بنجاح ({deleted_count} طلب)."
+        })
+    finally:
+        db.close()
