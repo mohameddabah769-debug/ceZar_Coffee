@@ -41,6 +41,45 @@
             padding-bottom: 50px;
         }
 
+        .att-btn {
+            border: 1px solid #D1D5DB;
+            background: #F9FAFB;
+            color: #4B5563;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .att-btn:hover {
+            background: #F3F4F6;
+        }
+        .att-btn.active-present {
+            background: #DCFCE7 !important;
+            color: #15803D !important;
+            border-color: #86EFAC !important;
+            font-weight: 900 !important;
+        }
+        .att-btn.active-leave {
+            background: #DBEAFE !important;
+            color: #1D4ED8 !important;
+            border-color: #93C5FD !important;
+            font-weight: 900 !important;
+        }
+        .att-btn.active-absent {
+            background: #FEE2E2 !important;
+            color: #B91C1C !important;
+            border-color: #FCA5A5 !important;
+            font-weight: 900 !important;
+        }
+        .att-btn.active-half {
+            background: #FEF3C7 !important;
+            color: #B45309 !important;
+            border-color: #FCD34D !important;
+            font-weight: 900 !important;
+        }
+
         /* Top Navbar */
         .navbar {
             background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-espresso) 100%);
@@ -1286,6 +1325,9 @@
                 <button class="filter-pill active" id="pillStaffEmployees" onclick="switchStaffSubTab('employees')">
                     <i class="fa-solid fa-users"></i> دليل الموظفين (<span id="staffCountBadge">0</span>)
                 </button>
+                <button class="filter-pill" id="pillStaffLedger" onclick="switchStaffSubTab('ledger')">
+                    <i class="fa-solid fa-book-open" style="color: #6366f1;"></i> كشكول الشهر وكشف حساب الموظف
+                </button>
                 <button class="filter-pill" id="pillStaffPayroll" onclick="switchStaffSubTab('payroll')">
                     <i class="fa-solid fa-hand-holding-dollar"></i> مسيرات الرواتب والسلف
                 </button>
@@ -1341,6 +1383,164 @@
                         <!-- Loaded by JS -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- SubTab 4: Employee Monthly Ledger Notebook (كشكول الشهر وحساب السلف والغياب) -->
+        <div id="subTabLedger" style="display: none;">
+            <!-- Top Filter & Action Bar -->
+            <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 14px; padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <div>
+                        <label style="font-size: 11px; font-weight: 800; color: #666; display: block; margin-bottom: 4px;">
+                            <i class="fa-solid fa-user"></i> اختر الموظف:
+                        </label>
+                        <select id="ledgerEmpSelect" class="form-control" onchange="loadEmployeeLedger()" style="min-width: 200px; padding: 7px 12px; font-weight: 800; border-radius: 8px;">
+                            <!-- Loaded dynamically -->
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: 800; color: #666; display: block; margin-bottom: 4px;">
+                            <i class="fa-solid fa-calendar-days"></i> شهر التقرير:
+                        </label>
+                        <input type="month" id="ledgerMonthInput" class="form-control" onchange="loadEmployeeLedger()" style="padding: 7px 12px; font-weight: 800; border-radius: 8px;">
+                    </div>
+                    <button class="filter-pill" onclick="setLedgerMonthCurrent()" style="padding: 8px 14px; margin-top: 18px; font-size: 11px;">
+                        <i class="fa-solid fa-clock-rotate-left"></i> الشهر الحالي
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="pin-btn" onclick="openQuickAdvanceModal()" style="margin: 0; width: auto; padding: 8px 16px; background: #D97706; font-size: 12px;">
+                        <i class="fa-solid fa-hand-holding-dollar"></i> تسجيل سلفة جديدة
+                    </button>
+                    <button class="pin-btn" onclick="quickBatchMarkToday()" style="margin: 0; width: auto; padding: 8px 16px; background: #059669; font-size: 12px;">
+                        <i class="fa-solid fa-users-check"></i> تحضير جماعي اليوم
+                    </button>
+                    <button class="pin-btn" onclick="printEmployeeLedger()" style="margin: 0; width: auto; padding: 8px 16px; background: var(--primary-espresso); font-size: 12px;">
+                        <i class="fa-solid fa-print"></i> طباعة كشكول الشهر
+                    </button>
+                </div>
+            </div>
+
+            <!-- Financial Balance & KPI Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                <!-- Base Salary -->
+                <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                        <i class="fa-solid fa-briefcase"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #777; font-weight: 800;">الراتب الأساسي</div>
+                        <div style="font-size: 17px; font-weight: 900; color: var(--primary-espresso);" id="ledgerCardBaseSalary">0 ج</div>
+                    </div>
+                </div>
+
+                <!-- Total Advances (السلف المسحوبة) -->
+                <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #92400E; font-weight: 800;">إجمالي السلف المستقطعة</div>
+                        <div style="font-size: 17px; font-weight: 900; color: #B45309;" id="ledgerCardAdvances">0 ج</div>
+                    </div>
+                </div>
+
+                <!-- Deductions & Bonuses -->
+                <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                        <i class="fa-solid fa-scale-unbalanced"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #777; font-weight: 800;">خصومات / مكافآت</div>
+                        <div style="font-size: 13px; font-weight: 900;" id="ledgerCardAdjustments">0 ج / 0 ج</div>
+                    </div>
+                </div>
+
+                <!-- Net Remaining (صافي المتبقي للصرف) -->
+                <div style="background: #ECFDF5; border: 2px solid #10B981; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #065F46; font-weight: 800;">صافي المتبقي للصرف</div>
+                        <div style="font-size: 20px; font-weight: 900; color: #047857;" id="ledgerCardNetRemaining">0 ج</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Counters Mini Bar -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+                <span class="badge" style="background: #ECFDF5; color: #065F46; padding: 6px 14px; font-size: 12px; border-radius: 20px; border: 1px solid #A7F3D0;">
+                    <i class="fa-solid fa-circle-check"></i> أيام الحضور: <strong id="ledgerBadgePresent">0</strong> يوم
+                </span>
+                <span class="badge" style="background: #EFF6FF; color: #1E40AF; padding: 6px 14px; font-size: 12px; border-radius: 20px; border: 1px solid #BFDBFE;">
+                    <i class="fa-solid fa-umbrella-beach"></i> أيام الإجازة: <strong id="ledgerBadgeLeave">0</strong> يوم
+                </span>
+                <span class="badge" style="background: #FEF2F2; color: #991B1B; padding: 6px 14px; font-size: 12px; border-radius: 20px; border: 1px solid #FECACA;">
+                    <i class="fa-solid fa-circle-xmark"></i> أيام الغياب: <strong id="ledgerBadgeAbsent">0</strong> يوم
+                </span>
+                <span class="badge" style="background: #FFFBEB; color: #92400E; padding: 6px 14px; font-size: 12px; border-radius: 20px; border: 1px solid #FDE68A;">
+                    <i class="fa-solid fa-hourglass-half"></i> نصف يوم: <strong id="ledgerBadgeHalfDay">0</strong> يوم
+                </span>
+            </div>
+
+            <!-- Section 1: Advances & Transactions Log (استلف يوم كام؟) -->
+            <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 14px; padding: 16px; margin-bottom: 18px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-size: 14px; font-weight: 900; color: var(--primary-espresso);">
+                        <i class="fa-solid fa-receipt" style="color: #D97706;"></i> سجل السلف والمسحوبات المالية للشهر (استلف يوم كام ومبلغ كام)
+                    </div>
+                    <button class="pin-btn" onclick="openQuickAdvanceModal()" style="margin: 0; width: auto; padding: 5px 14px; background: #D97706; font-size: 11px;">
+                        <i class="fa-solid fa-plus"></i> إضافة سلفة
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>تاريخ السلفة (اليوم)</th>
+                                <th>الوقت</th>
+                                <th>نوع الحركة</th>
+                                <th>المبلغ المستقطع</th>
+                                <th>السبب / البيان</th>
+                                <th>إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerAdvancesTableBody">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 2: Attendance Ledger Notebook (كشكول الحضور والغياب اليومي) -->
+            <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 14px; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-size: 14px; font-weight: 900; color: var(--primary-espresso);">
+                        <i class="fa-solid fa-book" style="color: #4F46E5;"></i> كشكول الحضور والغياب والإجازات يوم بيوم (<span id="ledgerEmpTitleName">الموظف</span>)
+                    </div>
+                    <div style="font-size: 11px; color: #666; font-weight: 700;">
+                        <i class="fa-solid fa-circle-info"></i> يمكنك النقر على حالة أي يوم لتغييرها فوراً
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px; text-align: center;">اليوم</th>
+                                <th>التاريخ</th>
+                                <th>يوم الأسبوع</th>
+                                <th style="min-width: 280px;">حالة الحضور (انقر للتغيير الفوري)</th>
+                                <th>ملاحظات اليوم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerAttendanceTableBody">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -2002,6 +2202,51 @@
                 <button type="submit" class="pin-btn" style="background: #059669;">
                     <i class="fa-solid fa-check"></i> تأكيد وحفظ الصرف
                 </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Advance Modal (تسجيل سلفة سريعة للموظف) -->
+    <div class="pin-modal-overlay" id="quickAdvanceModal" style="display: none;">
+        <div class="pin-card" style="max-width: 420px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 900; color: var(--primary-espresso);">
+                    <i class="fa-solid fa-hand-holding-dollar" style="color: #D97706;"></i> تسجيل سلفة للموظف
+                </h3>
+                <button onclick="closeModal('quickAdvanceModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitQuickAdvanceForm();">
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 800;">الموظف المستلف:</label>
+                    <select id="quickAdvEmpSelect" class="form-control" required style="font-weight: 800;">
+                        <!-- loaded by JS -->
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800;">المبلغ (ج):</label>
+                        <input type="number" id="quickAdvAmount" class="form-control" placeholder="مثلاً: 500" min="1" step="50" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800;">تاريخ الاستلاف:</label>
+                        <input type="date" id="quickAdvDate" class="form-control" required>
+                    </div>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <label style="font-size: 12px; font-weight: 800;">سبب السلفة / بيان:</label>
+                    <input type="text" id="quickAdvNotes" class="form-control" placeholder="مثلاً: سلفة مصاريف شخصية / طارئة">
+                </div>
+                <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 11px; color: #92400E; font-weight: 700;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> سيتم خصم هذا المبلغ تلقائياً من راتب الشهر وحسابه في الكشكول.
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="submit" class="pin-btn" style="flex: 1; background: #D97706; margin: 0; font-size: 13px;">
+                        <i class="fa-solid fa-check"></i> تأكيد وحفظ السلفة
+                    </button>
+                    <button type="button" class="pin-btn" onclick="closeModal('quickAdvanceModal')" style="flex: 1; background: #666; margin: 0; font-size: 13px;">
+                        إلغاء
+                    </button>
+                </div>
             </form>
         </div>
     </div>
@@ -4206,20 +4451,29 @@
         var allSalaries = [];
         var allSystemUsers = [];
 
+        var currentLedgerData = null;
+
         function switchStaffSubTab(sub) {
             document.querySelectorAll('#tabStaff .filter-pill').forEach(b => b.classList.remove('active'));
             const subEmp = document.getElementById('subTabEmployees');
             const subPay = document.getElementById('subTabPayroll');
             const subUsr = document.getElementById('subTabUsers');
+            const subLed = document.getElementById('subTabLedger');
             if (subEmp) subEmp.style.display = 'none';
             if (subPay) subPay.style.display = 'none';
             if (subUsr) subUsr.style.display = 'none';
+            if (subLed) subLed.style.display = 'none';
 
             if (sub === 'employees') {
                 const p = document.getElementById('pillStaffEmployees');
                 if (p) p.classList.add('active');
                 if (subEmp) subEmp.style.display = 'block';
                 fetchEmployees();
+            } else if (sub === 'ledger') {
+                const p = document.getElementById('pillStaffLedger');
+                if (p) p.classList.add('active');
+                if (subLed) subLed.style.display = 'block';
+                initLedgerView();
             } else if (sub === 'payroll') {
                 const p = document.getElementById('pillStaffPayroll');
                 if (p) p.classList.add('active');
@@ -4231,6 +4485,452 @@
                 if (subUsr) subUsr.style.display = 'block';
                 fetchSystemUsers();
             }
+        }
+
+        async function openEmployeeNotebook(empId) {
+            switchStaffSubTab('ledger');
+            await initLedgerView(empId);
+        }
+
+        function setLedgerMonthCurrent() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const inp = document.getElementById('ledgerMonthInput');
+            if (inp) {
+                inp.value = `${y}-${m}`;
+                loadEmployeeLedger();
+            }
+        }
+
+        async function initLedgerView(targetEmpId = null) {
+            if (!allEmployees || allEmployees.length === 0) {
+                await fetchEmployees();
+            }
+            const selectEl = document.getElementById('ledgerEmpSelect');
+            if (selectEl) {
+                selectEl.innerHTML = (allEmployees || []).map(e => `<option value="${e.id}">${e.name} (${e.role})</option>`).join('');
+                if (targetEmpId) {
+                    selectEl.value = targetEmpId;
+                }
+            }
+
+            const monthInp = document.getElementById('ledgerMonthInput');
+            if (monthInp && !monthInp.value) {
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = String(now.getMonth() + 1).padStart(2, '0');
+                monthInp.value = `${y}-${m}`;
+            }
+
+            loadEmployeeLedger();
+        }
+
+        async function loadEmployeeLedger() {
+            const selectEl = document.getElementById('ledgerEmpSelect');
+            if (!selectEl || !selectEl.value) return;
+            const empId = selectEl.value;
+
+            const monthInp = document.getElementById('ledgerMonthInput');
+            let monthVal = monthInp ? monthInp.value : '';
+            if (!monthVal) {
+                const now = new Date();
+                monthVal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                if (monthInp) monthInp.value = monthVal;
+            }
+
+            try {
+                const res = await fetch(`/api/employees/${empId}/monthly-ledger?month=${monthVal}`);
+                const data = await res.json();
+                if (!res.ok || data.status !== 'success') {
+                    console.error('Error loading ledger', data);
+                    return;
+                }
+
+                currentLedgerData = data;
+                const emp = data.employee;
+                const fin = data.financial_summary;
+                const att = data.attendance_summary;
+
+                // Title
+                const titleEl = document.getElementById('ledgerEmpTitleName');
+                if (titleEl) titleEl.textContent = `${emp.name} - ${emp.role}`;
+
+                // KPI Cards
+                if (document.getElementById('ledgerCardBaseSalary')) {
+                    document.getElementById('ledgerCardBaseSalary').textContent = `${fin.base_salary} ج`;
+                }
+                if (document.getElementById('ledgerCardAdvances')) {
+                    document.getElementById('ledgerCardAdvances').textContent = `${fin.total_advances} ج (${(data.advances_list || []).length} سلفة)`;
+                }
+                if (document.getElementById('ledgerCardAdjustments')) {
+                    document.getElementById('ledgerCardAdjustments').textContent = `خصم: ${fin.total_deductions} ج | بونص: ${fin.total_bonuses} ج`;
+                }
+                if (document.getElementById('ledgerCardNetRemaining')) {
+                    const el = document.getElementById('ledgerCardNetRemaining');
+                    el.textContent = `${fin.net_remaining} ج`;
+                    if (fin.net_remaining < 0) {
+                        el.style.color = '#DC2626';
+                    } else {
+                        el.style.color = '#047857';
+                    }
+                }
+
+                // Attendance Badges
+                if (document.getElementById('ledgerBadgePresent')) document.getElementById('ledgerBadgePresent').textContent = att.present_days;
+                if (document.getElementById('ledgerBadgeLeave')) document.getElementById('ledgerBadgeLeave').textContent = att.leave_days;
+                if (document.getElementById('ledgerBadgeAbsent')) document.getElementById('ledgerBadgeAbsent').textContent = att.absent_days;
+                if (document.getElementById('ledgerBadgeHalfDay')) document.getElementById('ledgerBadgeHalfDay').textContent = att.half_days;
+
+                // Section 1: Advances Table
+                const advTbody = document.getElementById('ledgerAdvancesTableBody');
+                if (advTbody) {
+                    if (!data.advances_list || data.advances_list.length === 0) {
+                        advTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #16A34A; padding: 14px; font-weight: 800;"><i class="fa-solid fa-circle-check"></i> لا توجد أي سلف مسحوبة لهذا الموظف خلال هذا الشهر</td></tr>';
+                    } else {
+                        advTbody.innerHTML = data.advances_list.map(adv => `
+                            <tr>
+                                <td style="font-weight: 900; color: #B45309;"><i class="fa-regular fa-calendar"></i> ${adv.date_str}</td>
+                                <td style="font-size: 11px; color: #666;">${adv.datetime_str || '-'}</td>
+                                <td><span style="background: #FFFBEB; color: #B45309; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 11px;">سلفة على الراتب</span></td>
+                                <td style="font-weight: 900; color: #DC2626; font-size: 15px;">- ${adv.amount} ج</td>
+                                <td style="color: #444; font-size: 12px;">${adv.notes || 'سلفة مصاريف'}</td>
+                                <td>
+                                    <button onclick="deleteAdvanceItem(${adv.id})" style="background: #FEE2E2; color: #DC2626; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="إلغاء السلفة">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+
+                // Section 2: Attendance Notebook Days Table
+                const attTbody = document.getElementById('ledgerAttendanceTableBody');
+                if (attTbody) {
+                    attTbody.innerHTML = (data.attendance_days || []).map(day => {
+                        let rowBg = '';
+                        if (day.status === 'غياب') rowBg = 'background: #FEF2F2;';
+                        else if (day.status === 'إجازة') rowBg = 'background: #F0F9FF;';
+
+                        return `
+                            <tr style="${rowBg}">
+                                <td style="font-weight: 900; text-align: center; color: var(--primary-espresso);">${day.day}</td>
+                                <td style="font-weight: 800; font-size: 12px; color: #555;">${day.date}</td>
+                                <td style="font-weight: 900; color: ${day.day_name === 'الجمعة' ? '#D97706' : 'var(--primary-espresso)'};">${day.day_name}</td>
+                                <td>
+                                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                        <button onclick="setDayAttendance(${emp.id}, '${day.date}', 'حاضر')" class="att-btn ${day.status === 'حاضر' ? 'active-present' : ''}">✓ حاضر</button>
+                                        <button onclick="setDayAttendance(${emp.id}, '${day.date}', 'إجازة')" class="att-btn ${day.status === 'إجازة' ? 'active-leave' : ''}">🏖️ إجازة</button>
+                                        <button onclick="setDayAttendance(${emp.id}, '${day.date}', 'غياب')" class="att-btn ${day.status === 'غياب' ? 'active-absent' : ''}">✗ غياب</button>
+                                        <button onclick="setDayAttendance(${emp.id}, '${day.date}', 'نصف يوم')" class="att-btn ${day.status === 'نصف يوم' ? 'active-half' : ''}">⏳ نصف يوم</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text" value="${day.notes || ''}" placeholder="ملاحظة..." onblur="updateDayAttendanceNote(${emp.id}, '${day.date}', '${day.status}', this.value)" style="border: 1px solid #E5E7EB; border-radius: 6px; padding: 4px 8px; font-size: 11px; width: 100%; max-width: 200px;">
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+            } catch(e) {
+                console.error('Error fetching ledger', e);
+            }
+        }
+
+        async function setDayAttendance(empId, dateStr, status) {
+            try {
+                const res = await fetch('/api/employees/attendance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employee_id: empId,
+                        date: dateStr,
+                        status: status
+                    })
+                });
+                if (res.ok) {
+                    loadEmployeeLedger();
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        async function updateDayAttendanceNote(empId, dateStr, status, note) {
+            try {
+                await fetch('/api/employees/attendance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employee_id: empId,
+                        date: dateStr,
+                        status: status,
+                        notes: note
+                    })
+                });
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        async function quickBatchMarkToday() {
+            const today = new Date().toISOString().split('T')[0];
+            if (!confirm(`هل تريد تسجيل تحضير جماعي (حاضر) لجميع العاملين ليوم اليوم (${today})؟`)) return;
+            try {
+                const res = await fetch('/api/employees/attendance/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        date: today,
+                        status: 'حاضر'
+                    })
+                });
+                const d = await res.json();
+                alert(d.message || '✅ تم تسجيل الحضور لجميع الموظفين اليوم!');
+                loadEmployeeLedger();
+            } catch(e) {
+                alert('تعذر التحضير الجماعي');
+            }
+        }
+
+        function openQuickAdvanceModal(empId = null) {
+            if (!allEmployees || allEmployees.length === 0) fetchEmployees();
+            const selectEl = document.getElementById('quickAdvEmpSelect');
+            if (selectEl) {
+                selectEl.innerHTML = (allEmployees || []).map(e => `<option value="${e.id}">${e.name} (${e.role}) - الراتب: ${e.salary} ج</option>`).join('');
+                if (empId) {
+                    selectEl.value = empId;
+                } else if (document.getElementById('ledgerEmpSelect')) {
+                    selectEl.value = document.getElementById('ledgerEmpSelect').value;
+                }
+            }
+            const today = new Date().toISOString().split('T')[0];
+            if (document.getElementById('quickAdvDate')) {
+                document.getElementById('quickAdvDate').value = today;
+            }
+            if (document.getElementById('quickAdvAmount')) {
+                document.getElementById('quickAdvAmount').value = '';
+            }
+            if (document.getElementById('quickAdvNotes')) {
+                document.getElementById('quickAdvNotes').value = '';
+            }
+            openModal('quickAdvanceModal');
+        }
+
+        async function submitQuickAdvanceForm() {
+            const empId = parseInt(document.getElementById('quickAdvEmpSelect').value);
+            const amount = parseFloat(document.getElementById('quickAdvAmount').value || 0);
+            const advDate = document.getElementById('quickAdvDate').value;
+            const notes = document.getElementById('quickAdvNotes').value.trim() || 'سلفة نقدية';
+
+            if (!empId || amount <= 0 || !advDate) {
+                alert('يرجى اختيار الموظف وتحديد مبلغ السلفة وتاريخ الاستلاف!');
+                return;
+            }
+
+            const monthVal = advDate.substring(0, 7);
+
+            try {
+                const res = await fetch('/api/salaries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employee_id: empId,
+                        payment_type: 'سلفة',
+                        month: monthVal,
+                        payment_date: advDate,
+                        amount: amount,
+                        notes: notes
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    closeModal('quickAdvanceModal');
+                    alert(data.message || '✅ تم تسجيل السلفة بنجاح وخصمها في كشكول الموظف!');
+                    loadEmployeeLedger();
+                    fetchSalaries();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر تسجيل السلفة'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function deleteAdvanceItem(id) {
+            if (!confirm('هل أنت متأكد من حذف هذه السلفة وإلغاء خصمها من الراتب؟')) return;
+            try {
+                await fetch(`/api/salaries/${id}`, { method: 'DELETE' });
+                loadEmployeeLedger();
+                fetchSalaries();
+            } catch(e) {
+                alert('تعذر الحذف');
+            }
+        }
+
+        function printEmployeeLedger() {
+            if (!currentLedgerData) {
+                alert('جاري تحميل بيانات كشكول الموظف...');
+                return;
+            }
+            const d = currentLedgerData;
+            const emp = d.employee;
+            const fin = d.financial_summary;
+            const att = d.attendance_summary;
+
+            const printWin = window.open('', '_blank', 'width=880,height=900');
+            if (!printWin) {
+                alert('يرجى السماح بالنوافذ المنبثقة لطباعة كشكول الشهر');
+                return;
+            }
+
+            const advancesRows = (d.advances_list && d.advances_list.length > 0)
+                ? d.advances_list.map((a, i) => `
+                    <tr>
+                        <td style="text-align: center;">${i + 1}</td>
+                        <td>${a.date_str} (${a.datetime_str || ''})</td>
+                        <td style="font-weight: bold; color: #b91c1c;">- ${a.amount} ج</td>
+                        <td>${a.notes || 'سلفة نقدية'}</td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="4" style="text-align: center; color: #15803d; font-weight: bold;">لا توجد أي سلف مسحوبة خلال هذا الشهر</td></tr>';
+
+            const attRows = (d.attendance_days || []).map(day => `
+                <tr style="${day.status === 'غياب' ? 'background: #fee2e2;' : (day.status === 'إجازة' ? 'background: #e0f2fe;' : '')}">
+                    <td style="text-align: center; font-weight: bold;">${day.day}</td>
+                    <td>${day.date}</td>
+                    <td>${day.day_name}</td>
+                    <td style="font-weight: bold;">${day.status}</td>
+                    <td>${day.notes || '-'}</td>
+                </tr>
+            `).join('');
+
+            const htmlContent = `
+            <!DOCTYPE html>
+            <html lang="ar" dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <title>كشكول حساب الموظف الشهري - ${emp.name}</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; color: #111; direction: rtl; }
+                    .header { text-align: center; border-bottom: 2px solid #2B1810; padding-bottom: 12px; margin-bottom: 20px; }
+                    .logo-text { font-size: 24px; font-weight: 900; color: #2B1810; letter-spacing: 1px; }
+                    .title { font-size: 18px; font-weight: 800; color: #D97706; margin-top: 4px; }
+                    .meta-box { display: flex; justify-content: space-between; background: #f9f6f0; border: 1px solid #e5dec9; padding: 12px 18px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
+                    .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+                    .card { border: 1px solid #ccc; padding: 10px; border-radius: 6px; text-align: center; }
+                    .card-title { font-size: 11px; color: #666; font-weight: bold; margin-bottom: 5px; }
+                    .card-val { font-size: 16px; font-weight: 900; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+                    th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: right; }
+                    th { background: #f3ece4; font-weight: 800; }
+                    .section-title { font-size: 14px; font-weight: 900; margin: 15px 0 8px 0; color: #2B1810; border-right: 4px solid #D97706; padding-right: 8px; }
+                    .signatures { display: flex; justify-content: space-between; margin-top: 40px; padding: 20px 40px; }
+                    .sig-box { text-align: center; font-weight: 800; font-size: 13px; }
+                    .sig-line { margin-top: 40px; border-top: 1px dashed #333; width: 180px; }
+                    @media print {
+                        body { padding: 10px; }
+                        button { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="logo-text">☕ ceZar Coffee - كشكول حساب الموظف الشهري</div>
+                    <div class="title">تقرير الحضور والغياب والسلف لشهر: ${d.month}</div>
+                </div>
+
+                <div class="meta-box">
+                    <div><strong>اسم الموظف:</strong> ${emp.name}</div>
+                    <div><strong>الوظيفة:</strong> ${emp.role}</div>
+                    <div><strong>الهاتف:</strong> ${emp.phone || '-'}</div>
+                    <div><strong>تاريخ الطباعة:</strong> ${new Date().toLocaleDateString('ar-EG')}</div>
+                </div>
+
+                <div class="summary-cards">
+                    <div class="card" style="background: #eef2ff;">
+                        <div class="card-title">الراتب الأساسي</div>
+                        <div class="card-val" style="color: #4338ca;">${fin.base_salary} ج</div>
+                    </div>
+                    <div class="card" style="background: #fffbeb;">
+                        <div class="card-title">إجمالي السلف المسحوبة</div>
+                        <div class="card-val" style="color: #b45309;">${fin.total_advances} ج</div>
+                    </div>
+                    <div class="card" style="background: #fef2f2;">
+                        <div class="card-title">الخصومات والغياب</div>
+                        <div class="card-val" style="color: #b91c1c;">${fin.total_deductions} ج</div>
+                    </div>
+                    <div class="card" style="background: #ecfdf5; border: 2px solid #059669;">
+                        <div class="card-title" style="color: #065f46;">صافي المستحق النهائي</div>
+                        <div class="card-val" style="color: #047857; font-size: 18px;">${fin.net_remaining} ج</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; font-size: 12px; font-weight: bold; background: #fff; border: 1px solid #ddd; padding: 8px 14px; border-radius: 6px;">
+                    <div style="color: #047857;">✓ أيام الحضور: ${att.present_days} يوم</div>
+                    <div style="color: #0284c7;">🏖️ أيام الإجازة: ${att.leave_days} يوم</div>
+                    <div style="color: #b91c1c;">✗ أيام الغياب: ${att.absent_days} يوم</div>
+                    <div style="color: #b45309;">⏳ نصف يوم: ${att.half_days} يوم</div>
+                </div>
+
+                <div class="section-title">سجل السلف والمسحوبات المالية للشهر (استلف يوم كام ومبلغ كام)</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">#</th>
+                            <th>تاريخ ووقت الاستلاف</th>
+                            <th>المبلغ المستقطع</th>
+                            <th>السبب / البيان</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${advancesRows}
+                    </tbody>
+                </table>
+
+                <div class="section-title">دفتر كشكول الحضور والغياب اليومي للشهر</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">اليوم</th>
+                            <th>التاريخ</th>
+                            <th>يوم الأسبوع</th>
+                            <th>الحالة</th>
+                            <th>الملاحظات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${attRows}
+                    </tbody>
+                </table>
+
+                <div class="signatures">
+                    <div class="sig-box">
+                        <div>إقرار واستلام الموظف</div>
+                        <div style="font-size: 11px; color: #555; margin-top: 4px;">استلمت صافي مستحقاتي عن شهر ${d.month}</div>
+                        <div class="sig-line"></div>
+                        <div style="margin-top: 5px;">توقيع الموظف: (${emp.name})</div>
+                    </div>
+                    <div class="sig-box">
+                        <div>اعتماد الإدارة والحسابات</div>
+                        <div style="font-size: 11px; color: #555; margin-top: 4px;">إدارة كافيه ceZar Coffee</div>
+                        <div class="sig-line"></div>
+                        <div style="margin-top: 5px;">التوقيع والختم</div>
+                    </div>
+                </div>
+                <script>
+                    window.onload = function() {
+                        window.print();
+                    };
+                <\/script>
+            </body>
+            </html>
+            `;
+            printWin.document.open();
+            printWin.document.write(htmlContent);
+            printWin.document.close();
         }
 
         function onSalaryEmployeeChange() {
@@ -4268,8 +4968,14 @@
                             <td>${statusBadge}</td>
                             <td>
                                 <div style="display: flex; gap: 4px;">
+                                    <button onclick="openEmployeeNotebook(${emp.id})" title="عرض كشكول الشهر وكشف الحساب" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
+                                        <i class="fa-solid fa-book-open"></i> الكشكول
+                                    </button>
+                                    <button onclick="openQuickAdvanceModal(${emp.id})" title="تسجيل سلفة سريعة" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
+                                        <i class="fa-solid fa-hand-holding-dollar"></i> سلفة
+                                    </button>
                                     <button onclick="openPayForEmployee(${emp.id})" title="صرف راتب أو سلفة" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
-                                        <i class="fa-solid fa-hand-holding-dollar"></i> صرف
+                                        <i class="fa-solid fa-money-bill"></i> صرف
                                     </button>
                                     <button onclick="openEditEmployee(${emp.id})" title="تعديل البيانات" style="background: #F0F9FF; color: #0284C7; border: 1px solid #BAE6FD; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
                                         <i class="fa-solid fa-pen-to-square"></i>

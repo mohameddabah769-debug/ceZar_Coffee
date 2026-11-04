@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal, get_db
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, CafeSetting, CafeTableConfig
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig
 from .seed import seed_menu
 
 # إنشاء الجداول تلقائياً
@@ -1637,7 +1637,19 @@ class SalaryPaymentCreateRequest(BaseModel):
     amount: float
     payment_type: str = "راتب شهري"
     month: str = "2026-11"
+    payment_date: Optional[str] = None
     notes: Optional[str] = ""
+
+class AttendanceRecordRequest(BaseModel):
+    employee_id: int
+    date: str
+    status: str = "حاضر"
+    notes: Optional[str] = ""
+
+class AttendanceBatchRequest(BaseModel):
+    date: str
+    status: str = "حاضر"
+    employee_ids: Optional[List[int]] = None
 
 class UserAccountRequest(BaseModel):
     id: Optional[int] = None
@@ -1726,11 +1738,26 @@ def record_salary_payment(req: SalaryPaymentCreateRequest, db: Session = Depends
     if not emp:
         raise HTTPException(status_code=404, detail="الموظف غير موجود")
     
+    p_date = datetime.utcnow()
+    if req.payment_date:
+        try:
+            p_date = datetime.strptime(req.payment_date.strip()[:10], "%Y-%m-%d")
+        except Exception:
+            try:
+                p_date = datetime.fromisoformat(req.payment_date.strip())
+            except Exception:
+                p_date = datetime.utcnow()
+    
+    month_val = req.month
+    if not month_val or len(month_val) < 7:
+        month_val = p_date.strftime("%Y-%m")
+        
     pay = SalaryPayment(
         employee_id=req.employee_id,
         amount=req.amount,
         payment_type=req.payment_type,
-        month=req.month,
+        month=month_val,
+        payment_date=p_date,
         notes=req.notes or ""
     )
     db.add(pay)
@@ -1738,6 +1765,196 @@ def record_salary_payment(req: SalaryPaymentCreateRequest, db: Session = Depends
     return {"status": "success", "message": f"تم تسجيل صرف {req.payment_type} للموظف ({emp.name}) بقيمة {req.amount} ج بنجاح!"}
 
 @app.delete("/api/salaries/{pay_id}")
+@app.get("/api/employees/{emp_id}/monthly-ledger")
+@app.get("/api/cezar/employees/{emp_id}/monthly-ledger")
+def get_employee_monthly_ledger(emp_id: int, month: Optional[str] = None, db: Session = Depends(get_db)):
+    import calendar
+    emp = db.query(Employee).filter(Employee.id == emp_id).first()
+    if not emp:
+        raise HTTPException(status_code=404, detail="الموظف غير موجود")
+    
+    if not month or len(month) < 7:
+        month = datetime.utcnow().strftime("%Y-%m")
+    
+    try:
+        parts = month.split("-")
+        year = int(parts[0])
+        month_num = int(parts[1])
+    except Exception:
+        now = datetime.utcnow()
+        year = now.year
+        month_num = now.month
+        month = f"{year}-{month_num:02d}"
+    
+    _, total_days = calendar.monthrange(year, month_num)
+    
+    prefix = f"{year}-{month_num:02d}-"
+    attendances = db.query(EmployeeAttendance).filter(
+        EmployeeAttendance.employee_id == emp_id,
+        EmployeeAttendance.date.startswith(prefix)
+    ).all()
+    att_map = {a.date: a for a in attendances}
+    
+    arabic_days = ["الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"]
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    
+    attendance_days = []
+    present_count = 0
+    leave_count = 0
+    absent_count = 0
+    half_day_count = 0
+    
+    for day in range(1, total_days + 1):
+        date_str = f"{year}-{month_num:02d}-{day:02d}"
+        weekday_idx = datetime(year, month_num, day).weekday()
+        day_name = arabic_days[weekday_idx]
+        
+        if date_str in att_map:
+            st = att_map[date_str].status
+            notes = att_map[date_str].notes or ""
+            att_id = att_map[date_str].id
+        else:
+            att_id = None
+            notes = ""
+            if date_str <= today_str:
+                st = "حاضر"
+            else:
+                st = "قادم"
+        
+        if st == "حاضر":
+            present_count += 1
+        elif st == "إجازة":
+            leave_count += 1
+        elif st == "غياب":
+            absent_count += 1
+        elif st == "نصف يوم":
+            half_day_count += 1
+            
+        attendance_days.append({
+            "day": day,
+            "date": date_str,
+            "day_name": day_name,
+            "status": st,
+            "notes": notes,
+            "attendance_id": att_id
+        })
+        
+    payments = db.query(SalaryPayment).filter(
+        SalaryPayment.employee_id == emp_id,
+        SalaryPayment.month == month
+    ).order_by(SalaryPayment.payment_date.desc(), SalaryPayment.id.desc()).all()
+    
+    total_advances = sum(p.amount for p in payments if p.payment_type == "سلفة")
+    total_deductions = sum(p.amount for p in payments if p.payment_type == "خصم")
+    total_bonuses = sum(p.amount for p in payments if p.payment_type == "مكافأة")
+    total_salary_paid = sum(p.amount for p in payments if p.payment_type == "راتب شهري")
+    
+    base_salary = float(emp.salary or 0.0)
+    net_remaining = base_salary - total_advances - total_deductions + total_bonuses - total_salary_paid
+    
+    advances_list = [{
+        "id": p.id,
+        "amount": p.amount,
+        "date_str": p.payment_date.strftime("%Y-%m-%d") if p.payment_date else month,
+        "datetime_str": p.payment_date.strftime("%Y-%m-%d %I:%M %p") if p.payment_date else "",
+        "notes": p.notes or ""
+    } for p in payments if p.payment_type == "سلفة"]
+    
+    all_transactions = [{
+        "id": p.id,
+        "payment_type": p.payment_type,
+        "amount": p.amount,
+        "date_str": p.payment_date.strftime("%Y-%m-%d") if p.payment_date else month,
+        "datetime_str": p.payment_date.strftime("%Y-%m-%d %I:%M %p") if p.payment_date else "",
+        "notes": p.notes or ""
+    } for p in payments]
+    
+    return {
+        "status": "success",
+        "employee": {
+            "id": emp.id,
+            "name": emp.name,
+            "role": emp.role,
+            "phone": emp.phone or "",
+            "salary": emp.salary,
+            "status": emp.status,
+            "hire_date": emp.hire_date or ""
+        },
+        "month": month,
+        "days_in_month": total_days,
+        "attendance_summary": {
+            "present_days": present_count,
+            "leave_days": leave_count,
+            "absent_days": absent_count,
+            "half_days": half_day_count
+        },
+        "attendance_days": attendance_days,
+        "financial_summary": {
+            "base_salary": base_salary,
+            "total_advances": total_advances,
+            "total_deductions": total_deductions,
+            "total_bonuses": total_bonuses,
+            "total_salary_paid": total_salary_paid,
+            "net_remaining": net_remaining
+        },
+        "advances_list": advances_list,
+        "all_transactions": all_transactions
+    }
+
+@app.post("/api/employees/attendance")
+@app.post("/api/cezar/employees/attendance")
+def record_employee_attendance(req: AttendanceRecordRequest, db: Session = Depends(get_db)):
+    emp = db.query(Employee).filter(Employee.id == req.employee_id).first()
+    if not emp:
+        raise HTTPException(status_code=404, detail="الموظف غير موجود")
+    
+    rec = db.query(EmployeeAttendance).filter(
+        EmployeeAttendance.employee_id == req.employee_id,
+        EmployeeAttendance.date == req.date
+    ).first()
+    
+    if rec:
+        rec.status = req.status
+        rec.notes = req.notes or ""
+    else:
+        rec = EmployeeAttendance(
+            employee_id=req.employee_id,
+            date=req.date,
+            status=req.status,
+            notes=req.notes or ""
+        )
+        db.add(rec)
+    db.commit()
+    return {"status": "success", "message": f"تم تسجيل حالة ({req.status}) للموظف {emp.name} ليوم {req.date}"}
+
+@app.post("/api/employees/attendance/batch")
+@app.post("/api/cezar/employees/attendance/batch")
+def batch_employee_attendance(req: AttendanceBatchRequest, db: Session = Depends(get_db)):
+    query = db.query(Employee).filter(Employee.status == "نشط")
+    if req.employee_ids:
+        query = query.filter(Employee.id.in_(req.employee_ids))
+    employees = query.all()
+    
+    count = 0
+    for emp in employees:
+        rec = db.query(EmployeeAttendance).filter(
+            EmployeeAttendance.employee_id == emp.id,
+            EmployeeAttendance.date == req.date
+        ).first()
+        if rec:
+            rec.status = req.status
+        else:
+            rec = EmployeeAttendance(
+                employee_id=emp.id,
+                date=req.date,
+                status=req.status,
+                notes="تحضير جماعي"
+            )
+            db.add(rec)
+        count += 1
+    db.commit()
+    return {"status": "success", "message": f"تم تسجيل تحضير جماعي ({req.status}) لعدد {count} موظف ليوم {req.date}"}
+
 @app.delete("/api/cezar/salaries/{pay_id}")
 def delete_salary_payment(pay_id: int, db: Session = Depends(get_db)):
     pay = db.query(SalaryPayment).filter(SalaryPayment.id == pay_id).first()

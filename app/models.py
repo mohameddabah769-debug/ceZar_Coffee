@@ -182,6 +182,20 @@ class SalaryPayment(Base):
     month = Column(String(30), default="2026-11")
     payment_date = Column(DateTime, default=datetime.utcnow)
     notes = Column(Text, nullable=True)
+
+
+class EmployeeAttendance(Base):
+    """سجل كشكول حضور وغياب وإجازات العاملين اليومي."""
+    __tablename__ = "employee_attendances"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False, index=True)
+    date = Column(String(20), nullable=False, index=True)  # YYYY-MM-DD
+    status = Column(String(30), default="حاضر")  # حاضر | غياب | إجازة | نصف يوم
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class CafeSetting(Base):
     """إعدادات وهوية الكافيه الشاملة وصلاحيات تحكم المالك."""
     __tablename__ = "cafe_settings"

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, CafeSetting, CafeTableConfig
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig
 from .seed import seed_menu
 
 Base.metadata.create_all(bind=engine)
@@ -1529,11 +1529,25 @@ def record_salary_payment():
     with get_db() as db:
         emp = db.query(Employee).filter(Employee.id == emp_id).first()
         if not emp: return jsonify({"detail": "الموظف غير موجود"}), 404
+        
+        p_date = datetime.utcnow()
+        date_str = data.get("payment_date")
+        if date_str:
+            try:
+                p_date = datetime.strptime(date_str.strip()[:10], "%Y-%m-%d")
+            except Exception:
+                p_date = datetime.utcnow()
+                
+        month_val = data.get("month")
+        if not month_val or len(month_val) < 7:
+            month_val = p_date.strftime("%Y-%m")
+            
         pay = SalaryPayment(
             employee_id=emp_id,
             amount=float(data.get("amount") or 0.0),
             payment_type=data.get("payment_type", "راتب شهري"),
-            month=data.get("month", "2026-11"),
+            month=month_val,
+            payment_date=p_date,
             notes=data.get("notes", "")
         )
         db.add(pay)
@@ -1541,6 +1555,141 @@ def record_salary_payment():
         return jsonify({"status": "success", "message": f"تم تسجيل صرف {pay.payment_type} للموظف ({emp.name}) بنجاح!"})
 
 @app.route("/api/salaries/<int:pay_id>", methods=["DELETE"])
+@app.route("/api/employees/<int:emp_id>/monthly-ledger", methods=["GET"])
+@app.route("/api/cezar/employees/<int:emp_id>/monthly-ledger", methods=["GET"])
+def get_employee_monthly_ledger(emp_id):
+    import calendar
+    month = request.args.get("month")
+    if not month or len(month) < 7:
+        month = datetime.utcnow().strftime("%Y-%m")
+    try:
+        parts = month.split("-")
+        year, month_num = int(parts[0]), int(parts[1])
+    except Exception:
+        now = datetime.utcnow()
+        year, month_num = now.year, now.month
+        month = f"{year}-{month_num:02d}"
+
+    with get_db() as db:
+        emp = db.query(Employee).filter(Employee.id == emp_id).first()
+        if not emp: return jsonify({"detail": "الموظف غير موجود"}), 404
+
+        _, total_days = calendar.monthrange(year, month_num)
+        prefix = f"{year}-{month_num:02d}-"
+        attendances = db.query(EmployeeAttendance).filter(
+            EmployeeAttendance.employee_id == emp_id,
+            EmployeeAttendance.date.startswith(prefix)
+        ).all()
+        att_map = {a.date: a for a in attendances}
+        arabic_days = ["الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"]
+        today_str = datetime.utcnow().strftime("%Y-%m-%d")
+
+        attendance_days = []
+        present_count, leave_count, absent_count, half_day_count = 0, 0, 0, 0
+
+        for day in range(1, total_days + 1):
+            date_str = f"{year}-{month_num:02d}-{day:02d}"
+            weekday_idx = datetime(year, month_num, day).weekday()
+            day_name = arabic_days[weekday_idx]
+
+            if date_str in att_map:
+                st = att_map[date_str].status
+                notes = att_map[date_str].notes or ""
+                att_id = att_map[date_str].id
+            else:
+                att_id = None
+                notes = ""
+                st = "حاضر" if date_str <= today_str else "قادم"
+
+            if st == "حاضر": present_count += 1
+            elif st == "إجازة": leave_count += 1
+            elif st == "غياب": absent_count += 1
+            elif st == "نصف يوم": half_day_count += 1
+
+            attendance_days.append({
+                "day": day, "date": date_str, "day_name": day_name,
+                "status": st, "notes": notes, "attendance_id": att_id
+            })
+
+        payments = db.query(SalaryPayment).filter(
+            SalaryPayment.employee_id == emp_id,
+            SalaryPayment.month == month
+        ).order_by(SalaryPayment.payment_date.desc(), SalaryPayment.id.desc()).all()
+
+        total_advances = sum(p.amount for p in payments if p.payment_type == "سلفة")
+        total_deductions = sum(p.amount for p in payments if p.payment_type == "خصم")
+        total_bonuses = sum(p.amount for p in payments if p.payment_type == "مكافأة")
+        total_salary_paid = sum(p.amount for p in payments if p.payment_type == "راتب شهري")
+        base_salary = float(emp.salary or 0.0)
+        net_remaining = base_salary - total_advances - total_deductions + total_bonuses - total_salary_paid
+
+        advances_list = [{
+            "id": p.id, "amount": p.amount,
+            "date_str": p.payment_date.strftime("%Y-%m-%d") if p.payment_date else month,
+            "datetime_str": p.payment_date.strftime("%Y-%m-%d %I:%M %p") if p.payment_date else "",
+            "notes": p.notes or ""
+        } for p in payments if p.payment_type == "سلفة"]
+
+        all_transactions = [{
+            "id": p.id, "payment_type": p.payment_type, "amount": p.amount,
+            "date_str": p.payment_date.strftime("%Y-%m-%d") if p.payment_date else month,
+            "datetime_str": p.payment_date.strftime("%Y-%m-%d %I:%M %p") if p.payment_date else "",
+            "notes": p.notes or ""
+        } for p in payments]
+
+        return jsonify({
+            "status": "success",
+            "employee": {"id": emp.id, "name": emp.name, "role": emp.role, "salary": emp.salary, "phone": emp.phone or ""},
+            "month": month,
+            "days_in_month": total_days,
+            "attendance_summary": {"present_days": present_count, "leave_days": leave_count, "absent_days": absent_count, "half_days": half_day_count},
+            "attendance_days": attendance_days,
+            "financial_summary": {"base_salary": base_salary, "total_advances": total_advances, "total_deductions": total_deductions, "total_bonuses": total_bonuses, "total_salary_paid": total_salary_paid, "net_remaining": net_remaining},
+            "advances_list": advances_list,
+            "all_transactions": all_transactions
+        })
+
+@app.route("/api/employees/attendance", methods=["POST"])
+@app.route("/api/cezar/employees/attendance", methods=["POST"])
+def record_employee_attendance():
+    data = request.get_json() or {}
+    emp_id = data.get("employee_id")
+    date_val = data.get("date")
+    status_val = data.get("status", "حاضر")
+    notes_val = data.get("notes", "")
+
+    with get_db() as db:
+        emp = db.query(Employee).filter(Employee.id == emp_id).first()
+        if not emp: return jsonify({"detail": "الموظف غير موجود"}), 404
+        rec = db.query(EmployeeAttendance).filter(
+            EmployeeAttendance.employee_id == emp_id,
+            EmployeeAttendance.date == date_val
+        ).first()
+        if rec:
+            rec.status = status_val
+            rec.notes = notes_val
+        else:
+            rec = EmployeeAttendance(employee_id=emp_id, date=date_val, status=status_val, notes=notes_val)
+            db.add(rec)
+        db.commit()
+        return jsonify({"status": "success", "message": f"تم حفظ حالة ({status_val}) للموظف {emp.name}"})
+
+@app.route("/api/employees/attendance/batch", methods=["POST"])
+@app.route("/api/cezar/employees/attendance/batch", methods=["POST"])
+def batch_employee_attendance():
+    data = request.get_json() or {}
+    date_val = data.get("date")
+    status_val = data.get("status", "حاضر")
+    with get_db() as db:
+        emps = db.query(Employee).filter(Employee.status == "نشط").all()
+        for emp in emps:
+            rec = db.query(EmployeeAttendance).filter(EmployeeAttendance.employee_id == emp.id, EmployeeAttendance.date == date_val).first()
+            if rec: rec.status = status_val
+            else:
+                db.add(EmployeeAttendance(employee_id=emp.id, date=date_val, status=status_val, notes="تحضير جماعي"))
+        db.commit()
+        return jsonify({"status": "success", "message": f"تم تحضير {len(emps)} موظف بنجاح"})
+
 @app.route("/api/cezar/salaries/<int:pay_id>", methods=["DELETE"])
 def delete_salary_payment(pay_id):
     with get_db() as db:
