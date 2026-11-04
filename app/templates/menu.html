@@ -1319,6 +1319,18 @@
                     <input type="hidden" id="modalTableSelect" value="1">
                 </div>
 
+                <!-- Promo Code Box -->
+                <div class="form-group" style="background: #FDFBF7; padding: 10px 14px; border-radius: 12px; border: 1.5px solid #E2D9CF; margin-bottom: 12px;">
+                    <label style="font-size: 12px; font-weight: 800; color: var(--primary-espresso); margin-bottom: 6px; display: block;">
+                        <i class="fa-solid fa-tags" style="color: var(--cezar-orange);"></i> كود الخصم (بروموكود):
+                    </label>
+                    <div style="display: flex; gap: 6px;">
+                        <input type="text" id="menuPromoCodeInput" placeholder="أدخل الكود (مثال: CEZAR10)" style="flex: 1; text-transform: uppercase; padding: 8px 12px; border: 1px solid #D5C9BE; border-radius: 8px; font-size: 12px; font-weight: 800; outline: none;">
+                        <button type="button" onclick="applyMenuPromoCode()" style="background: var(--cezar-orange); color: white; border: none; border-radius: 8px; padding: 8px 16px; font-weight: 900; font-size: 12px; cursor: pointer;">تطبيق</button>
+                    </div>
+                    <div id="menuPromoAlert" style="display: none; font-size: 11px; font-weight: 800; margin-top: 6px;"></div>
+                </div>
+
                 <div class="form-group" id="orderNotesGroup">
                     <label><i class="fa-solid fa-comment-dots" style="color: var(--cezar-gold);"></i> ملاحظات خاصة (سكر، إضافات):</label>
                     <input type="text" id="orderNotes" class="form-control" placeholder="مثال: سكر زيادة، بدون مكسرات، ثلج إضافي...">
@@ -1365,6 +1377,85 @@
     </div>
 
     <!-- Table Selection Modal (Locked & Disabled) -->
+
+    <!-- Drink Customization Modal -->
+    <div class="modal-overlay" id="customizationModal" style="display: none; z-index: 10001;">
+        <div class="modal-content" style="max-width: 420px; text-align: right; background: white; border-radius: 20px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #EDE8E1; padding-bottom: 10px; margin-bottom: 14px;">
+                <h3 style="font-size: 17px; font-weight: 900; color: var(--primary-espresso); margin: 0;" id="customItemName">تخصيص المشروب</h3>
+                <button onclick="closeCustomizationModal()" style="border: none; background: #eee; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+
+            <!-- Sugar Level -->
+            <div style="margin-bottom: 14px;">
+                <label style="font-size: 13px; font-weight: 800; color: var(--primary-espresso); margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-cubes-stacked" style="color: var(--cezar-gold);"></i> مستوى السكر:
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; text-align: center; border: 1px solid #E2D9CF;">
+                        <input type="radio" name="custSugar" value="سادة (بدون سكر)" checked> سادة (بدون)
+                    </label>
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; text-align: center; border: 1px solid #E2D9CF;">
+                        <input type="radio" name="custSugar" value="مظبوط"> مظبوط (معلقة)
+                    </label>
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; text-align: center; border: 1px solid #E2D9CF;">
+                        <input type="radio" name="custSugar" value="زيادة"> سكر زيادة
+                    </label>
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; text-align: center; border: 1px solid #E2D9CF;">
+                        <input type="radio" name="custSugar" value="ستيفيا (دايت)"> دايت (ستيفيا)
+                    </label>
+                </div>
+            </div>
+
+            <!-- Milk Option -->
+            <div style="margin-bottom: 14px;">
+                <label style="font-size: 13px; font-weight: 800; color: var(--primary-espresso); margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-cow" style="color: var(--cezar-orange);"></i> نوع الحليب:
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; text-align: center; border: 1px solid #E2D9CF;">
+                        <input type="radio" name="custMilk" value="طبيعي" data-extra="0" checked onchange="updateCustomPrice()"> حليب عادي
+                    </label>
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; text-align: center; border: 1px solid #E2D9CF;">
+                        <input type="radio" name="custMilk" value="حليب لوز" data-extra="15" onchange="updateCustomPrice()"> حليب لوز (+15ج)
+                    </label>
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; text-align: center; border: 1px solid #E2D9CF;">
+                        <input type="radio" name="custMilk" value="حليب شوفان" data-extra="15" onchange="updateCustomPrice()"> شوفان (+15ج)
+                    </label>
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; text-align: center; border: 1px solid #E2D9CF;">
+                        <input type="radio" name="custMilk" value="بدون حليب" data-extra="0" onchange="updateCustomPrice()"> بدون حليب
+                    </label>
+                </div>
+            </div>
+
+            <!-- Extras (Syrup / Shot) -->
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 800; color: var(--primary-espresso); margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--cezar-gold);"></i> إضافات مميزة:
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; border: 1px solid #E2D9CF;">
+                        <input type="checkbox" id="extraShot" data-extra="15" onchange="updateCustomPrice()"> + شوت إسبريسو (+15ج)
+                    </label>
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; border: 1px solid #E2D9CF;">
+                        <input type="checkbox" id="extraCaramel" data-extra="10" onchange="updateCustomPrice()"> + سيرب كراميل (+10ج)
+                    </label>
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; border: 1px solid #E2D9CF;">
+                        <input type="checkbox" id="extraVanilla" data-extra="10" onchange="updateCustomPrice()"> + سيرب فانيليا (+10ج)
+                    </label>
+                    <label style="background: #F8F5F0; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; border: 1px solid #E2D9CF;">
+                        <input type="checkbox" id="extraIce" data-extra="0" onchange="updateCustomPrice()"> + ثلج إضافي (مجاناً)
+                    </label>
+                </div>
+            </div>
+
+            <!-- Submit Customization -->
+            <button class="btn-confirm-order" onclick="confirmCustomizationAndAdd()" style="margin: 0; width: 100%;">
+                <i class="fa-solid fa-check"></i>
+                <span id="btnCustomSubmitText">إضافة للسلة</span>
+            </button>
+        </div>
+    </div>
 
     <!-- Bill Request Modal -->
     <div class="modal-overlay" id="billModal">
@@ -1696,6 +1787,11 @@
                     card.innerHTML = `
                         <div class="item-info">
                             <div class="item-name">${item.name}</div>
+                            <div style="margin-top: 2px;">
+                                <button type="button" onclick="event.stopPropagation(); openCustomizeModal(${item.id})" style="background: #FFF3E0; border: 1px solid var(--cezar-orange); color: var(--cezar-orange); border-radius: 12px; font-size: 10px; font-weight: 800; padding: 2px 7px; cursor: pointer;">
+                                    <i class="fa-solid fa-sliders"></i> تخصيص الإضافات
+                                </button>
+                            </div>
                             ${item.description ? `<div class="item-desc">${item.description}</div>` : ''}
                             <div class="item-price">${item.price} جنيه</div>
                         </div>
@@ -1947,8 +2043,9 @@
                 }
             }
 
-            // 3. Grand Total Calculation (Previous Table Orders + New Cart Items)
-            const grandTotal = prevTotal + newTotal;
+            // 3. Grand Total Calculation (Previous Table Orders + New Cart Items - Promo)
+            const promoDiscount = (menuAppliedPromo && menuAppliedPromo.discount_amount) ? menuAppliedPromo.discount_amount : 0;
+            const grandTotal = Math.max(0, prevTotal + newTotal - promoDiscount);
             totalDisplay.textContent = `${grandTotal} جنيه`;
 
             if (prevTotal > 0 && newTotal > 0) {
@@ -2005,7 +2102,8 @@
                 id: c.item.id,
                 name: c.item.name,
                 price: c.item.price,
-                quantity: c.qty
+                quantity: c.qty,
+                customization: c.customization || null
             }));
 
             if (itemsPayload.length === 0) return;
@@ -2021,7 +2119,8 @@
                     body: JSON.stringify({
                         table_number: selectedTable,
                         items: itemsPayload,
-                        notes: notes
+                        notes: notes,
+                        promo_code: menuAppliedPromo ? menuAppliedPromo.code : null
                     })
                 });
 

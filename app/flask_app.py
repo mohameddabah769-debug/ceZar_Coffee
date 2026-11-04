@@ -1,6 +1,7 @@
 import os
 import sys
 import io
+import csv
 import qrcode
 from datetime import datetime
 from flask import Flask, request, jsonify, redirect, Response
@@ -8,10 +9,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode
 from .seed import seed_menu
 
-# تهيئة الجداول تلقائياً
 Base.metadata.create_all(bind=engine)
 
 def auto_migrate_columns():
@@ -24,6 +24,8 @@ def auto_migrate_columns():
             ("delivery_fee", "FLOAT DEFAULT 0.0"),
             ("delivery_driver", "VARCHAR(100) DEFAULT NULL"),
             ("delivery_status", "VARCHAR(50) DEFAULT NULL"),
+            ("discount_amount", "FLOAT DEFAULT 0.0"),
+            ("promo_code", "VARCHAR(50) DEFAULT NULL"),
         ]
         for col_name, col_type in columns_to_add:
             try:
@@ -80,6 +82,17 @@ def get_admin_page():
     return Response("<h2>جاري تحميل لوحة تحكم سيزر كوفي...</h2>", mimetype="text/html; charset=utf-8")
 
 
+@app.route("/kitchen")
+@app.route("/bar")
+@app.route("/cezar/bar")
+def get_kitchen_page():
+    file_path = os.path.join(TEMPLATES_DIR, "kitchen.html")
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            return Response(f.read(), mimetype="text/html; charset=utf-8")
+    return Response("<h2>جاري تحميل شاشة البار والمطبخ...</h2>", mimetype="text/html; charset=utf-8")
+
+
 @app.route("/qr-cards")
 @app.route("/cezar/qr-generator")
 def get_qr_cards_page():
@@ -91,7 +104,7 @@ def get_qr_cards_page():
 
 
 # ==========================================
-# 2. واجهات برمجة الأصناف (Menu APIs)
+# 2. الأصناف (Menu Items)
 # ==========================================
 
 @app.route("/api/menu-items", methods=["GET"])
@@ -179,7 +192,7 @@ def delete_menu_item(item_id):
 
 
 # ==========================================
-# 3. واجهات برمجة الطلبات والكاشير (POS & Orders)
+# 3. الطلبات والكاشير (POS & Orders)
 # ==========================================
 
 @app.route("/api/orders", methods=["POST"])
@@ -192,17 +205,31 @@ def create_table_order():
         return jsonify({"detail": "السلة فارغة"}), 400
 
     lines = []
-    total = 0.0
+    items_total = 0.0
     for item in items:
         p = float(item.get("price") or 0.0)
         q = int(item.get("quantity") or 1)
         sub = p * q
-        total += sub
-        lines.append(f"- {q}x {item.get('name')}: {sub:g} ج")
+        items_total += sub
+        cust = f" [{item.get('customization')}]" if item.get("customization") else ""
+        lines.append(f"- {q}x {item.get('name')}{cust}: {sub:g} ج")
 
-    items_summary = "\n".join(lines)
+    promo_code = data.get("promo_code")
+    discount = 0.0
 
     with SessionLocal() as db:
+        if promo_code:
+            promo = db.query(PromoCode).filter(PromoCode.code == promo_code.strip().upper(), PromoCode.is_active.is_(True)).first()
+            if promo and items_total >= (promo.min_order_value or 0.0):
+                if promo.discount_type == "percentage":
+                    discount = round((items_total * promo.discount_value) / 100.0, 2)
+                else:
+                    discount = min(items_total, promo.discount_value)
+                promo.usage_count = (promo.usage_count or 0) + 1
+
+        grand_total = max(0.0, items_total - discount)
+        items_summary = "\n".join(lines)
+
         current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
         shift_id = current_shift.id if current_shift else None
 
@@ -210,7 +237,9 @@ def create_table_order():
             table_number=table_num,
             order_type="صالة",
             items_summary=items_summary,
-            total_price=total,
+            total_price=grand_total,
+            discount_amount=discount,
+            promo_code=promo_code,
             customer_name=data.get("customer_name") or f"ترابيزة {table_num}",
             customer_phone=data.get("customer_phone") or "",
             notes=data.get("notes") or "",
@@ -220,8 +249,8 @@ def create_table_order():
         )
         db.add(order)
         if current_shift:
-            current_shift.total_sales += total
-            current_shift.cash_sales += total
+            current_shift.total_sales += grand_total
+            current_shift.cash_sales += grand_total
         db.commit()
         db.refresh(order)
         return jsonify({
@@ -229,6 +258,7 @@ def create_table_order():
             "message": f"تم استلام طلب ترابيزة {order.table_number} بنجاح!",
             "order_id": order.id,
             "table_number": order.table_number,
+            "discount_amount": discount,
             "total_price": order.total_price
         })
 
@@ -250,10 +280,12 @@ def create_pos_direct_order():
         q = int(item.get("quantity") or 1)
         sub = p * q
         items_total += sub
-        lines.append(f"- {q}x {item.get('name')}: {sub:g} ج")
+        cust = f" [{item.get('customization')}]" if item.get("customization") else ""
+        lines.append(f"- {q}x {item.get('name')}{cust}: {sub:g} ج")
 
     delivery_fee = float(data.get("delivery_fee") or 0.0) if order_type == "دليفري" else 0.0
-    grand_total = items_total + delivery_fee
+    discount = float(data.get("discount_amount") or 0.0)
+    grand_total = max(0.0, items_total + delivery_fee - discount)
     items_summary = "\n".join(lines)
     payment_method = data.get("payment_method") or "كاش"
 
@@ -267,6 +299,8 @@ def create_pos_direct_order():
             order_type=order_type,
             items_summary=items_summary,
             total_price=grand_total,
+            discount_amount=discount,
+            promo_code=data.get("promo_code"),
             payment_method=payment_method,
             status="قيد التحضير",
             customer_name=data.get("customer_name") or default_name,
@@ -332,6 +366,8 @@ def get_orders():
                     "order_type": o.order_type or "صالة",
                     "items_summary": o.items_summary,
                     "total_price": o.total_price,
+                    "discount_amount": o.discount_amount or 0.0,
+                    "promo_code": o.promo_code or "",
                     "payment_method": o.payment_method or "كاش",
                     "status": o.status,
                     "customer_name": o.customer_name,
@@ -403,6 +439,7 @@ def get_table_bill(table_number):
         active_orders = db.query(TableOrder).filter(
             TableOrder.table_number == table_number,
             TableOrder.status != "ملغي",
+            TableOrder.status != "تمت التسوية",
             ~TableOrder.status.like("طلب حساب%"),
             TableOrder.status != "نداء ويتر",
             ~TableOrder.items_summary.like("%طلب الحساب%"),
@@ -441,7 +478,6 @@ def settle_table_bill(table_number):
             o.status = "تمت التسوية"
         db.commit()
         return jsonify({"status": "success", "message": f"تمت تسوية حساب ترابيزة {table_number} وإفراغها بنجاح!", "table_number": table_number})
-
 
 
 @app.route("/api/tables/<int:table_number>/track", methods=["GET"])
@@ -490,6 +526,8 @@ def get_order_by_id(order_id):
             "order_type": order.order_type or "صالة",
             "items_summary": order.items_summary,
             "total_price": order.total_price,
+            "discount_amount": order.discount_amount or 0.0,
+            "promo_code": order.promo_code or "",
             "payment_method": order.payment_method or "كاش",
             "status": order.status,
             "customer_name": order.customer_name,
@@ -570,6 +608,7 @@ def request_bill_endpoint():
         active_orders = db.query(TableOrder).filter(
             TableOrder.table_number == table_num,
             TableOrder.status != "ملغي",
+            TableOrder.status != "تمت التسوية",
             ~TableOrder.status.like("طلب حساب%"),
             TableOrder.status != "نداء ويتر",
             ~TableOrder.items_summary.like("%طلب الحساب%"),
@@ -612,7 +651,7 @@ def clear_all_orders():
 
 
 # ==========================================
-# 4. واجهات إدارة الشيفتات والمصروفات (Shifts & Expenses)
+# 4. الشيفتات والمصروفات (Shifts & Expenses)
 # ==========================================
 
 @app.route("/api/shifts/current", methods=["GET"])
@@ -823,9 +862,8 @@ def delete_expense(expense_id):
         return jsonify({"status": "success", "message": "تم حذف المصروف بنجاح"})
 
 
-
 # ==========================================
-# 5. واجهات خدمة الحجوزات (Reservations APIs)
+# 5. الحجوزات وقائمة الانتظار
 # ==========================================
 
 @app.route("/api/reservations", methods=["GET"])
@@ -901,10 +939,6 @@ def delete_reservation(res_id):
         db.commit()
         return jsonify({"status": "success", "message": "تم حذف الحجز بنجاح"})
 
-
-# ==========================================
-# 6. واجهات خدمة قائمة الانتظار (Waiting List APIs)
-# ==========================================
 
 @app.route("/api/waiting-list", methods=["GET"])
 @app.route("/api/cezar/waiting-list", methods=["GET"])
@@ -991,7 +1025,295 @@ def delete_waiting_customer(wait_id):
 
 
 # ==========================================
-# 7. نظام تسجيل الدخول
+# 6. البروموكود والخصومات
+# ==========================================
+
+@app.route("/api/promo-codes", methods=["GET"])
+@app.route("/api/cezar/promo-codes", methods=["GET"])
+def get_promo_codes():
+    with SessionLocal() as db:
+        codes = db.query(PromoCode).order_by(desc(PromoCode.id)).all()
+        return jsonify({
+            "promo_codes": [
+                {
+                    "id": p.id,
+                    "code": p.code,
+                    "discount_type": p.discount_type,
+                    "discount_value": p.discount_value,
+                    "min_order_value": p.min_order_value or 0.0,
+                    "is_active": p.is_active,
+                    "usage_count": p.usage_count or 0
+                }
+                for p in codes
+            ]
+        })
+
+
+@app.route("/api/promo-codes", methods=["POST"])
+@app.route("/api/cezar/promo-codes", methods=["POST"])
+def create_promo_code():
+    data = request.json or {}
+    code_str = (data.get("code") or "").strip().upper()
+    with SessionLocal() as db:
+        existing = db.query(PromoCode).filter(PromoCode.code == code_str).first()
+        if existing:
+            return jsonify({"detail": "كود الخصم موجود بالفعل"}), 400
+
+        new_promo = PromoCode(
+            code=code_str,
+            discount_type=data.get("discount_type") or "percentage",
+            discount_value=float(data.get("discount_value") or 10.0),
+            min_order_value=float(data.get("min_order_value") or 0.0),
+            is_active=True
+        )
+        db.add(new_promo)
+        db.commit()
+        return jsonify({"status": "success", "message": f"تم إنشاء كود الخصم {new_promo.code} بنجاح!", "id": new_promo.id})
+
+
+@app.route("/api/promo-codes/validate", methods=["POST"])
+@app.route("/api/cezar/promo-codes/validate", methods=["POST"])
+def validate_promo_code():
+    data = request.json or {}
+    code_str = (data.get("code") or "").strip().upper()
+    order_total = float(data.get("order_total") or 0.0)
+
+    with SessionLocal() as db:
+        promo = db.query(PromoCode).filter(PromoCode.code == code_str, PromoCode.is_active.is_(True)).first()
+        if not promo:
+            return jsonify({"detail": "كود الخصم غير صحيح أو منتهي الصلاحية"}), 404
+
+        if order_total < (promo.min_order_value or 0.0):
+            return jsonify({"detail": f"الحد الأدنى لتفعيل هذا الكود هو {promo.min_order_value} جنيه"}), 400
+
+        if promo.discount_type == "percentage":
+            discount = round((order_total * promo.discount_value) / 100.0, 2)
+        else:
+            discount = min(order_total, promo.discount_value)
+
+        new_total = max(0.0, order_total - discount)
+        return jsonify({
+            "status": "valid",
+            "code": promo.code,
+            "discount_type": promo.discount_type,
+            "discount_value": promo.discount_value,
+            "discount_amount": discount,
+            "new_total": new_total,
+            "message": f"تم تطبيق خصم {promo.discount_value}{'%' if promo.discount_type == 'percentage' else ' ج'} بنجاح!"
+        })
+
+
+@app.route("/api/promo-codes/<int:code_id>", methods=["DELETE"])
+@app.route("/api/cezar/promo-codes/<int:code_id>", methods=["DELETE"])
+def delete_promo_code(code_id):
+    with SessionLocal() as db:
+        p = db.query(PromoCode).filter(PromoCode.id == code_id).first()
+        if not p:
+            return jsonify({"detail": "كود الخصم غير موجود"}), 404
+        db.delete(p)
+        db.commit()
+        return jsonify({"status": "success", "message": "تم حذف كود الخصم"})
+
+
+# ==========================================
+# 7. إدارة المخزون وتنبيه النواقص
+# ==========================================
+
+@app.route("/api/inventory", methods=["GET"])
+@app.route("/api/cezar/inventory", methods=["GET"])
+def get_inventory():
+    with SessionLocal() as db:
+        items = db.query(InventoryItem).order_by(InventoryItem.name).all()
+        alerts = []
+        inv_list = []
+        for i in items:
+            is_low = i.current_stock <= i.min_alert_stock
+            item_data = {
+                "id": i.id,
+                "name": i.name,
+                "unit": i.unit,
+                "current_stock": i.current_stock,
+                "min_alert_stock": i.min_alert_stock,
+                "cost_per_unit": i.cost_per_unit,
+                "is_low": is_low
+            }
+            inv_list.append(item_data)
+            if is_low:
+                alerts.append(item_data)
+
+        return jsonify({
+            "status": "success",
+            "inventory": inv_list,
+            "low_stock_alerts": alerts,
+            "alerts_count": len(alerts)
+        })
+
+
+@app.route("/api/inventory", methods=["POST"])
+@app.route("/api/cezar/inventory", methods=["POST"])
+def add_inventory_item():
+    data = request.json or {}
+    name_str = (data.get("name") or "").strip()
+    with SessionLocal() as db:
+        existing = db.query(InventoryItem).filter(InventoryItem.name == name_str).first()
+        if existing:
+            return jsonify({"detail": "الصنف موجود بالفعل في المخزن"}), 400
+
+        item = InventoryItem(
+            name=name_str,
+            unit=(data.get("unit") or "كجم").strip(),
+            current_stock=float(data.get("current_stock") or 0.0),
+            min_alert_stock=float(data.get("min_alert_stock") or 5.0),
+            cost_per_unit=float(data.get("cost_per_unit") or 0.0)
+        )
+        db.add(item)
+        db.commit()
+        return jsonify({"status": "success", "message": f"تمت إضافة {item.name} للمخزن بنجاح!", "id": item.id})
+
+
+@app.route("/api/inventory/<int:item_id>", methods=["PUT"])
+@app.route("/api/cezar/inventory/<int:item_id>", methods=["PUT"])
+def update_inventory_item(item_id):
+    data = request.json or {}
+    with SessionLocal() as db:
+        item = db.query(InventoryItem).filter(InventoryItem.id == item_id).first()
+        if not item:
+            return jsonify({"detail": "الصنف غير موجود بالمخزن"}), 404
+
+        if "current_stock" in data and data["current_stock"] is not None:
+            item.current_stock = float(data["current_stock"])
+        if "min_alert_stock" in data and data["min_alert_stock"] is not None:
+            item.min_alert_stock = float(data["min_alert_stock"])
+        if "cost_per_unit" in data and data["cost_per_unit"] is not None:
+            item.cost_per_unit = float(data["cost_per_unit"])
+
+        db.commit()
+        return jsonify({"status": "success", "message": "تم تحديث رصيد المخزن بنجاح"})
+
+
+@app.route("/api/inventory/<int:item_id>", methods=["DELETE"])
+@app.route("/api/cezar/inventory/<int:item_id>", methods=["DELETE"])
+def delete_inventory_item(item_id):
+    with SessionLocal() as db:
+        item = db.query(InventoryItem).filter(InventoryItem.id == item_id).first()
+        if not item:
+            return jsonify({"detail": "الصنف غير موجود"}), 404
+        db.delete(item)
+        db.commit()
+        return jsonify({"status": "success", "message": "تم حذف الصنف من المخزن"})
+
+
+# ==========================================
+# 8. تقارير ذكية وتصدير Excel (Analytics & Export)
+# ==========================================
+
+@app.route("/api/analytics", methods=["GET"])
+@app.route("/api/cezar/analytics", methods=["GET"])
+def get_analytics():
+    with SessionLocal() as db:
+        orders = db.query(TableOrder).filter(
+            TableOrder.status != "ملغي",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر",
+            TableOrder.total_price > 0
+        ).all()
+
+        item_counter = {}
+        for o in orders:
+            if not o.items_summary:
+                continue
+            for line in o.items_summary.split("\n"):
+                line = line.strip().lstrip("- ")
+                if "x " in line:
+                    try:
+                        parts = line.split("x ", 1)
+                        qty = int(parts[0].strip())
+                        name_part = parts[1].split(":")[0].strip()
+                        if "[" in name_part:
+                            name_part = name_part.split("[")[0].strip()
+                        item_counter[name_part] = item_counter.get(name_part, 0) + qty
+                    except Exception:
+                        pass
+
+        top_items = sorted(
+            [{"name": k, "orders_count": v} for k, v in item_counter.items()],
+            key=lambda x: x["orders_count"],
+            reverse=True
+        )[:6]
+
+        hourly_counts = {h: 0 for h in range(24)}
+        for o in orders:
+            if o.created_at:
+                hourly_counts[o.created_at.hour] += 1
+
+        peak_hours = [{"hour": f"{h}:00", "count": hourly_counts[h]} for h in range(8, 24)]
+
+        sales_by_type = {"صالة": 0.0, "تيك أواي": 0.0, "دليفري": 0.0}
+        for o in orders:
+            t = o.order_type or "صالة"
+            sales_by_type[t] = sales_by_type.get(t, 0.0) + o.total_price
+
+        return jsonify({
+            "status": "success",
+            "top_sellers": top_items,
+            "peak_hours": peak_hours,
+            "sales_by_type": sales_by_type,
+            "total_served_orders": len(orders)
+        })
+
+
+@app.route("/api/export/sales-csv", methods=["GET"])
+@app.route("/api/cezar/export/sales-csv", methods=["GET"])
+def export_sales_csv():
+    with SessionLocal() as db:
+        orders = db.query(TableOrder).filter(
+            TableOrder.status != "ملغي",
+            TableOrder.total_price > 0
+        ).order_by(desc(TableOrder.id)).all()
+
+        output = io.StringIO()
+        output.write("\ufeff")
+        writer = csv.writer(output)
+        writer.writerow([
+            "رقم الطلب",
+            "نوع الطلب",
+            "رقم الترابيزة",
+            "اسم العميل",
+            "رقم الهاتف",
+            "الأصناف المطلوبة",
+            "طريقة الدفع",
+            "الخصم (ج)",
+            "الإجمالي المدفوع (ج)",
+            "الحالة",
+            "التاريخ والوقت"
+        ])
+
+        for o in orders:
+            writer.writerow([
+                o.id,
+                o.order_type or "صالة",
+                o.table_number or "-",
+                o.customer_name or "-",
+                o.customer_phone or "-",
+                (o.items_summary or "").replace("\n", " | "),
+                o.payment_method or "كاش",
+                o.discount_amount or 0.0,
+                o.total_price,
+                o.status,
+                o.created_at.strftime("%Y-%m-%d %I:%M %p") if o.created_at else "-"
+            ])
+
+        csv_data = output.getvalue().encode("utf-8-sig")
+        filename = f"ceZar_Sales_Report_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.csv"
+        return Response(
+            csv_data,
+            mimetype="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+
+
+# ==========================================
+# 9. تسجيل الدخول
 # ==========================================
 
 @app.route("/api/auth/login", methods=["POST"])

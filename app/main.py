@@ -1,6 +1,7 @@
 import os
 import sys
 import io
+import csv
 import socket
 from typing import Optional, List
 from datetime import datetime
@@ -23,13 +24,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal, get_db
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode
 from .seed import seed_menu
 
 # إنشاء الجداول تلقائياً
 Base.metadata.create_all(bind=engine)
 
-# تحديث الأعمدة الجديدة في جدول table_orders تلقائياً إذا كانت غير موجودة
 def auto_migrate_columns():
     with engine.connect() as conn:
         columns_to_add = [
@@ -40,6 +40,8 @@ def auto_migrate_columns():
             ("delivery_fee", "FLOAT DEFAULT 0.0"),
             ("delivery_driver", "VARCHAR(100) DEFAULT NULL"),
             ("delivery_status", "VARCHAR(50) DEFAULT NULL"),
+            ("discount_amount", "FLOAT DEFAULT 0.0"),
+            ("promo_code", "VARCHAR(50) DEFAULT NULL"),
         ]
         for col_name, col_type in columns_to_add:
             try:
@@ -50,7 +52,6 @@ def auto_migrate_columns():
 
 auto_migrate_columns()
 
-# التأكد من وجود أصناف المنيو وحسابات المديرين
 with SessionLocal() as db:
     seed_menu(db)
     if db.query(ManagerAccount).filter(ManagerAccount.username == "admin").count() == 0:
@@ -60,12 +61,11 @@ with SessionLocal() as db:
     db.commit()
 
 app = FastAPI(
-    title="ceZar COFFEE - All-In-One POS & Management System",
-    description="نظام إدارة المبيعات، الشيفتات، الحجوزات، والصالة والدليفري لكافيه سيزر كوفي",
-    version="2.0.0"
+    title="ceZar COFFEE - Enterprise Café Management & POS System",
+    description="نظام إدارة المبيعات، الشيفتات، الحجوزات، الصالة، الدليفري، شاشة البار، المخزون، والخصومات",
+    version="3.0.0"
 )
 
-# ربط الملفات الثابتة (اللوجو والصور)
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -74,7 +74,6 @@ TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
 
 def get_lan_ip():
-    """كشف الآي بي المحلي لجهاز اللابتوب على شبكة الواي فاي تلقائياً لمسح الـ QR."""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(0.5)
@@ -95,6 +94,7 @@ class TableOrderItem(BaseModel):
     name: str
     price: float
     quantity: int = 1
+    customization: Optional[str] = None
 
 
 class CreateTableOrderRequest(BaseModel):
@@ -103,6 +103,7 @@ class CreateTableOrderRequest(BaseModel):
     notes: Optional[str] = None
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
+    promo_code: Optional[str] = None
 
 
 class PosOrderCreateRequest(BaseModel):
@@ -116,6 +117,8 @@ class PosOrderCreateRequest(BaseModel):
     delivery_address: Optional[str] = None
     delivery_fee: Optional[float] = 0.0
     delivery_driver: Optional[str] = None
+    discount_amount: Optional[float] = 0.0
+    promo_code: Optional[str] = None
 
 
 class MenuItemCreate(BaseModel):
@@ -202,6 +205,32 @@ class DeliveryStatusUpdateRequest(BaseModel):
     delivery_driver: Optional[str] = None
 
 
+class PromoCodeCreateRequest(BaseModel):
+    code: str
+    discount_type: str = "percentage"  # percentage | fixed
+    discount_value: float = 10.0
+    min_order_value: float = 0.0
+
+
+class PromoValidateRequest(BaseModel):
+    code: str
+    order_total: float = 0.0
+
+
+class InventoryCreateRequest(BaseModel):
+    name: str
+    unit: str = "كجم"
+    current_stock: float = 0.0
+    min_alert_stock: float = 5.0
+    cost_per_unit: float = 0.0
+
+
+class InventoryUpdateRequest(BaseModel):
+    current_stock: Optional[float] = None
+    min_alert_stock: Optional[float] = None
+    cost_per_unit: Optional[float] = None
+
+
 # ==========================================
 # 1. صفحات العرض (Frontend Views)
 # ==========================================
@@ -231,6 +260,17 @@ def get_admin_page():
     return HTMLResponse("<h2>جاري تحميل لوحة تحكم سيزر كوفي...</h2>")
 
 
+@app.get("/kitchen", response_class=HTMLResponse)
+@app.get("/bar", response_class=HTMLResponse)
+@app.get("/cezar/bar", response_class=HTMLResponse)
+def get_kitchen_page():
+    file_path = os.path.join(TEMPLATES_DIR, "kitchen.html")
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse("<h2>جاري تحميل شاشة البار والمطبخ (KDS)...</h2>")
+
+
 @app.get("/qr-cards", response_class=HTMLResponse)
 @app.get("/cezar/qr-generator", response_class=HTMLResponse)
 def get_qr_cards_page():
@@ -248,7 +288,6 @@ def get_qr_cards_page():
 @app.get("/api/menu-items")
 @app.get("/api/cezar/menu-items")
 def get_menu_items(all_items: bool = False, category: Optional[str] = None, db: Session = Depends(get_db)):
-    """استرجاع أصناف المنيو مقسمة بالأقسام. إذا كانت all_items=True تعيد الأصناف للإدارة."""
     query = db.query(MenuItem)
     if not all_items:
         query = query.filter(MenuItem.is_available.is_(True))
@@ -340,15 +379,27 @@ def create_table_order(order_data: CreateTableOrderRequest, db: Session = Depend
         raise HTTPException(status_code=400, detail="السلة فارغة")
 
     lines = []
-    total = 0.0
+    items_total = 0.0
     for item in order_data.items:
         item_total = item.price * item.quantity
-        total += item_total
-        lines.append(f"- {item.quantity}x {item.name}: {item_total:g} ج")
+        items_total += item_total
+        cust_note = f" [{item.customization}]" if item.customization else ""
+        lines.append(f"- {item.quantity}x {item.name}{cust_note}: {item_total:g} ج")
 
+    # تطبيق البروموكود إذا وجد
+    discount = 0.0
+    if order_data.promo_code:
+        promo = db.query(PromoCode).filter(PromoCode.code == order_data.promo_code.strip().upper(), PromoCode.is_active.is_(True)).first()
+        if promo and items_total >= (promo.min_order_value or 0.0):
+            if promo.discount_type == "percentage":
+                discount = round((items_total * promo.discount_value) / 100.0, 2)
+            else:
+                discount = min(items_total, promo.discount_value)
+            promo.usage_count = (promo.usage_count or 0) + 1
+
+    grand_total = max(0.0, items_total - discount)
     items_summary = "\n".join(lines)
 
-    # جلب الشيفت المفتوح حالياً لربط الأوردر به
     current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
     shift_id = current_shift.id if current_shift else None
 
@@ -356,7 +407,9 @@ def create_table_order(order_data: CreateTableOrderRequest, db: Session = Depend
         table_number=order_data.table_number,
         order_type="صالة",
         items_summary=items_summary,
-        total_price=total,
+        total_price=grand_total,
+        discount_amount=discount,
+        promo_code=order_data.promo_code,
         customer_name=order_data.customer_name or f"ترابيزة {order_data.table_number}",
         customer_phone=order_data.customer_phone or "",
         notes=order_data.notes or "",
@@ -366,10 +419,9 @@ def create_table_order(order_data: CreateTableOrderRequest, db: Session = Depend
     )
     db.add(order)
 
-    # تحديث إجمالي مبيعات الشيفت
     if current_shift:
-        current_shift.total_sales += total
-        current_shift.cash_sales += total
+        current_shift.total_sales += grand_total
+        current_shift.cash_sales += grand_total
 
     db.commit()
     db.refresh(order)
@@ -378,6 +430,7 @@ def create_table_order(order_data: CreateTableOrderRequest, db: Session = Depend
         "message": f"تم استلام طلب ترابيزة {order.table_number} بنجاح!",
         "order_id": order.id,
         "table_number": order.table_number,
+        "discount_amount": discount,
         "total_price": order.total_price
     }
 
@@ -385,7 +438,6 @@ def create_table_order(order_data: CreateTableOrderRequest, db: Session = Depend
 @app.post("/api/pos/orders")
 @app.post("/api/cezar/pos/orders")
 def create_pos_direct_order(data: PosOrderCreateRequest, db: Session = Depends(get_db)):
-    """إنشاء أوردر كاشير مباشر (صالة أو تيك أواي أو دليفري)."""
     if not data.items:
         raise HTTPException(status_code=400, detail="يجب إضافة صنف واحد على الأقل للأوردر")
 
@@ -394,10 +446,12 @@ def create_pos_direct_order(data: PosOrderCreateRequest, db: Session = Depends(g
     for item in data.items:
         item_total = item.price * item.quantity
         items_total += item_total
-        lines.append(f"- {item.quantity}x {item.name}: {item_total:g} ج")
+        cust_note = f" [{item.customization}]" if item.customization else ""
+        lines.append(f"- {item.quantity}x {item.name}{cust_note}: {item_total:g} ج")
 
     delivery_fee = data.delivery_fee or 0.0 if data.order_type == "دليفري" else 0.0
-    grand_total = items_total + delivery_fee
+    discount = data.discount_amount or 0.0
+    grand_total = max(0.0, items_total + delivery_fee - discount)
     items_summary = "\n".join(lines)
 
     current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
@@ -408,6 +462,8 @@ def create_pos_direct_order(data: PosOrderCreateRequest, db: Session = Depends(g
         order_type=data.order_type,
         items_summary=items_summary,
         total_price=grand_total,
+        discount_amount=discount,
+        promo_code=data.promo_code,
         payment_method=data.payment_method,
         status="قيد التحضير",
         customer_name=data.customer_name or ("عميل تيك أواي" if data.order_type == "تيك أواي" else ("عميل دليفري" if data.order_type == "دليفري" else f"ترابيزة {data.table_number}")),
@@ -421,7 +477,6 @@ def create_pos_direct_order(data: PosOrderCreateRequest, db: Session = Depends(g
     )
     db.add(order)
 
-    # تحديث مبيعات الشيفت
     if current_shift:
         current_shift.total_sales += grand_total
         if data.payment_method == "فيزا":
@@ -475,6 +530,8 @@ def get_orders(order_type: Optional[str] = None, db: Session = Depends(get_db)):
                 "order_type": o.order_type or "صالة",
                 "items_summary": o.items_summary,
                 "total_price": o.total_price,
+                "discount_amount": o.discount_amount or 0.0,
+                "promo_code": o.promo_code or "",
                 "payment_method": o.payment_method or "كاش",
                 "status": o.status,
                 "customer_name": o.customer_name,
@@ -494,7 +551,6 @@ def get_orders(order_type: Optional[str] = None, db: Session = Depends(get_db)):
 @app.get("/api/tables/status")
 @app.get("/api/cezar/tables/status")
 def get_all_tables_status(db: Session = Depends(get_db)):
-    """استرجاع خريطة حالة الـ 25 ترابيزة في الصالة (فاضية، مشغولة، طلبت الحساب، طلبت ويتر)."""
     tables_data = []
     for t in range(1, 26):
         active_orders = db.query(TableOrder).filter(
@@ -546,6 +602,7 @@ def get_table_bill(table_number: int, db: Session = Depends(get_db)):
     active_orders = db.query(TableOrder).filter(
         TableOrder.table_number == table_number,
         TableOrder.status != "ملغي",
+        TableOrder.status != "تمت التسوية",
         ~TableOrder.status.like("طلب حساب%"),
         TableOrder.status != "نداء ويتر",
         ~TableOrder.items_summary.like("%طلب الحساب%"),
@@ -577,7 +634,6 @@ def get_table_bill(table_number: int, db: Session = Depends(get_db)):
 @app.post("/api/tables/{table_number}/settle")
 @app.post("/api/cezar/tables/{table_number}/settle")
 def settle_table_bill(table_number: int, db: Session = Depends(get_db)):
-    """تسوية وقفل حساب ترابيزة كاملة وتغيير حالة جميع طلباتها لتمت التسوية وإفراغها."""
     orders = db.query(TableOrder).filter(
         TableOrder.table_number == table_number,
         TableOrder.status != "ملغي",
@@ -587,7 +643,6 @@ def settle_table_bill(table_number: int, db: Session = Depends(get_db)):
         o.status = "تمت التسوية"
     db.commit()
     return {"status": "success", "message": f"تمت تسوية حساب ترابيزة {table_number} وإفراغها بنجاح!", "table_number": table_number}
-
 
 
 @app.get("/api/tables/{table_number}/track")
@@ -636,6 +691,8 @@ def get_order_by_id(order_id: int, db: Session = Depends(get_db)):
         "order_type": order.order_type or "صالة",
         "items_summary": order.items_summary,
         "total_price": order.total_price,
+        "discount_amount": order.discount_amount or 0.0,
+        "promo_code": order.promo_code or "",
         "payment_method": order.payment_method or "كاش",
         "status": order.status,
         "customer_name": order.customer_name,
@@ -710,6 +767,7 @@ def request_bill_endpoint(req: RequestBillRequest, db: Session = Depends(get_db)
     active_orders = db.query(TableOrder).filter(
         TableOrder.table_number == req.table_number,
         TableOrder.status != "ملغي",
+        TableOrder.status != "تمت التسوية",
         ~TableOrder.status.like("طلب حساب%"),
         TableOrder.status != "نداء ويتر",
         ~TableOrder.items_summary.like("%طلب الحساب%"),
@@ -760,12 +818,10 @@ def clear_all_orders(db: Session = Depends(get_db)):
 @app.get("/api/shifts/current")
 @app.get("/api/cezar/shifts/current")
 def get_current_shift(db: Session = Depends(get_db)):
-    """استرجاع تفاصيل الوردية المفتوحة حالياً."""
     shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
     if not shift:
         return {"status": "no_active_shift", "message": "لا يوجد وردية مفتوحة حالياً"}
 
-    # حساب المبيعات والمصروفات الحية المرتبطة بهذا الشيفت
     orders = db.query(TableOrder).filter(
         TableOrder.shift_id == shift.id,
         TableOrder.status != "ملغي",
@@ -803,7 +859,6 @@ def get_current_shift(db: Session = Depends(get_db)):
 @app.post("/api/shifts/open")
 @app.post("/api/cezar/shifts/open")
 def open_shift(req: ShiftOpenRequest, db: Session = Depends(get_db)):
-    """فتح وردية جديدة."""
     active = db.query(Shift).filter(Shift.status == "مفتوح").first()
     if active:
         raise HTTPException(status_code=400, detail=f"يوجد وردية مفتوحة بالفعل للكاشير ({active.cashier_name}). يجب تقفيلها أولاً.")
@@ -824,7 +879,6 @@ def open_shift(req: ShiftOpenRequest, db: Session = Depends(get_db)):
 @app.post("/api/shifts/close")
 @app.post("/api/cezar/shifts/close")
 def close_shift(req: ShiftCloseRequest, db: Session = Depends(get_db)):
-    """تقفيل الوردية الحالية وحساب العجز أو الزيادة."""
     shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
     if not shift:
         raise HTTPException(status_code=400, detail="لا توجد وردية مفتوحة لإغلاقها!")
@@ -879,7 +933,6 @@ def close_shift(req: ShiftCloseRequest, db: Session = Depends(get_db)):
 @app.get("/api/shifts/history")
 @app.get("/api/cezar/shifts/history")
 def get_shifts_history(db: Session = Depends(get_db)):
-    """استرجاع سجل الورديات السابقة."""
     shifts = db.query(Shift).order_by(desc(Shift.id)).limit(30).all()
     return {
         "shifts": [
@@ -905,7 +958,6 @@ def get_shifts_history(db: Session = Depends(get_db)):
 @app.post("/api/expenses")
 @app.post("/api/cezar/expenses")
 def add_expense(req: ExpenseCreateRequest, db: Session = Depends(get_db)):
-    """تسجيل مصروف أو نثريات سريعة للوردية."""
     current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
     shift_id = current_shift.id if current_shift else None
 
@@ -929,7 +981,6 @@ def add_expense(req: ExpenseCreateRequest, db: Session = Depends(get_db)):
 @app.get("/api/expenses")
 @app.get("/api/cezar/expenses")
 def get_expenses(db: Session = Depends(get_db)):
-    """استرجاع قائمة المصروفات."""
     current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
     query = db.query(Expense)
     if current_shift:
@@ -953,7 +1004,6 @@ def get_expenses(db: Session = Depends(get_db)):
 @app.delete("/api/expenses/{expense_id}")
 @app.delete("/api/cezar/expenses/{expense_id}")
 def delete_expense(expense_id: int, db: Session = Depends(get_db)):
-    """حذف مصروف وإعادة المبلغ لكاش الوردية."""
     exp = db.query(Expense).filter(Expense.id == expense_id).first()
     if not exp:
         raise HTTPException(status_code=404, detail="المصروف غير موجود")
@@ -966,15 +1016,13 @@ def delete_expense(expense_id: int, db: Session = Depends(get_db)):
     return {"status": "success", "message": "تم حذف المصروف بنجاح"}
 
 
-
 # ==========================================
-# 5. واجهات خدمة الحجوزات (Reservations APIs)
+# 5. الحجوزات وقائمة الانتظار (Reservations & Waiting List)
 # ==========================================
 
 @app.get("/api/reservations")
 @app.get("/api/cezar/reservations")
 def get_reservations(db: Session = Depends(get_db)):
-    """استرجاع قائمة الحجوزات."""
     res_list = db.query(Reservation).order_by(desc(Reservation.id)).limit(50).all()
     return {
         "reservations": [
@@ -997,7 +1045,6 @@ def get_reservations(db: Session = Depends(get_db)):
 @app.post("/api/reservations")
 @app.post("/api/cezar/reservations")
 def create_reservation(req: ReservationCreateRequest, db: Session = Depends(get_db)):
-    """تسجيل حجز مسبق جديد."""
     res = Reservation(
         customer_name=req.customer_name.strip(),
         customer_phone=req.customer_phone.strip(),
@@ -1036,14 +1083,9 @@ def delete_reservation(res_id: int, db: Session = Depends(get_db)):
     return {"status": "success", "message": "تم حذف الحجز بنجاح"}
 
 
-# ==========================================
-# 6. واجهات خدمة قائمة الانتظار (Waiting List APIs)
-# ==========================================
-
 @app.get("/api/waiting-list")
 @app.get("/api/cezar/waiting-list")
 def get_waiting_list(db: Session = Depends(get_db)):
-    """استرجاع قائمة الانتظار الحالية."""
     waiters = db.query(WaitingList).filter(WaitingList.status.in_(["قيد الانتظار", "تم النداء"])).order_by(WaitingList.id).all()
     return {
         "waiting_list": [
@@ -1065,7 +1107,6 @@ def get_waiting_list(db: Session = Depends(get_db)):
 @app.post("/api/waiting-list")
 @app.post("/api/cezar/waiting-list")
 def add_to_waiting_list(req: WaitingListCreateRequest, db: Session = Depends(get_db)):
-    """إضافة زبون لقائمة الانتظار."""
     waiter = WaitingList(
         customer_name=req.customer_name.strip(),
         customer_phone=req.customer_phone.strip(),
@@ -1082,7 +1123,6 @@ def add_to_waiting_list(req: WaitingListCreateRequest, db: Session = Depends(get
 @app.post("/api/waiting-list/{wait_id}/seat")
 @app.post("/api/cezar/waiting-list/{wait_id}/seat")
 def seat_waiting_customer(wait_id: int, req: SeatWaitingCustomerRequest, db: Session = Depends(get_db)):
-    """تسكين العميل على طاولة متاحة وتحديث حالته."""
     waiter = db.query(WaitingList).filter(WaitingList.id == wait_id).first()
     if not waiter:
         raise HTTPException(status_code=404, detail="العميل غير موجود بقائمة الانتظار")
@@ -1116,7 +1156,286 @@ def delete_waiting_customer(wait_id: int, db: Session = Depends(get_db)):
 
 
 # ==========================================
-# 7. توليد باركود QR عالي الدقة لأي ترابيزة
+# 6. نظام البروموكود والخصومات (Promo Codes & Discounts)
+# ==========================================
+
+@app.get("/api/promo-codes")
+@app.get("/api/cezar/promo-codes")
+def get_promo_codes(db: Session = Depends(get_db)):
+    codes = db.query(PromoCode).order_by(desc(PromoCode.id)).all()
+    return {
+        "promo_codes": [
+            {
+                "id": p.id,
+                "code": p.code,
+                "discount_type": p.discount_type,
+                "discount_value": p.discount_value,
+                "min_order_value": p.min_order_value or 0.0,
+                "is_active": p.is_active,
+                "usage_count": p.usage_count or 0
+            }
+            for p in codes
+        ]
+    }
+
+
+@app.post("/api/promo-codes")
+@app.post("/api/cezar/promo-codes")
+def create_promo_code(req: PromoCodeCreateRequest, db: Session = Depends(get_db)):
+    code_str = req.code.strip().upper()
+    existing = db.query(PromoCode).filter(PromoCode.code == code_str).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="كود الخصم موجود بالفعل")
+
+    new_promo = PromoCode(
+        code=code_str,
+        discount_type=req.discount_type,
+        discount_value=req.discount_value,
+        min_order_value=req.min_order_value,
+        is_active=True
+    )
+    db.add(new_promo)
+    db.commit()
+    db.refresh(new_promo)
+    return {"status": "success", "message": f"تم إنشاء كود الخصم {new_promo.code} بنجاح!", "id": new_promo.id}
+
+
+@app.post("/api/promo-codes/validate")
+@app.post("/api/cezar/promo-codes/validate")
+def validate_promo_code(req: PromoValidateRequest, db: Session = Depends(get_db)):
+    code_str = req.code.strip().upper()
+    promo = db.query(PromoCode).filter(PromoCode.code == code_str, PromoCode.is_active.is_(True)).first()
+    if not promo:
+        raise HTTPException(status_code=404, detail="كود الخصم غير صحيح أو منتهي الصلاحية")
+
+    if req.order_total < (promo.min_order_value or 0.0):
+        raise HTTPException(status_code=400, detail=f"الحد الأدنى لتفعيل هذا الكود هو {promo.min_order_value} جنيه")
+
+    if promo.discount_type == "percentage":
+        discount = round((req.order_total * promo.discount_value) / 100.0, 2)
+    else:
+        discount = min(req.order_total, promo.discount_value)
+
+    new_total = max(0.0, req.order_total - discount)
+    return {
+        "status": "valid",
+        "code": promo.code,
+        "discount_type": promo.discount_type,
+        "discount_value": promo.discount_value,
+        "discount_amount": discount,
+        "new_total": new_total,
+        "message": f"تم تطبيق خصم {promo.discount_value}{'%' if promo.discount_type == 'percentage' else ' ج'} بنجاح!"
+    }
+
+
+@app.delete("/api/promo-codes/{code_id}")
+@app.delete("/api/cezar/promo-codes/{code_id}")
+def delete_promo_code(code_id: int, db: Session = Depends(get_db)):
+    p = db.query(PromoCode).filter(PromoCode.id == code_id).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="كود الخصم غير موجود")
+    db.delete(p)
+    db.commit()
+    return {"status": "success", "message": "تم حذف كود الخصم"}
+
+
+# ==========================================
+# 7. إدارة المخزون وتنبيه النواقص (Inventory Management)
+# ==========================================
+
+@app.get("/api/inventory")
+@app.get("/api/cezar/inventory")
+def get_inventory(db: Session = Depends(get_db)):
+    items = db.query(InventoryItem).order_by(InventoryItem.name).all()
+    alerts = []
+    inv_list = []
+    for i in items:
+        is_low = i.current_stock <= i.min_alert_stock
+        item_data = {
+            "id": i.id,
+            "name": i.name,
+            "unit": i.unit,
+            "current_stock": i.current_stock,
+            "min_alert_stock": i.min_alert_stock,
+            "cost_per_unit": i.cost_per_unit,
+            "is_low": is_low
+        }
+        inv_list.append(item_data)
+        if is_low:
+            alerts.append(item_data)
+
+    return {
+        "status": "success",
+        "inventory": inv_list,
+        "low_stock_alerts": alerts,
+        "alerts_count": len(alerts)
+    }
+
+
+@app.post("/api/inventory")
+@app.post("/api/cezar/inventory")
+def add_inventory_item(req: InventoryCreateRequest, db: Session = Depends(get_db)):
+    name_str = req.name.strip()
+    existing = db.query(InventoryItem).filter(InventoryItem.name == name_str).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="الصنف موجود بالفعل في المخزن")
+
+    item = InventoryItem(
+        name=name_str,
+        unit=req.unit.strip(),
+        current_stock=req.current_stock,
+        min_alert_stock=req.min_alert_stock,
+        cost_per_unit=req.cost_per_unit
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"status": "success", "message": f"تمت إضافة {item.name} للمخزن بنجاح!", "id": item.id}
+
+
+@app.put("/api/inventory/{item_id}")
+@app.put("/api/cezar/inventory/{item_id}")
+def update_inventory_item(item_id: int, req: InventoryUpdateRequest, db: Session = Depends(get_db)):
+    item = db.query(InventoryItem).filter(InventoryItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="الصنف غير موجود بالمخزن")
+
+    if req.current_stock is not None:
+        item.current_stock = req.current_stock
+    if req.min_alert_stock is not None:
+        item.min_alert_stock = req.min_alert_stock
+    if req.cost_per_unit is not None:
+        item.cost_per_unit = req.cost_per_unit
+
+    db.commit()
+    return {"status": "success", "message": "تم تحديث رصيد المخزن بنجاح"}
+
+
+@app.delete("/api/inventory/{item_id}")
+@app.delete("/api/cezar/inventory/{item_id}")
+def delete_inventory_item(item_id: int, db: Session = Depends(get_db)):
+    item = db.query(InventoryItem).filter(InventoryItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="الصنف غير موجود")
+    db.delete(item)
+    db.commit()
+    return {"status": "success", "message": "تم حذف الصنف من المخزن"}
+
+
+# ==========================================
+# 8. تقارير ذكية، الأكثر مبيعاً وتصدير Excel (Analytics & Export)
+# ==========================================
+
+@app.get("/api/analytics")
+@app.get("/api/cezar/analytics")
+def get_analytics(db: Session = Depends(get_db)):
+    orders = db.query(TableOrder).filter(
+        TableOrder.status != "ملغي",
+        ~TableOrder.status.like("طلب حساب%"),
+        TableOrder.status != "نداء ويتر",
+        TableOrder.total_price > 0
+    ).all()
+
+    # Best Sellers parsing
+    item_counter = {}
+    for o in orders:
+        if not o.items_summary:
+            continue
+        for line in o.items_summary.split("\n"):
+            line = line.strip().lstrip("- ")
+            if "x " in line:
+                try:
+                    parts = line.split("x ", 1)
+                    qty = int(parts[0].strip())
+                    name_part = parts[1].split(":")[0].strip()
+                    # Remove bracket customizations for counting base item
+                    if "[" in name_part:
+                        name_part = name_part.split("[")[0].strip()
+                    item_counter[name_part] = item_counter.get(name_part, 0) + qty
+                except Exception:
+                    pass
+
+    top_items = sorted(
+        [{"name": k, "orders_count": v} for k, v in item_counter.items()],
+        key=lambda x: x["orders_count"],
+        reverse=True
+    )[:6]
+
+    # Hourly distribution
+    hourly_counts = {h: 0 for h in range(24)}
+    for o in orders:
+        if o.created_at:
+            hourly_counts[o.created_at.hour] += 1
+
+    peak_hours = [{"hour": f"{h}:00", "count": hourly_counts[h]} for h in range(8, 24)]
+
+    # Sales by Order Type
+    sales_by_type = {"صالة": 0.0, "تيك أواي": 0.0, "دليفري": 0.0}
+    for o in orders:
+        t = o.order_type or "صالة"
+        sales_by_type[t] = sales_by_type.get(t, 0.0) + o.total_price
+
+    return {
+        "status": "success",
+        "top_sellers": top_items,
+        "peak_hours": peak_hours,
+        "sales_by_type": sales_by_type,
+        "total_served_orders": len(orders)
+    }
+
+
+@app.get("/api/export/sales-csv")
+@app.get("/api/cezar/export/sales-csv")
+def export_sales_csv(db: Session = Depends(get_db)):
+    orders = db.query(TableOrder).filter(
+        TableOrder.status != "ملغي",
+        TableOrder.total_price > 0
+    ).order_by(desc(TableOrder.id)).all()
+
+    output = io.StringIO()
+    # Write UTF-8 BOM so Excel opens Arabic correctly
+    output.write("\ufeff")
+    writer = csv.writer(output)
+    writer.writerow([
+        "رقم الطلب",
+        "نوع الطلب",
+        "رقم الترابيزة",
+        "اسم العميل",
+        "رقم الهاتف",
+        "الأصناف المطلوبة",
+        "طريقة الدفع",
+        "الخصم (ج)",
+        "الإجمالي المدفوع (ج)",
+        "الحالة",
+        "التاريخ والوقت"
+    ])
+
+    for o in orders:
+        writer.writerow([
+            o.id,
+            o.order_type or "صالة",
+            o.table_number or "-",
+            o.customer_name or "-",
+            o.customer_phone or "-",
+            (o.items_summary or "").replace("\n", " | "),
+            o.payment_method or "كاش",
+            o.discount_amount or 0.0,
+            o.total_price,
+            o.status,
+            o.created_at.strftime("%Y-%m-%d %I:%M %p") if o.created_at else "-"
+        ])
+
+    csv_data = output.getvalue().encode("utf-8-sig")
+    filename = f"ceZar_Sales_Report_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.csv"
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
+# ==========================================
+# 9. توليد باركود QR عالي الدقة لأي ترابيزة
 # ==========================================
 
 @app.get("/api/qr/{table_number}")
@@ -1154,7 +1473,7 @@ def generate_table_qr(table_number: int, request: Request, host: Optional[str] =
 
 
 # ==========================================
-# 8. نظام تسجيل دخول المدير وتغيير البيانات
+# 10. نظام تسجيل دخول المدير وتغيير البيانات
 # ==========================================
 
 @app.post("/api/auth/login")

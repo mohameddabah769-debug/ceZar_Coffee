@@ -41,7 +41,7 @@ class Expense(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     shift_id = Column(Integer, ForeignKey("shifts.id"), nullable=True)
-    title = Column(String(150), nullable=False)  # بيان المصروف: حليب، بن، سكر، صيانة...
+    title = Column(String(150), nullable=False)
     amount = Column(Float, nullable=False, default=0.0)
     category = Column(String(80), default="مشتريات تشغيل")
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -53,12 +53,14 @@ class TableOrder(Base):
     __tablename__ = "table_orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    table_number = Column(Integer, nullable=True, default=0, index=True) # 0 في حالة التيك أواي أو الدليفري
+    table_number = Column(Integer, nullable=True, default=0, index=True)
     order_type = Column(String(30), default="صالة", index=True)  # صالة | تيك أواي | دليفري
     items_summary = Column(Text, nullable=False)
     total_price = Column(Float, nullable=False, default=0.0)
+    discount_amount = Column(Float, default=0.0)
+    promo_code = Column(String(50), nullable=True)
     payment_method = Column(String(30), default="كاش")  # كاش | فيزا
-    status = Column(String(50), default="جديد", index=True)  # جديد | قيد التحضير | مكتمل | ملغي
+    status = Column(String(50), default="جديد", index=True)  # جديد | قيد التحضير | تم التقديم | ملغي | تمت التسوية
     customer_name = Column(String(100), nullable=True, default="عميل سيزر")
     customer_phone = Column(String(30), nullable=True)
     notes = Column(Text, nullable=True)
@@ -83,8 +85,8 @@ class Reservation(Base):
     customer_phone = Column(String(30), nullable=False)
     table_number = Column(Integer, nullable=True)
     guests_count = Column(Integer, default=2)
-    reservation_time = Column(String(50), nullable=False)  # التاريخ والوقت
-    deposit = Column(Float, default=0.0)  # العربون المدفوع
+    reservation_time = Column(String(50), nullable=False)
+    deposit = Column(Float, default=0.0)
     status = Column(String(40), default="مؤكد", index=True)  # مؤكد | وصل وتم الجلوس | ملغي
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -98,9 +100,36 @@ class WaitingList(Base):
     customer_name = Column(String(120), nullable=False)
     customer_phone = Column(String(30), nullable=False)
     guests_count = Column(Integer, default=2)
-    status = Column(String(40), default="قيد الانتظار", index=True)  # قيد الانتظار | تم النداء | تم التسكين | ملغي
+    status = Column(String(40), default="قيد الانتظار", index=True)
     assigned_table = Column(Integer, nullable=True)
     notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class InventoryItem(Base):
+    """إدارة مخزون المواد الخام ونواقص الكافيه."""
+    __tablename__ = "inventory_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), nullable=False, unique=True, index=True)  # بن برازيلي، حليب، سكر، أكواب...
+    unit = Column(String(30), default="كجم")  # كجم | لتر | علبة | كرتونة | عبوة
+    current_stock = Column(Float, default=0.0)
+    min_alert_stock = Column(Float, default=5.0)  # الحد الأدنى لإطلاق تنبيه النواقص
+    cost_per_unit = Column(Float, default=0.0)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PromoCode(Base):
+    """نظام الخصومات والبروموكود للزبائن والكاشير."""
+    __tablename__ = "promo_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(50), unique=True, nullable=False, index=True)  # CEZAR10, VIP, WELCOME
+    discount_type = Column(String(20), default="percentage")  # percentage | fixed
+    discount_value = Column(Float, nullable=False, default=10.0)  # 10% or 20 EGP
+    min_order_value = Column(Float, default=0.0)
+    is_active = Column(Boolean, default=True)
+    usage_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

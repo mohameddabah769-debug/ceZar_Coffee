@@ -656,6 +656,9 @@
                 <span id="navShiftText">جاري تحميل الشيفت...</span>
             </div>
 
+            <a href="/kitchen" target="_blank" class="nav-btn" style="background: rgba(232, 93, 4, 0.25); border-color: var(--cezar-orange);" title="فتح شاشة البار المستقلة للبارستا">
+                <i class="fa-solid fa-mug-hot"></i> شاشة البار (KDS)
+            </a>
             <a href="/menu?table=1" target="_blank" class="nav-btn">
                 <i class="fa-solid fa-mobile-screen-button"></i> المنيو
             </a>
@@ -738,6 +741,22 @@
         <button class="tab-btn" data-tab="shifts" onclick="switchTab('shifts', this)">
             <i class="fa-solid fa-wallet"></i>
             <span>إدارة الشيفتات والدرج</span>
+        </button>
+
+        <button class="tab-btn" data-tab="inventory" onclick="switchTab('inventory', this)">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <span>المخزون والنواقص</span>
+            <span id="lowStockBadge" style="background: #dc3545; color: white; padding: 2px 7px; border-radius: 10px; font-size: 11px; display: none;">0</span>
+        </button>
+
+        <button class="tab-btn" data-tab="analytics" onclick="switchTab('analytics', this)">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>التقارير والأكثر مبيعاً</span>
+        </button>
+
+        <button class="tab-btn" data-tab="promos" onclick="switchTab('promos', this)">
+            <i class="fa-solid fa-tags"></i>
+            <span>الخصومات والبروموكود</span>
         </button>
 
         <button class="tab-btn" data-tab="reservations" onclick="switchTab('reservations', this)">
@@ -871,6 +890,16 @@
 
                 <!-- Cart Bottom Total & Submit -->
                 <div style="border-top: 2px solid var(--border-color); padding-top: 12px; margin-top: 12px;">
+                    <!-- POS Promo Code Box -->
+                    <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                        <input type="text" id="posPromoCodeInput" placeholder="كود الخصم (اختياري)" style="text-transform: uppercase; flex: 1; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 12px; font-weight: 800;">
+                        <button onclick="applyPosPromoCode()" type="button" style="background: var(--cezar-orange); color: white; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 800; cursor: pointer;">تطبيق</button>
+                    </div>
+                    <div id="posPromoAppliedRow" style="display: none; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 4px; color: #dc3545;">
+                        <span>خصم بروموكود (<span id="posPromoCodeAppliedName"></span>):</span>
+                        <span id="posPromoDiscountVal">-0 ج</span>
+                    </div>
+
                     <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 4px;">
                         <span>إجمالي الأصناف:</span>
                         <span id="posCartSubtotal">0 ج</span>
@@ -1065,6 +1094,140 @@
                     </tr>
                 </thead>
                 <tbody id="adminMenuTableBody">
+                    <!-- Rendered by JS -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- ==================================================== -->
+    <!-- TAB 7: Inventory & Stock Alerts                      -->
+    <!-- ==================================================== -->
+    <main class="tab-content" id="tabInventory">
+        <!-- Low Stock Alert Banner -->
+        <div id="inventoryAlertBanner" style="display: none; background: #FFEBEE; border: 2px solid #EF4444; border-radius: 14px; padding: 14px 18px; margin-bottom: 16px; color: #B91C1C; font-weight: 800; font-size: 13px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-triangle-exclamation fa-beat" style="font-size: 18px;"></i>
+                <span id="inventoryAlertText">تنبيه: هناك مواد خام قاربت على النفاد!</span>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 15px; font-weight: 900; color: var(--primary-espresso);">
+                <i class="fa-solid fa-boxes-stacked" style="color: var(--cezar-orange);"></i> رصيد المواد الخام وتنبيه النواقص
+            </div>
+            <button class="pin-btn" onclick="openAddInventoryModal()" style="margin: 0; width: auto; padding: 8px 18px; background: var(--cezar-orange);">
+                <i class="fa-solid fa-plus"></i> إضافة مادة خام جديدة
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>المادة الخام</th>
+                        <th>الوحدة</th>
+                        <th>الرصيد الحالي</th>
+                        <th>حد التنبيه</th>
+                        <th>تكلفة الوحدة</th>
+                        <th>الحالة</th>
+                        <th>تعديل سريع</th>
+                        <th>إجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTableBody">
+                    <!-- Rendered by JS -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- ==================================================== -->
+    <!-- TAB 8: Reports, Analytics & Best Sellers             -->
+    <!-- ==================================================== -->
+    <main class="tab-content" id="tabAnalytics">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 16px; font-weight: 900; color: var(--primary-espresso);">
+                <i class="fa-solid fa-chart-line" style="color: var(--cezar-orange);"></i> تحليلات المبيعات والأصناف الأكثر طلباً
+            </div>
+            <a href="/api/export/sales-csv" target="_blank" class="pin-btn" style="margin: 0; width: auto; padding: 8px 18px; background: #28a745; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-file-excel"></i> تصدير المبيعات إلى Excel (CSV)
+            </a>
+        </div>
+
+        <!-- Analytics Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px;">
+            <!-- Top Sellers Card -->
+            <div style="background: white; border-radius: 16px; padding: 18px; border: 1px solid var(--border-color); box-shadow: 0 3px 12px rgba(43, 24, 16, 0.05);">
+                <h4 style="font-size: 15px; font-weight: 900; margin-bottom: 14px; color: var(--primary-espresso);"><i class="fa-solid fa-trophy" style="color: var(--cezar-gold);"></i> الأصناف الأكثر مبيعاً (Top Best Sellers)</h4>
+                <div id="topSellersList" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Peak Hours Card -->
+            <div style="background: white; border-radius: 16px; padding: 18px; border: 1px solid var(--border-color); box-shadow: 0 3px 12px rgba(43, 24, 16, 0.05);">
+                <h4 style="font-size: 15px; font-weight: 900; margin-bottom: 14px; color: var(--primary-espresso);"><i class="fa-solid fa-fire" style="color: var(--cezar-orange);"></i> ساعات الذروة اليومية (Peak Hours)</h4>
+                <div id="peakHoursChart" style="display: flex; align-items: flex-end; gap: 6px; height: 180px; padding-top: 10px; border-bottom: 2px solid var(--border-color);">
+                    <!-- Rendered by JS bars -->
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #888; font-weight: 800; margin-top: 6px;">
+                    <span>8 ص</span>
+                    <span>12 ظهراً</span>
+                    <span>4 عصراً</span>
+                    <span>8 مساءً</span>
+                    <span>12 منتصف الليل</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales by Channel Grid -->
+        <div style="background: white; border-radius: 16px; padding: 18px; border: 1px solid var(--border-color); box-shadow: 0 3px 12px rgba(43, 24, 16, 0.05);">
+            <h4 style="font-size: 15px; font-weight: 900; margin-bottom: 14px; color: var(--primary-espresso);"><i class="fa-solid fa-pie-chart" style="color: #0284C7;"></i> توزيع المبيعات حسب القنوات</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; text-align: center;">
+                <div style="background: #FFF7ED; padding: 14px; border-radius: 12px; border: 1px solid #FFEDD5;">
+                    <div style="font-size: 12px; color: #C2410C; font-weight: 800;"><i class="fa-solid fa-chair"></i> مبيعات الصالة</div>
+                    <div style="font-size: 20px; font-weight: 900; color: #9A3412;" id="analyticsSalesHall">0 ج</div>
+                </div>
+                <div style="background: #FAF5FF; padding: 14px; border-radius: 12px; border: 1px solid #F3E8FF;">
+                    <div style="font-size: 12px; color: #7E22CE; font-weight: 800;"><i class="fa-solid fa-bag-shopping"></i> مبيعات التيك أواي</div>
+                    <div style="font-size: 20px; font-weight: 900; color: #6B21A8;" id="analyticsSalesTakeaway">0 ج</div>
+                </div>
+                <div style="background: #F0F9FF; padding: 14px; border-radius: 12px; border: 1px solid #E0F2FE;">
+                    <div style="font-size: 12px; color: #0369A1; font-weight: 800;"><i class="fa-solid fa-motorcycle"></i> مبيعات الدليفري</div>
+                    <div style="font-size: 20px; font-weight: 900; color: #075985;" id="analyticsSalesDelivery">0 ج</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==================================================== -->
+    <!-- TAB 9: Promo Codes & Discounts                       -->
+    <!-- ==================================================== -->
+    <main class="tab-content" id="tabPromos">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 15px; font-weight: 900; color: var(--primary-espresso);">
+                <i class="fa-solid fa-tags" style="color: var(--cezar-orange);"></i> أكواد الخصم والبروموكود النشطة
+            </div>
+            <button class="pin-btn" onclick="openAddPromoModal()" style="margin: 0; width: auto; padding: 8px 18px; background: var(--cezar-orange);">
+                <i class="fa-solid fa-plus"></i> إضافة كود خصم جديد
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>كود الخصم</th>
+                        <th>نوع الخصم</th>
+                        <th>القيمة</th>
+                        <th>الحد الأدنى للأوردر</th>
+                        <th>مرات الاستخدام</th>
+                        <th>الحالة</th>
+                        <th>إجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="promoCodesTableBody">
                     <!-- Rendered by JS -->
                 </tbody>
             </table>
@@ -1368,6 +1531,85 @@
         </div>
     </div>
 
+    <!-- 11. Add Inventory Modal -->
+    <div class="pin-modal-overlay" id="addInventoryModal" style="display: none;">
+        <div class="pin-card" style="max-width: 420px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 900;"><i class="fa-solid fa-boxes-stacked" style="color: var(--cezar-orange);"></i> إضافة مادة خام جديدة للمخزن</h3>
+                <button onclick="closeModal('addInventoryModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: 800;">اسم الخامة (مثال: بن برازيلي، حليب كامل الدسم):</label>
+                <input type="text" id="invItemName" placeholder="اسم الخامة" class="form-control">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">الوحدة:</label>
+                    <select id="invItemUnit" class="form-control">
+                        <option value="كجم">كجم (Kilogram)</option>
+                        <option value="لتر">لتر (Liter)</option>
+                        <option value="علبة">علبة / عبوة</option>
+                        <option value="قطعة">قطعة</option>
+                        <option value="سيرب">زجاجة سيرب</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">الرصيد المتاح حالياً:</label>
+                    <input type="number" step="0.1" id="invItemQuantity" value="10" class="form-control">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">حد التنبيه (Low Stock):</label>
+                    <input type="number" step="0.1" id="invItemMinQuantity" value="3" class="form-control">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">تكلفة الوحدة (ج):</label>
+                    <input type="number" step="0.5" id="invItemCost" value="0" class="form-control">
+                </div>
+            </div>
+            <button class="pin-btn" onclick="submitNewInventory()">حفظ في المخزن</button>
+        </div>
+    </div>
+
+    <!-- 12. Add Promo Code Modal -->
+    <div class="pin-modal-overlay" id="addPromoModal" style="display: none;">
+        <div class="pin-card" style="max-width: 420px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 900;"><i class="fa-solid fa-tags" style="color: var(--cezar-orange);"></i> إنشاء كود خصم جديد (بروموكود)</h3>
+                <button onclick="closeModal('addPromoModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: 800;">الكود بالإنجليزية (مثال: CEZAR20, COFFEE50):</label>
+                <input type="text" id="promoCodeInput" placeholder="CEZAR10" style="text-transform: uppercase;" class="form-control">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">نوع الخصم:</label>
+                    <select id="promoTypeInput" class="form-control">
+                        <option value="percentage">نسبة مئوية (%)</option>
+                        <option value="fixed">مبلغ ثابت (ج)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">قيمة الخصم:</label>
+                    <input type="number" step="1" id="promoValueInput" value="10" class="form-control">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">الحد الأدنى للأوردر (ج):</label>
+                    <input type="number" id="promoMinOrderInput" value="0" class="form-control">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">الحد الأقصى للاستخدام:</label>
+                    <input type="number" id="promoMaxUsesInput" value="100" class="form-control">
+                </div>
+            </div>
+            <button class="pin-btn" onclick="submitNewPromoCode()">تفعيل كود الخصم</button>
+        </div>
+    </div>
+
     <!-- ==================================================== -->
     <!-- JAVASCRIPT ENGINE                                    -->
     <!-- ==================================================== -->
@@ -1377,6 +1619,8 @@
         var activeFilter = 'all';
         var adminMenuItems = [];
         var posCartItems = [];
+        var posAppliedPromo = null;
+        var inventoryItems = [];
         var posCurrentType = 'صالة';
         var currentShiftData = null;
         var globalAudioCtx = null;
@@ -1551,6 +1795,9 @@
             if (tabName === 'shifts') fetchCurrentShift();
             if (tabName === 'reservations') { fetchReservations(); fetchWaitingList(); }
             if (tabName === 'menu') fetchAdminMenu();
+            if (tabName === 'inventory') fetchInventory();
+            if (tabName === 'analytics') fetchAnalytics();
+            if (tabName === 'promos') fetchPromoCodes();
         }
 
         function closeModal(id) {
@@ -1874,7 +2121,9 @@
                 payment_method: paymentMethod,
                 delivery_address: deliveryAddress,
                 delivery_fee: deliveryFee,
-                delivery_driver: deliveryDriver
+                delivery_driver: deliveryDriver,
+                promo_code: posAppliedPromo ? posAppliedPromo.code : null,
+                discount_amount: posAppliedPromo ? posAppliedPromo.discount_amount : 0.0
             };
 
             try {
@@ -1892,6 +2141,11 @@
                         alert('✅ تم حفظ الأوردر بنجاح!');
                     }
                     posCartItems = [];
+                    posAppliedPromo = null;
+                    const pInp = document.getElementById('posPromoCodeInput');
+                    if (pInp) pInp.value = '';
+                    const pRow = document.getElementById('posPromoAppliedRow');
+                    if (pRow) pRow.style.display = 'none';
                     renderPosCart();
                     fetchOrders();
                 } else {
@@ -2633,6 +2887,331 @@
         }
 
         // Start
+        
+        // ====================================================
+        // POS PROMO CODE LOGIC
+        // ====================================================
+        async function applyPosPromoCode() {
+            const code = (document.getElementById('posPromoCodeInput').value || '').trim();
+            if (!code) {
+                alert('يرجى كتابة كود الخصم أولاً');
+                return;
+            }
+            const subtotal = posCartItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+            if (subtotal <= 0) {
+                alert('يجب إضافة أصناف للسلة قبل تطبيق الخصم');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/promo-codes/validate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code, order_total: subtotal })
+                });
+                const data = await res.json();
+                if (data.status === 'valid') {
+                    posAppliedPromo = data;
+                    document.getElementById('posPromoAppliedRow').style.display = 'flex';
+                    document.getElementById('posPromoCodeAppliedName').textContent = data.code;
+                    document.getElementById('posPromoDiscountVal').textContent = `-${data.discount_amount} ج`;
+                    renderPosCart();
+                    alert(`✅ تم تطبيق خصم ${data.discount_amount} ج بنجاح!`);
+                } else {
+                    posAppliedPromo = null;
+                    document.getElementById('posPromoAppliedRow').style.display = 'none';
+                    renderPosCart();
+                    alert(data.message || 'كود الخصم غير صالح');
+                }
+            } catch(e) {
+                alert('تعذر التحقق من كود الخصم');
+            }
+        }
+
+        // ====================================================
+        // INVENTORY MANAGEMENT LOGIC
+        // ====================================================
+        async function fetchInventory() {
+            try {
+                const res = await fetch('/api/inventory');
+                const data = await res.json();
+                inventoryItems = data.items || [];
+
+                const tbody = document.getElementById('inventoryTableBody');
+                if (!tbody) return;
+                if (inventoryItems.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #888;">لا توجد مواد خام مسجلة حالياً</td></tr>';
+                } else {
+                    tbody.innerHTML = inventoryItems.map(item => {
+                        const isLow = item.is_low_stock;
+                        const statusBadge = isLow 
+                            ? '<span style="background: #FEE2E2; color: #DC2626; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-triangle-exclamation"></i> قارب على النفاد</span>'
+                            : '<span style="background: #DCFCE7; color: #16A34A; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-circle-check"></i> متوفر</span>';
+
+                        return `<tr>
+                            <td style="font-weight: 900; color: var(--primary-espresso);">${item.name}</td>
+                            <td>${item.unit}</td>
+                            <td style="font-size: 15px; font-weight: 900; color: ${isLow ? '#DC2626' : 'var(--primary-espresso)'};">${item.quantity}</td>
+                            <td style="color: #666; font-weight: 800;">${item.min_quantity}</td>
+                            <td>${item.cost_per_unit || 0} ج</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <div style="display: flex; gap: 4px;">
+                                    <button onclick="adjustInventoryStock(${item.id}, 1)" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; border-radius: 6px; padding: 2px 8px; font-weight: 900; cursor: pointer;">+1</button>
+                                    <button onclick="adjustInventoryStock(${item.id}, 5)" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; border-radius: 6px; padding: 2px 8px; font-weight: 900; cursor: pointer;">+5</button>
+                                    <button onclick="adjustInventoryStock(${item.id}, -1)" style="background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; border-radius: 6px; padding: 2px 8px; font-weight: 900; cursor: pointer;">-1</button>
+                                </div>
+                            </td>
+                            <td>
+                                <button onclick="deleteInventoryItem(${item.id})" style="border: none; background: #FFEBEE; color: #DC2626; padding: 6px 10px; border-radius: 8px; font-weight: 800; cursor: pointer;">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
+
+                const lowCount = data.low_stock_count || 0;
+                const badge = document.getElementById('lowStockBadge');
+                const banner = document.getElementById('inventoryAlertBanner');
+                const bannerText = document.getElementById('inventoryAlertText');
+
+                if (badge) {
+                    if (lowCount > 0) {
+                        badge.style.display = 'inline-block';
+                        badge.textContent = lowCount;
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+                if (banner && bannerText) {
+                    if (lowCount > 0) {
+                        banner.style.display = 'block';
+                        bannerText.textContent = `تنبيه: هناك ${lowCount} خامات وصلت للحد الحرج وقاربت على النفاد!`;
+                    } else {
+                        banner.style.display = 'none';
+                    }
+                }
+            } catch(e) {
+                console.error("Error fetching inventory", e);
+            }
+        }
+
+        async function adjustInventoryStock(id, delta) {
+            const item = inventoryItems.find(it => it.id === id);
+            if (!item) return;
+            const newQty = Math.max(0, (item.quantity || 0) + delta);
+            try {
+                await fetch(`/api/inventory/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantity: newQty })
+                });
+                fetchInventory();
+            } catch(e) {
+                alert('تعذر تعديل الرصيد');
+            }
+        }
+
+        async function deleteInventoryItem(id) {
+            if (!confirm('هل أنت متأكد من حذف هذه المادة الخام من المخزن؟')) return;
+            try {
+                await fetch(`/api/inventory/${id}`, { method: 'DELETE' });
+                fetchInventory();
+            } catch(e) {
+                alert('تعذر الحذف');
+            }
+        }
+
+        function openAddInventoryModal() {
+            document.getElementById('addInventoryModal').style.display = 'flex';
+        }
+
+        async function submitNewInventory() {
+            const name = document.getElementById('invItemName').value.trim();
+            const unit = document.getElementById('invItemUnit').value;
+            const qty = parseFloat(document.getElementById('invItemQuantity').value || 0);
+            const minQty = parseFloat(document.getElementById('invItemMinQuantity').value || 0);
+            const cost = parseFloat(document.getElementById('invItemCost').value || 0);
+
+            if (!name) {
+                alert('يرجى إدخال اسم الخامة');
+                return;
+            }
+
+            try {
+                await fetch('/api/inventory', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        unit: unit,
+                        quantity: qty,
+                        min_quantity: minQty,
+                        cost_per_unit: cost
+                    })
+                });
+                closeModal('addInventoryModal');
+                document.getElementById('invItemName').value = '';
+                fetchInventory();
+                alert('✅ تم إضافة المادة الخام بنجاح!');
+            } catch(e) {
+                alert('تعذر إضافة المادة الخام');
+            }
+        }
+
+        // ====================================================
+        // ANALYTICS & CHARTS LOGIC
+        // ====================================================
+        async function fetchAnalytics() {
+            try {
+                const res = await fetch('/api/analytics');
+                const data = await res.json();
+
+                // Top Sellers
+                const topContainer = document.getElementById('topSellersList');
+                const topSellers = data.top_sellers || [];
+                if (!topContainer) return;
+                if (topSellers.length === 0) {
+                    topContainer.innerHTML = '<div style="color: #888; text-align: center; font-size: 13px;">لا توجد مبيعات مسجلة حتى الآن</div>';
+                } else {
+                    const maxQty = Math.max(...topSellers.map(s => s.quantity), 1);
+                    topContainer.innerHTML = topSellers.map((item, idx) => {
+                        const pct = Math.round((item.quantity / maxQty) * 100);
+                        const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `#${idx+1}`));
+                        return `<div>
+                            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 4px;">
+                                <span>${medal} ${item.name}</span>
+                                <span style="color: var(--cezar-orange);">${item.quantity} طلب (${item.total_revenue} ج)</span>
+                            </div>
+                            <div style="background: #F0EDE8; border-radius: 8px; height: 10px; overflow: hidden;">
+                                <div style="background: linear-gradient(90deg, var(--cezar-orange), var(--cezar-gold)); width: ${pct}%; height: 100%; border-radius: 8px;"></div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+
+                // Peak Hours Bars
+                const peakContainer = document.getElementById('peakHoursChart');
+                const peakHours = data.peak_hours || [];
+                if (peakContainer) {
+                    const maxHourVal = Math.max(...peakHours.map(h => h.count), 1);
+                    peakContainer.innerHTML = peakHours.map(h => {
+                        const hPct = Math.max(5, Math.round((h.count / maxHourVal) * 100));
+                        const isPeak = h.count === maxHourVal && h.count > 0;
+                        return `<div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;" title="${h.hour}:00 - ${h.count} طلبات">
+                            <div style="font-size: 9px; font-weight: 800; color: ${isPeak ? 'var(--cezar-orange)' : '#888'}; margin-bottom: 2px;">${h.count > 0 ? h.count : ''}</div>
+                            <div style="width: 100%; max-width: 14px; background: ${isPeak ? 'var(--cezar-orange)' : '#0284C7'}; height: ${hPct}%; border-radius: 4px 4px 0 0; opacity: ${h.count > 0 ? '1' : '0.2'};"></div>
+                        </div>`;
+                    }).join('');
+                }
+
+                // Channel Sales
+                const byChannel = data.by_channel || {};
+                const sHall = document.getElementById('analyticsSalesHall');
+                const sTake = document.getElementById('analyticsSalesTakeaway');
+                const sDeliv = document.getElementById('analyticsSalesDelivery');
+                if (sHall) sHall.textContent = `${(byChannel['صالة'] || 0)} ج`;
+                if (sTake) sTake.textContent = `${(byChannel['تيك أواي'] || 0)} ج`;
+                if (sDeliv) sDeliv.textContent = `${(byChannel['دليفري'] || 0)} ج`;
+            } catch(e) {
+                console.error("Error fetching analytics", e);
+            }
+        }
+
+        // ====================================================
+        // PROMO CODES MANAGEMENT LOGIC
+        // ====================================================
+        async function fetchPromoCodes() {
+            try {
+                const res = await fetch('/api/promo-codes');
+                const data = await res.json();
+                const promos = data.promo_codes || [];
+                const tbody = document.getElementById('promoCodesTableBody');
+                if (!tbody) return;
+
+                if (promos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #888;">لا توجد أكواد خصم مضافة حالياً</td></tr>';
+                } else {
+                    tbody.innerHTML = promos.map(p => {
+                        const typeLbl = p.discount_type === 'percentage' ? `${p.discount_value}%` : `${p.discount_value} ج`;
+                        const statusBadge = p.is_active 
+                            ? '<span style="background: #DCFCE7; color: #16A34A; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;">نشط</span>'
+                            : '<span style="background: #FEE2E2; color: #DC2626; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;">معطل</span>';
+
+                        return `<tr>
+                            <td style="font-weight: 900; color: var(--cezar-orange); font-size: 14px; letter-spacing: 1px;">${p.code}</td>
+                            <td>${p.discount_type === 'percentage' ? 'نسبة مئوية' : 'مبلغ ثابت'}</td>
+                            <td style="font-weight: 900;">${typeLbl}</td>
+                            <td>${p.min_order_value || 0} ج</td>
+                            <td>${p.usage_count || 0} / ${p.max_uses || '∞'}</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <button onclick="deletePromoCode(${p.id})" style="border: none; background: #FFEBEE; color: #DC2626; padding: 6px 10px; border-radius: 8px; font-weight: 800; cursor: pointer;">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
+            } catch(e) {
+                console.error("Error fetching promos", e);
+            }
+        }
+
+        function openAddPromoModal() {
+            document.getElementById('addPromoModal').style.display = 'flex';
+        }
+
+        async function submitNewPromoCode() {
+            const code = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+            const type = document.getElementById('promoTypeInput').value;
+            const val = parseFloat(document.getElementById('promoValueInput').value || 0);
+            const minOrder = parseFloat(document.getElementById('promoMinOrderInput').value || 0);
+            const maxUses = parseInt(document.getElementById('promoMaxUsesInput').value || 100);
+
+            if (!code || val <= 0) {
+                alert('يرجى إدخال كود صحيح وقيمة خصم');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/promo-codes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: code,
+                        discount_type: type,
+                        discount_value: val,
+                        min_order_value: minOrder,
+                        max_uses: maxUses,
+                        is_active: true
+                    })
+                });
+                const d = await res.json();
+                if (res.ok && d.status === 'success') {
+                    closeModal('addPromoModal');
+                    document.getElementById('promoCodeInput').value = '';
+                    fetchPromoCodes();
+                    alert('✅ تم تفعيل كود الخصم بنجاح!');
+                } else {
+                    alert('خطأ: ' + (d.detail || 'الكود مكرر أو غير صالح'));
+                }
+            } catch(e) {
+                alert('تعذر إضافة كود الخصم');
+            }
+        }
+
+        async function deletePromoCode(id) {
+            if (!confirm('هل أنت متأكد من حذف كود الخصم هذا؟')) return;
+            try {
+                await fetch(`/api/promo-codes/${id}`, { method: 'DELETE' });
+                fetchPromoCodes();
+            } catch(e) {
+                alert('تعذر الحذف');
+            }
+        }
+
         checkManagerAuth();
     </script>
 </body>

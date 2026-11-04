@@ -7,7 +7,7 @@ except Exception:
     pass
 
 from sqlalchemy.orm import Session
-from .models import MenuItem
+from .models import MenuItem, InventoryItem, PromoCode
 
 CEZAR_MENU_DATA = [
     # 0. الكوفى (Hot Coffee)
@@ -50,156 +50,74 @@ CEZAR_MENU_DATA = [
     {"category": "مشروبات ساخنة", "name": "ابل سيدر", "price": 50, "description": "عصير تفاح ساخن مع أعواد القرفة والقرنفل"},
 
     # 1. أيس كوفي
-    {"category": "أيس كوفي", "name": "ايس لاتيه كلاسيك", "price": 75, "description": "إسبريسو غني مع حليب بارد ومكعبات ثلج"},
-    {"category": "أيس كوفي", "name": "ايس لاتيه فليفر", "price": 85, "description": "نكهتك المفضلة (كراميل / فانيليا / بندق)"},
-    {"category": "أيس كوفي", "name": "ايس كوفى كلاسيك", "price": 75, "description": "قهوة باردة منعشة على أصولها"},
-    {"category": "أيس كوفي", "name": "ايس كوفى فليفر", "price": 80, "description": "بنكهة (كراميل / فانيليا / بندق)"},
-    {"category": "أيس كوفي", "name": "ايس امريكان", "price": 70, "description": "إسبريسو دبل شوت مع مياه مثلجة"},
-    {"category": "أيس كوفي", "name": "ايس كراميل ميكاتو", "price": 80, "description": "طبقات الحليب البارد مع الإسبريسو وصوص الكراميل الفاخر"},
-    {"category": "أيس كوفي", "name": "موكا (دارك / وايت)", "price": 85, "description": "إسبريسو مع الشوكولاتة الداكنة أو البيضاء والحليب المثلج"},
-    {"category": "أيس كوفي", "name": "ايس فرابتشينو كلاسيك", "price": 90, "description": "مشروب القهوة المخفوق مع الثلج والكريمة"},
-    {"category": "أيس كوفي", "name": "ايس فرابتشينو فليفر", "price": 95, "description": "اختيارك من (كراميل / فانيليا / بندق / شوكليت)"},
-    {"category": "أيس كوفي", "name": "ايس اسبانش لاتيه", "price": 90, "description": "إسبريسو سيزر مع الحليب المكثف المحلى الفاخر"},
-    {"category": "أيس كوفي", "name": "ايس فرابيه", "price": 95, "description": "فرابيه مثلج كريمي بنكهة كراميل، فانيليا، بندق، أو شوكليت"},
+    {"category": "أيس كوفي", "name": "أيس لاتيه كلاسيك", "price": 65, "description": "إسبريسو مع حليب بارد وثلج"},
+    {"category": "أيس كوفي", "name": "أيس لاتيه فليفر", "price": 70, "description": "أيس لاتيه بنكهة فانيليا أو كراميل أو بندق"},
+    {"category": "أيس كوفي", "name": "سبانش لاتيه بارد", "price": 75, "description": "إسبريسو مع حليب مكثف محلى وحليب بارد"},
+    {"category": "أيس كوفي", "name": "أيس موكا شوكليت", "price": 70, "description": "إسبريسو مع صوص شوكولاتة وحليب وثلج"},
+    {"category": "أيس كوفي", "name": "أيس وايت موكا", "price": 75, "description": "إسبريسو مع صوص شوكولاتة بيضاء وحليب بارد"},
+    {"category": "أيس كوفي", "name": "أيس امريكانو", "price": 50, "description": "شوت إسبريسو مزدوج مع ماء مثلج ومنعش"},
 
     # 2. ميلك شيك
-    {"category": "ميلك شيك", "name": "ميلك شيك شوكليت", "price": 85, "description": "شوكولاتة بلجيكية غنية مع الآيس كريم والحليب"},
-    {"category": "ميلك شيك", "name": "ميلك شيك فانيليا", "price": 85, "description": "فانيليا طبيعية كريمية مع صوص الفانيليا"},
-    {"category": "ميلك شيك", "name": "ميلك شيك مانجو", "price": 85, "description": "مانجو طبيعي فريش مخفوق مع آيس كريم فانيليا"},
-    {"category": "ميلك شيك", "name": "ميلك شيك فراولة", "price": 85, "description": "فراولة طازجة مع الكريمة الغنية"},
-    {"category": "ميلك شيك", "name": "ميلك شيك كراميل", "price": 85, "description": "صوص الكراميل الذهبي مع آيس كريم الفانيليا"},
-    {"category": "ميلك شيك", "name": "ميلك شيك اوريو", "price": 95, "description": "بسكويت أوريو المطحون مع الآيس كريم وصوص الشوكولاتة"},
-    {"category": "ميلك شيك", "name": "ميلك شيك كيت كات", "price": 100, "description": "قطع كيت كات المقرمشة مع حليب وشوكولاتة"},
-    {"category": "ميلك شيك", "name": "ميلك شيك سنيكرز", "price": 100, "description": "شوكولاتة سنيكرز مع الفول السوداني وصوص الكراميل"},
-    {"category": "ميلك شيك", "name": "ميلك شيك هوهوز", "price": 95, "description": "كيكة هوهوز بالشوكولاتة والكريمة المخفوقة"},
-    {"category": "ميلك شيك", "name": "ميلك شيك مورو", "price": 100, "description": "مورو بار الفاخر مع الشوكولاتة الذائبة"},
-    {"category": "ميلك شيك", "name": "ميلك شيك كيوى", "price": 95, "description": "كيوي فريش منعش مع الآيس كريم"},
-    {"category": "ميلك شيك", "name": "ميلك شيك توت", "price": 95, "description": "توت أزرق وأحمر طبيعي مخفوق"},
-    {"category": "ميلك شيك", "name": "ميلك شيك خوخ", "price": 95, "description": "خوخ طبيعي ناعم مع لمسة كريمة"},
-    {"category": "ميلك شيك", "name": "ميلك شيك اناناس", "price": 95, "description": "أناناس استوائي منعش"},
-    {"category": "ميلك شيك", "name": "ميلك شيك بشون فروت", "price": 95, "description": "باشن فروت منعش وحيوي"},
-    {"category": "ميلك شيك", "name": "ميلك شيك نوتيلا", "price": 100, "description": "شوكولاتة نوتيلا أصلية وبندق محمص"},
-    {"category": "ميلك شيك", "name": "ميلك شيك لوتس", "price": 100, "description": "زبدة لوتس أصلية مع بسكويت لوتس مطحون"},
-    {"category": "ميلك شيك", "name": "ميلك شيك جوز هند", "price": 95, "description": "جوز هند استوائي ناعم ومميز"},
-    {"category": "ميلك شيك", "name": "ميلك شيك بينا كولادا", "price": 95, "description": "مزيج الأناناس مع حليب جوز الهند المنعش"},
+    {"category": "ميلك شيك", "name": "ميلك شيك فانيليا", "price": 65, "description": "أيس كريم فانيليا مع حليب وكريمة مخفوقة"},
+    {"category": "ميلك شيك", "name": "ميلك شيك شوكولاتة", "price": 65, "description": "أيس كريم شوكولاتة مع صوص فادج غني"},
+    {"category": "ميلك شيك", "name": "ميلك شيك فراولة", "price": 65, "description": "أيس كريم فراولة طبيعية مع صوص فراولة"},
+    {"category": "ميلك شيك", "name": "ميلك شيك أوريو", "price": 75, "description": "بسكويت أوريو مطحون مع أيس كريم وشوكولاتة"},
+    {"category": "ميلك شيك", "name": "ميلك شيك لوتس", "price": 80, "description": "بسكويت لوتس وزبدة لوتس أصلية مع الكريمة"},
+    {"category": "ميلك شيك", "name": "ميلك شيك كيت كات", "price": 80, "description": "أصابع كيت كات مع أيس كريم وكريمة"},
 
-    # 3. ميكسات فريش وعصائر
-    {"category": "ميكسات فريش", "name": "بينك", "price": 80, "description": "مانجو طبيعي مع بطيخ أحمر مثلج"},
-    {"category": "ميكسات فريش", "name": "مانجو مينت", "price": 80, "description": "مانجو طازج مع لمسة نعناع منعش"},
-    {"category": "ميكسات فريش", "name": "بطيخ مينت", "price": 80, "description": "بطيخ فريش مع نعناع بلدي بارد"},
-    {"category": "ميكسات فريش", "name": "فلوريدا", "price": 85, "description": "مانجو + فراولة + جوافة طبيعية"},
-    {"category": "ميكسات فريش", "name": "ميامى", "price": 85, "description": "مانجو + جوافة + عصير برتقال فريش"},
-    {"category": "ميكسات فريش", "name": "برادايس", "price": 85, "description": "مانجو + أناناس + خوخ ناعم"},
-    {"category": "ميكسات فريش", "name": "سندريلا", "price": 85, "description": "مانجو + توت بري + فراولة"},
-    {"category": "ميكسات فريش", "name": "ساسو", "price": 85, "description": "مانجو + موز بالحليب + أناناس"},
-    {"category": "ميكسات فريش", "name": "منعنع", "price": 85, "description": "ليمون فريش + برتقال + أوراق نعناع"},
-    {"category": "ميكسات فريش", "name": "باريس", "price": 85, "description": "موز بالحليب الفريش مع صوص شوكولاتة ناعم"},
-    {"category": "ميكسات فريش", "name": "فروت", "price": 85, "description": "مانجو + فراولة + موز بالحليب"},
-    {"category": "ميكسات فريش", "name": "مانجو كيوى", "price": 95, "description": "مانجو حلو مع كيوي لاذع ومنعش"},
-    {"category": "ميكسات فريش", "name": "كيوى برتقال", "price": 95, "description": "فيتامين سي طبيعي فريش 100%"},
-    {"category": "ميكسات فريش", "name": "بريف هارت", "price": 95, "description": "بلح طبيعي + موز + حليب جوز الهند"},
-    {"category": "ميكسات فريش", "name": "جلاكسى", "price": 100, "description": "مانجو + كيوي + أناناس استوائي"},
-    {"category": "ميكسات فريش", "name": "فول باور", "price": 110, "description": "أفوكادو طبيعي + موز + مانجو + مكسرات وعسل"},
-    {"category": "ميكسات فريش", "name": "ريد نايت", "price": 110, "description": "بلح أسواني + أفوكادو + موز + مكسرات فاخرة"},
-    {"category": "ميكسات فريش", "name": "دودينايت", "price": 110, "description": "أفوكادو غني + مانجو + بولة آيس كريم فانيليا"},
+    # 3. ميكسات فريش وموهيتو
+    {"category": "ميكسات فريش", "name": "موهيتو كلاسيك نعناع", "price": 55, "description": "سفن أب مع ليمون ونعناع فريش وثلج مجروش"},
+    {"category": "ميكسات فريش", "name": "موهيتو بلوبيري (توت أزرق)", "price": 60, "description": "موهيتو منعش مع سيرب توت أزرق"},
+    {"category": "ميكسات فريش", "name": "موهيتو فراولة", "price": 60, "description": "موهيتو مع قطع فراولة وسيرب فراولة مركز"},
+    {"category": "ميكسات فريش", "name": "موهيتو بطيخ", "price": 60, "description": "موهيتو بنكهة البطيخ المنعشة للصيف"},
+    {"category": "ميكسات فريش", "name": "ريد بول بطيخ / توت", "price": 75, "description": "مشروب الطاقة ريد بول مع نكهتك المفضلة وثلج"},
+    {"category": "ميكسات فريش", "name": "سموذي مانجو فريش", "price": 60, "description": "مانجو طبيعية مثلجة وسميكة"},
+    {"category": "ميكسات فريش", "name": "سموذي فراولة فريش", "price": 60, "description": "فراولة بيوريه مثلجة ومنعشة"},
+    {"category": "ميكسات فريش", "name": "عصير برتقال فريش", "price": 45, "description": "برتقال طبيعي 100% معصور فريش"},
+    {"category": "ميكسات فريش", "name": "ليمون نعناع فريش", "price": 40, "description": "عصير ليمون ونعناع مثلج ومنعش"},
 
-    # 4. كوكتيل صودا وموهيتو
-    {"category": "كوكتيل صودا", "name": "صن شاين", "price": 65, "description": "سفن أب مع نكهات البرتقال والرمان والثلج"},
-    {"category": "كوكتيل صودا", "name": "شيرى كولا", "price": 65, "description": "كولا منعشة مع سيرب الكريز الكلاسيكي"},
-    {"category": "كوكتيل صودا", "name": "موهيتو كلاسيك", "price": 65, "description": "ليمون وشرائح نعناع طازجة مع الصودا المثلجة"},
-    {"category": "كوكتيل صودا", "name": "موهيتو فليفر", "price": 75, "description": "ليمون ونعناع مع اختيارك من (توت / أناناس / خوخ)"},
-    {"category": "كوكتيل صودا", "name": "موهيتو بلو", "price": 75, "description": "سيرب البلو كوراساو الأزرق مع ليمون ونعناع وصودا"},
-    {"category": "كوكتيل صودا", "name": "موهيتو ريد بول كلاسيك", "price": 100, "description": "موهيتو طاقة مع كانز ريد بول وليمون ونعناع"},
-    {"category": "كوكتيل صودا", "name": "موهيتو ريد بول فليفر", "price": 110, "description": "ريد بول مع نكهات (توت / خوخ / جوز هند / أناناس)"},
+    # 4. الحلويات والوافلز
+    {"category": "وافلز", "name": "وافل نوتيلا كلاسيك", "price": 75, "description": "وافل بلجيكي مقرمش غرقان نوتيلا أصلية"},
+    {"category": "وافلز", "name": "وافل لوتس بلجيكي", "price": 85, "description": "وافل بزبدة وبسكويت لوتس مقرمش"},
+    {"category": "وافلز", "name": "وافل ميكس شوكليت (أبيض وبني)", "price": 85, "description": "وافل بنوتيلا وشوكولاتة بلجيكية بيضاء"},
+    {"category": "وافلز", "name": "وافل فواكه نوتيلا", "price": 95, "description": "وافل نوتيلا مع قطع موز وفراولة طازجة"},
+    {"category": "وافلز", "name": "كريب نوتيلا بالموز", "price": 80, "description": "كريب فرنسي طري محشو نوتيلا وموز ومكسرات"},
+    {"category": "وافلز", "name": "بان كيك ميني شوكولاتة", "price": 70, "description": "قطع ميني بان كيك هشة مع صوص شوكولاتة"},
+    {"category": "وافلز", "name": "أم علي بالمكسرات والقشطة", "price": 65, "description": "أم علي ساخنة باللبن والقشطة الفلاحي والمكسرات"},
+    {"category": "وافلز", "name": "مولتن كيك فادج", "price": 85, "description": "كيك شوكولاتة ساخن محشو لافا ذائبة مع بولة أيس كريم"},
+    {"category": "وافلز", "name": "تشيز كيك بلوبيري", "price": 75, "description": "تشيز كيك كريمي مع صوص التوت الأزرق الفاخر"},
 
-    # 5. وافلز
-    {"category": "وافلز", "name": "وافل نوتيلا", "price": 75, "description": "عجينة وافل بلجيكية مقرمشة مغطاة بالنوتيلا الذائبة"},
-    {"category": "وافلز", "name": "وافل كراميل", "price": 75, "description": "وافل ساخن مع صوص كراميل ذهبي"},
-    {"category": "وافلز", "name": "وافل لوتس", "price": 80, "description": "وافل مع زبدة لوتس وبسكويت لوتس كرانشي"},
-    {"category": "وافلز", "name": "وافل وايت شوكليت", "price": 80, "description": "شوكولاتة بلجيكية بيضاء ناعمة ولذيذة"},
-    {"category": "وافلز", "name": "وافل بنانا كراميل", "price": 85, "description": "شرائح موز طازج مع صوص الكراميل ورشة قرفة"},
-    {"category": "وافلز", "name": "وافل بستاشيو", "price": 90, "description": "صوص الفستق الإيطالي (بيستاشيو) مع فستق مجروش"},
-    {"category": "وافلز", "name": "وافل نوتيلا فواكه", "price": 90, "description": "نوتيلا غنية مع قطع موز وفراولة وكيوي"},
-    {"category": "وافلز", "name": "وافل اوريو نوتيلا", "price": 90, "description": "مزيج نوتيلا مع بسكويت أوريو مقرمش"},
-    {"category": "وافلز", "name": "وافل ايس", "price": 90, "description": "وافل ساخن مقرمش مع بولة آيس كريم فانيليا وصوص"},
-    {"category": "وافلز", "name": "فته وافلز", "price": 110, "description": "قطع وافل + هوهوز + توينكيز + أوريو + 4 صوصات فاخرة"},
-    {"category": "وافلز", "name": "وافلز القيصر", "price": 110, "description": "الوافل الخاص بسيزر: ميكس لوتس، نوتيلا، بستاشيو، ومكسرات"},
-
-    # 6. بان كيك
-    {"category": "بان كيك", "name": "بان كيك نوتيلا (6 قطع)", "price": 30, "description": "ميني بان كيك هش ولذيذ مع صوص نوتيلا"},
-    {"category": "بان كيك", "name": "بان كيك نوتيلا (12 قطعة)", "price": 50, "description": "12 قطعة ميني بان كيك ساخن مع نوتيلا وفيرة"},
-    {"category": "بان كيك", "name": "بان كيك نوتيلا (24 قطعة)", "price": 80, "description": "بوكس عائلي 24 قطعة ميني بان كيك غرقان نوتيلا"},
-    {"category": "بان كيك", "name": "بان كيك لوتس (6 قطع)", "price": 30, "description": "مع زبدة لوتس البلجيكية الأصلية"},
-    {"category": "بان كيك", "name": "بان كيك لوتس (12 قطعة)", "price": 50, "description": "12 قطعة مع زبدة لوتس وبسكويت مطحون"},
-    {"category": "بان كيك", "name": "بان كيك لوتس (24 قطعة)", "price": 80, "description": "بوكس 24 قطعة لعشاق زبدة اللوتس"},
-    {"category": "بان كيك", "name": "بان كيك وايت شوكليت (6 قطع)", "price": 30, "description": "مع صوص الشوكولاتة البيضاء الناعمة"},
-    {"category": "بان كيك", "name": "بان كيك وايت شوكليت (12 قطعة)", "price": 50, "description": "12 قطعة مع وايت شوكليت"},
-    {"category": "بان كيك", "name": "بان كيك وايت شوكليت (24 قطعة)", "price": 80, "description": "24 قطعة وايت شوكليت"},
-    {"category": "بان كيك", "name": "بان كيك كراميل (6 قطع)", "price": 30, "description": "مع صوص الكراميل التوفي الذهبي"},
-    {"category": "بان كيك", "name": "بان كيك كراميل (12 قطعة)", "price": 50, "description": "12 قطعة مع صوص كراميل"},
-    {"category": "بان كيك", "name": "بان كيك كراميل (24 قطعة)", "price": 80, "description": "24 قطعة صوص كراميل"},
-    {"category": "بان كيك", "name": "بان كيك بستاشيو (6 قطع)", "price": 35, "description": "مع صوص الفستق الحلبي المقرمش"},
-    {"category": "بان كيك", "name": "بان كيك بستاشيو (12 قطعة)", "price": 60, "description": "12 قطعة بصوص الفستق"},
-    {"category": "بان كيك", "name": "بان كيك بستاشيو (24 قطعة)", "price": 90, "description": "24 قطعة بصوص الفستق الفاخر"},
-    {"category": "بان كيك", "name": "بان كيك عسل وقرفة (6 قطع)", "price": 35, "description": "عسل نحل طبيعي مع رشة قرفة ناعمة"},
-    {"category": "بان كيك", "name": "بان كيك عسل وقرفة (12 قطعة)", "price": 60, "description": "12 قطعة عسل نحل وقرفة"},
-    {"category": "بان كيك", "name": "بان كيك عسل وقرفة (24 قطعة)", "price": 90, "description": "24 قطعة عسل نحل وقرفة"},
-    {"category": "بان كيك", "name": "بان كيك ميكس صوصات (6 قطع)", "price": 35, "description": "اختيارك من ميكس الصوصات المفضلة"},
-    {"category": "بان كيك", "name": "بان كيك ميكس صوصات (12 قطعة)", "price": 60, "description": "12 قطعة بميكس صوصات نوتيلا ولوتس ووايت"},
-    {"category": "بان كيك", "name": "بان كيك ميكس صوصات (24 قطعة)", "price": 90, "description": "بوكس الميكس الملكي 24 قطعة بجميع الصوصات"},
-
-    # 7. طواجن أم علي
-    {"category": "أم على", "name": "أم على كلاسيك", "price": 60, "description": "طاجن رقاق فاخر بالحليب الساخن والقشطة البلدية"},
-    {"category": "أم على", "name": "أم على مكسرات", "price": 75, "description": "أم علي غنية بالبندق واللوز والزبيب وجوز الهند"},
-    {"category": "أم على", "name": "أم على عسل", "price": 75, "description": "أم علي محلاة بعسل النحل الطبيعي والقشطة"},
-    {"category": "أم على", "name": "أم على نوتيلا", "price": 75, "description": "طاجن أم علي مع طبقة نوتيلا شوكولاتة ذائبة"},
-    {"category": "أم على", "name": "أم على لوتس", "price": 80, "description": "أم علي مع زبدة لوتس وبسكويت كرانشي"},
-    {"category": "أم على", "name": "أم على فواكه", "price": 90, "description": "أم علي بالقشطة مع قطع موز وفراولة فريش"},
-    {"category": "أم على", "name": "أم على ميكس صوص", "price": 90, "description": "ميكس نوتيلا ووايت شوكليت وصوص كراميل"},
-    {"category": "أم على", "name": "أم على القيصر", "price": 100, "description": "طاجن سيزر الملكي: قشطة، مكسرات، نوتيلا، ولوتس"},
-
-    # 8. أيس كريم
-    {"category": "أيس كريم", "name": "هاواى", "price": 80, "description": "2 بولة مانجو + بولة فانيليا + صوص فراولة فريش"},
-    {"category": "أيس كريم", "name": "اسبشيال فانيليا", "price": 85, "description": "3 بولات آيس كريم فانيليا مع صوص كراميل دافئ"},
-    {"category": "أيس كريم", "name": "بنانا اسبليت", "price": 85, "description": "3 بولات آيس كريم على سرير من الموز مع شوكولاتة وكريمة"},
-    {"category": "أيس كريم", "name": "بنانا بوت", "price": 85, "description": "3 بولات من اختيارك مع موز ومكسرات مقرمشة"},
-    {"category": "أيس كريم", "name": "بيرى شوكليت", "price": 90, "description": "3 بولات شوكولاتة مع قطع فواكه فريش وصوص بيري"},
-    {"category": "أيس كريم", "name": "بيتش بوى", "price": 100, "description": "3 بولات فانيليا + مكسرات محمصة + قطع سنيكرز"},
-    {"category": "أيس كريم", "name": "اضافة بولة أيس كريم", "price": 25, "description": "بولة إضافية من أي نكهة حسب اختيارك"},
-
-    # 9. فروت سلات
-    {"category": "فروت سلات", "name": "فروت سلات", "price": 80, "description": "تشكيلة فواكه الموسم الطازجة مع عصير طبيعي"},
-    {"category": "فروت سلات", "name": "فروت سلات ايس كريم", "price": 90, "description": "سلطة فواكه مع بولة آيس كريم فانيليا غنية"},
-    {"category": "فروت سلات", "name": "فروت سلات جامبو", "price": 100, "description": "طبق حجم عائلي غني بجميع أنواع الفواكه والمكسرات"},
-    {"category": "فروت سلات", "name": "فروت سلات القنبلة", "price": 120, "description": "قنبلة سيزر: سلطة فواكه + كريم شانتيه + قطع بسبوسة وقشطة"},
-
-    # 10. مشروبات غازية ومياه
-    {"category": "مشروبات غازية", "name": "مياة صغيرة", "price": 15, "description": "زجاجة مياه معدنية نقية"},
-    {"category": "مشروبات غازية", "name": "كانز (كولا / بيبسى / فانتا)", "price": 30, "description": "كانز مثلج منعش"},
-    {"category": "مشروبات غازية", "name": "بيريل", "price": 35, "description": "مشروب شعير طبيعي مثلج"},
-    {"category": "مشروبات غازية", "name": "فيورى", "price": 35, "description": "مشروب طاقة منعش بنكهات الفواكه"},
-    {"category": "مشروبات غازية", "name": "تويست", "price": 35, "description": "مشروب منعش بنكهات الليمون والفواكه"},
-    {"category": "مشروبات غازية", "name": "فيروز", "price": 35, "description": "مشروب شعير بالفاكهة (تفاح / أناناس)"},
-    {"category": "مشروبات غازية", "name": "ديو", "price": 35, "description": "ماونتن ديو الأصلي المنعش"},
-    {"category": "مشروبات غازية", "name": "شويبس (رمان / اناناس)", "price": 35, "description": "شويبس جولد بنكهات منعشة"},
-    {"category": "مشروبات غازية", "name": "ريد بول", "price": 80, "description": "مشروب الطاقة العالمي الأصلي"},
-
-    # 11. شيشة
-    {"category": "شيشة", "name": "شيشة قص حجرين", "price": 25, "description": "شيشة معسل سلوم / قص حجرين على أصولها"},
-    {"category": "شيشة", "name": "حجر قص إضافي", "price": 12, "description": "تغيير حجر معسل قص إضافي"},
+    # 5. شيشة
+    {"category": "شيشة", "name": "شيشة سلوم", "price": 40, "description": "شيشة سلوم مصرية على أصولها"},
+    {"category": "شيشة", "name": "شيشة قص", "price": 45, "description": "معسل قص أصلي ومظبوط"},
     {"category": "شيشة", "name": "شيشة فاخر", "price": 70, "description": "معسل فاخر بنكهات التفاحتين، عنب، خوخ، بطيخ"},
-    {"category": "شيشة", "name": "شيشة فاخر ميكس", "price": 85, "description": "ميكس نكهات فاخرة حسب اختيارك"},
-    {"category": "شيشة", "name": "إضافة ميكس", "price": 10, "description": "إضافة نكهة إضافية للحجر"},
-    {"category": "شيشة", "name": "إضافة فليفر / ايس", "price": 10, "description": "إضافة تبريد ثلجي (Ice Tip) أو نكهة فليفر"},
-    {"category": "شيشة", "name": "لى طبي", "price": 10, "description": "خرطوم لي طبي صحي استخدام مرة واحدة"}
+    {"category": "شيشة", "name": "شيشة فاخر ميكس", "price": 85, "description": "ميكس نكهات فاخرة حسب اختيارك"}
+]
+
+DEFAULT_INVENTORY = [
+    {"name": "بن إسبريسو كولومبي فاخر", "unit": "كجم", "current_stock": 18.5, "min_alert_stock": 5.0, "cost_per_unit": 450.0},
+    {"name": "بن تركي سيزر خصوصي", "unit": "كجم", "current_stock": 12.0, "min_alert_stock": 4.0, "cost_per_unit": 380.0},
+    {"name": "حليب كامل الدسم مبخر", "unit": "لتر", "current_stock": 42.0, "min_alert_stock": 10.0, "cost_per_unit": 38.0},
+    {"name": "سكر أبيض ناعم", "unit": "كجم", "current_stock": 25.0, "min_alert_stock": 8.0, "cost_per_unit": 35.0},
+    {"name": "شوكولاتة نوتيلا أصلية", "unit": "علبة", "current_stock": 6.0, "min_alert_stock": 2.0, "cost_per_unit": 280.0},
+    {"name": "زبدة وبسكويت لوتس", "unit": "علبة", "current_stock": 4.0, "min_alert_stock": 2.0, "cost_per_unit": 220.0},
+    {"name": "سيرب فانيليا وبندق وكراميل", "unit": "زجاجة", "current_stock": 8.0, "min_alert_stock": 3.0, "cost_per_unit": 180.0},
+    {"name": "أكواب تيك أواي 12oz بغطاء", "unit": "كرتونة", "current_stock": 5.0, "min_alert_stock": 2.0, "cost_per_unit": 350.0},
+    {"name": "مناديل وشاليموه كافيه", "unit": "باكت", "current_stock": 15.0, "min_alert_stock": 4.0, "cost_per_unit": 90.0},
+    {"name": "علب مشروب الطاقة ريد بول", "unit": "علبة", "current_stock": 24.0, "min_alert_stock": 6.0, "cost_per_unit": 45.0},
+]
+
+DEFAULT_PROMO_CODES = [
+    {"code": "CEZAR10", "discount_type": "percentage", "discount_value": 10.0, "min_order_value": 50.0},
+    {"code": "WELCOME", "discount_type": "percentage", "discount_value": 15.0, "min_order_value": 70.0},
+    {"code": "VIP", "discount_type": "percentage", "discount_value": 20.0, "min_order_value": 100.0},
+    {"code": "COFFEE20", "discount_type": "fixed", "discount_value": 20.0, "min_order_value": 80.0},
 ]
 
 
 def seed_menu(db: Session):
-    """تحميل قائمة أصناف كافيه سيزر الـ 122 صنف إذا كانت قاعدة البيانات فارغة."""
     count = db.query(MenuItem).count()
     if count == 0:
-        print(f"🌱 [ceZar Coffee]: جاري تحميل المنيو الأولي ({len(CEZAR_MENU_DATA)} صنف)...", flush=True)
         for item in CEZAR_MENU_DATA:
             db_item = MenuItem(
                 category=item["category"],
@@ -210,6 +128,27 @@ def seed_menu(db: Session):
             )
             db.add(db_item)
         db.commit()
-        print(f"✅ [ceZar Coffee]: تم تحميل {len(CEZAR_MENU_DATA)} صنف بنجاح في قاعدة البيانات!", flush=True)
-    else:
-        print(f"ℹ️ [ceZar Coffee]: المنيو محمل مسبقاً ({count} صنف موجود).", flush=True)
+
+    # Seed Inventory
+    if db.query(InventoryItem).count() == 0:
+        for inv in DEFAULT_INVENTORY:
+            db.add(InventoryItem(
+                name=inv["name"],
+                unit=inv["unit"],
+                current_stock=inv["current_stock"],
+                min_alert_stock=inv["min_alert_stock"],
+                cost_per_unit=inv["cost_per_unit"]
+            ))
+        db.commit()
+
+    # Seed Promo Codes
+    if db.query(PromoCode).count() == 0:
+        for p in DEFAULT_PROMO_CODES:
+            db.add(PromoCode(
+                code=p["code"],
+                discount_type=p["discount_type"],
+                discount_value=p["discount_value"],
+                min_order_value=p["min_order_value"],
+                is_active=True
+            ))
+        db.commit()

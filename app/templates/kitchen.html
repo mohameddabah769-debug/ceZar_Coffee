@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ceZar COFFEE | شاشة البار والمطبخ (KDS)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-kds: #120D0A;
+            --card-kds: #1E1713;
+            --border-kds: #362922;
+            --cezar-orange: #E85D04;
+            --cezar-gold: #D4A373;
+            --text-light: #F4F1EA;
+            --urgent-red: #E63946;
+            --prep-yellow: #FFB703;
+            --ready-green: #2A9D8F;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-kds);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top KDS Bar */
+        .kds-header {
+            background: #1A120E;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-kds);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .kds-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .kds-brand img {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px solid var(--cezar-gold);
+        }
+
+        .kds-brand h1 {
+            font-size: 20px;
+            font-weight: 900;
+            color: white;
+            line-height: 1.1;
+        }
+
+        .kds-brand h1 span {
+            color: var(--cezar-orange);
+        }
+
+        .kds-brand p {
+            font-size: 11px;
+            color: var(--cezar-gold);
+            font-weight: 700;
+        }
+
+        .kds-stats {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .stat-pill {
+            background: var(--card-kds);
+            border: 1px solid var(--border-kds);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Filter Tabs */
+        .filter-bar {
+            padding: 10px 20px;
+            background: #160F0C;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-kds);
+            overflow-x: auto;
+        }
+
+        .filter-btn {
+            background: transparent;
+            color: #A89B91;
+            border: 1.5px solid var(--border-kds);
+            padding: 6px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .filter-btn.active {
+            background: var(--cezar-orange);
+            color: white;
+            border-color: var(--cezar-orange);
+        }
+
+        /* Orders Grid */
+        .kds-grid {
+            flex: 1;
+            padding: 18px 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            align-content: start;
+        }
+
+        .ticket-card {
+            background: var(--card-kds);
+            border: 2px solid var(--border-kds);
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.15s, border-color 0.15s;
+        }
+
+        .ticket-card.new {
+            border-color: var(--urgent-red);
+            animation: pulseTicket 1.5s infinite;
+        }
+
+        @keyframes pulseTicket {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(230, 57, 70, 0); }
+        }
+
+        .ticket-card.in-prep {
+            border-color: var(--prep-yellow);
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed var(--border-kds);
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .ticket-channel {
+            font-size: 17px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ticket-time {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 10px;
+            background: #2B1D16;
+            color: var(--cezar-gold);
+        }
+
+        .ticket-time.late {
+            background: var(--urgent-red);
+            color: white;
+        }
+
+        .ticket-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .ticket-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            background: #17110E;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid #2B1F18;
+        }
+
+        .item-title {
+            font-size: 15px;
+            font-weight: 900;
+            color: white;
+            line-height: 1.3;
+        }
+
+        .item-notes {
+            font-size: 11px;
+            color: #FFB703;
+            font-weight: 800;
+            margin-top: 3px;
+        }
+
+        .item-qty {
+            background: var(--cezar-orange);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .ticket-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            border-top: 1px dashed var(--border-kds);
+            padding-top: 12px;
+        }
+
+        .btn-kds {
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: transform 0.1s;
+        }
+
+        .btn-kds:active {
+            transform: scale(0.96);
+        }
+
+        .btn-prep {
+            background: #2D2006;
+            color: var(--prep-yellow);
+            border: 1.5px solid var(--prep-yellow);
+        }
+
+        .btn-ready {
+            background: var(--ready-green);
+            color: white;
+            grid-column: span 1;
+        }
+
+        .btn-ready.full {
+            grid-column: 1 / -1;
+        }
+
+        /* Sound Alert Button */
+        .sound-toggle-btn {
+            background: rgba(232, 93, 4, 0.2);
+            color: var(--cezar-orange);
+            border: 1px solid var(--cezar-orange);
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sound Audio Tags -->
+    <audio id="kdsChime" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+    <audio id="kdsBell" src="https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3" preload="auto"></audio>
+
+    <!-- Header -->
+    <header class="kds-header">
+        <div class="kds-brand">
+            <img src="/static/images/cezar_logo.jpg" alt="ceZar Logo" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=100'">
+            <div>
+                <h1>ce<span>Z</span>ar COFFEE</h1>
+                <p>شاشة البار والمطبخ الحية (Barista Display)</p>
+            </div>
+        </div>
+
+        <div class="kds-stats">
+            <button class="sound-toggle-btn" id="soundToggle" onclick="toggleSound()">
+                <i class="fa-solid fa-volume-high"></i> الصوت مفعّل
+            </button>
+            <div class="stat-pill" style="color: #FFB703;">
+                <i class="fa-solid fa-mug-hot"></i>
+                <span>قيد التحضير: <strong id="kdsPrepCount">0</strong></span>
+            </div>
+            <div class="stat-pill" style="color: #E63946;">
+                <i class="fa-solid fa-bell"></i>
+                <span>جديد: <strong id="kdsNewCount">0</strong></span>
+            </div>
+            <div class="stat-pill" style="color: #A89B91;">
+                <i class="fa-solid fa-clock"></i>
+                <span id="kdsClock">00:00</span>
+            </div>
+            <a href="/admin" style="background: rgba(255,255,255,0.1); color: white; padding: 6px 12px; border-radius: 10px; text-decoration: none; font-size: 12px; font-weight: 800;">
+                <i class="fa-solid fa-sliders"></i> لوحة التحكم
+            </a>
+        </div>
+    </header>
+
+    <!-- Filter Bar -->
+    <nav class="filter-bar">
+        <button class="filter-btn active" onclick="setKdsFilter('all', this)">الكل (<span id="countAll">0</span>)</button>
+        <button class="filter-btn" onclick="setKdsFilter('hall', this)">صالة ترابيزات (<span id="countHall">0</span>)</button>
+        <button class="filter-btn" onclick="setKdsFilter('takeaway', this)">تيك أواي سفري (<span id="countTakeaway">0</span>)</button>
+        <button class="filter-btn" onclick="setKdsFilter('delivery', this)">دليفري (<span id="countDelivery">0</span>)</button>
+    </nav>
+
+    <!-- Grid of Tickets -->
+    <main class="kds-grid" id="kdsGrid">
+        <!-- Rendered by JS -->
+    </main>
+
+    <script>
+        var kdsOrders = [];
+        var activeFilter = 'all';
+        var soundEnabled = true;
+        var knownTicketIds = new Set();
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('kdsClock').textContent = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundToggle');
+            if (soundEnabled) {
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> الصوت مفعّل';
+                btn.style.color = 'var(--cezar-orange)';
+                const audio = document.getElementById('kdsChime');
+                if (audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> الصوت مكتوم';
+                btn.style.color = '#888';
+            }
+        }
+
+        async function fetchKdsOrders() {
+            try {
+                const res = await fetch('/api/orders');
+                const data = await res.json();
+                
+                // We only show orders needing preparation (status = جديد, جاري التحضير, قيد التحضير)
+                const pending = (data.orders || []).filter(o => 
+                    o.status === 'جديد' || 
+                    o.status === 'جاري التحضير' || 
+                    o.status === 'قيد التحضير'
+                );
+
+                // Sound trigger on new tickets
+                let hasNew = false;
+                pending.forEach(p => {
+                    if (!knownTicketIds.has(p.id)) {
+                        knownTicketIds.add(p.id);
+                        hasNew = true;
+                    }
+                });
+
+                if (hasNew && soundEnabled) {
+                    const audio = document.getElementById('kdsChime');
+                    if (audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
+                }
+
+                kdsOrders = pending;
+                renderKdsGrid();
+            } catch(e) {}
+        }
+
+        function setKdsFilter(filter, btnEl) {
+            activeFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            renderKdsGrid();
+        }
+
+        function renderKdsGrid() {
+            const grid = document.getElementById('kdsGrid');
+            grid.innerHTML = '';
+
+            let list = kdsOrders;
+            if (activeFilter === 'hall') list = list.filter(o => o.order_type === 'صالة');
+            else if (activeFilter === 'takeaway') list = list.filter(o => o.order_type === 'تيك أواي');
+            else if (activeFilter === 'delivery') list = list.filter(o => o.order_type === 'دليفري');
+
+            // Counts
+            document.getElementById('countAll').textContent = kdsOrders.length;
+            document.getElementById('countHall').textContent = kdsOrders.filter(o => o.order_type === 'صالة').length;
+            document.getElementById('countTakeaway').textContent = kdsOrders.filter(o => o.order_type === 'تيك أواي').length;
+            document.getElementById('countDelivery').textContent = kdsOrders.filter(o => o.order_type === 'دليفري').length;
+
+            const newCount = kdsOrders.filter(o => o.status === 'جديد').length;
+            const prepCount = kdsOrders.filter(o => o.status === 'جاري التحضير' || o.status === 'قيد التحضير').length;
+            document.getElementById('kdsNewCount').textContent = newCount;
+            document.getElementById('kdsPrepCount').textContent = prepCount;
+
+            if (list.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #665; font-size: 16px; font-weight: 800;">
+                        <i class="fa-solid fa-mug-saucer" style="font-size: 48px; color: var(--cezar-gold); margin-bottom: 14px;"></i><br>
+                        البار هادئ! لا توجد طلبات معلقة قيد التحضير حالياً ☕✨
+                    </div>
+                `;
+                return;
+            }
+
+            list.forEach(order => {
+                const card = document.createElement('div');
+                const isNew = (order.status === 'جديد');
+                card.className = `ticket-card ${isNew ? 'new' : 'in-prep'}`;
+
+                let channelTitle = `<i class="fa-solid fa-chair" style="color: var(--cezar-orange);"></i> ترابيزة ${order.table_number}`;
+                if (order.order_type === 'تيك أواي') {
+                    channelTitle = `<i class="fa-solid fa-bag-shopping" style="color: #A855F7;"></i> سفري (${order.customer_name})`;
+                } else if (order.order_type === 'دليفري') {
+                    channelTitle = `<i class="fa-solid fa-motorcycle" style="color: #38BDF8;"></i> دليفري (${order.customer_name})`;
+                }
+
+                // Parse items lines
+                const lines = (order.items_summary || '').split('\n').filter(l => l.trim());
+                let itemsHtml = '';
+                lines.forEach(line => {
+                    let mainTitle = line;
+                    let customTag = '';
+                    if (line.includes('[') && line.includes(']')) {
+                        const sIdx = line.indexOf('[');
+                        const eIdx = line.indexOf(']');
+                        mainTitle = line.substring(0, sIdx).trim();
+                        const customVal = line.substring(sIdx + 1, eIdx);
+                        customTag = `<div style="color: var(--cezar-gold); font-size: 13px; font-weight: 800; margin-top: 4px; display: flex; align-items: center; gap: 5px;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span>${customVal}</span>
+                        </div>`;
+                    }
+                    itemsHtml += `
+                        <div class="ticket-item">
+                            <div>
+                                <div class="item-title">${mainTitle}</div>
+                                ${customTag}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div>
+                        <div class="ticket-header">
+                            <div class="ticket-channel">${channelTitle}</div>
+                            <div class="ticket-time">#${order.id} • ${order.created_at}</div>
+                        </div>
+
+                        <div class="ticket-items">
+                            ${itemsHtml}
+                        </div>
+
+                        ${order.notes ? `<div style="background: rgba(232, 93, 4, 0.15); border: 1px solid var(--cezar-orange); padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; color: #FFAA5A; margin-bottom: 12px;">📝 ملاحظة: ${order.notes}</div>` : ''}
+                    </div>
+
+                    <div class="ticket-actions">
+                        ${isNew ? `
+                            <button class="btn-kds btn-prep" onclick="setOrderStatus(${order.id}, 'جاري التحضير')">
+                                <i class="fa-solid fa-fire"></i> بدء التحضير
+                            </button>
+                            <button class="btn-kds btn-ready" onclick="setOrderStatus(${order.id}, 'تم التقديم')">
+                                <i class="fa-solid fa-check-double"></i> جاهز الآن!
+                            </button>
+                        ` : `
+                            <button class="btn-kds btn-ready full" onclick="setOrderStatus(${order.id}, 'تم التقديم')">
+                                <i class="fa-solid fa-bell"></i> تم التجهيز وجاهز للتقديم! 🔔
+                            </button>
+                        `}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function setOrderStatus(orderId, status) {
+            try {
+                await fetch(`/api/orders/${orderId}/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: status })
+                });
+
+                if (status === 'تم التقديم' && soundEnabled) {
+                    const audio = document.getElementById('kdsBell');
+                    if (audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
+                }
+
+                fetchKdsOrders();
+            } catch(e) {}
+        }
+
+        fetchKdsOrders();
+        setInterval(fetchKdsOrders, 3000); // 3-second live refresh
+    </script>
+</body>
+</html>
