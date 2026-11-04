@@ -238,6 +238,29 @@ class InventoryCreateRequest(BaseModel):
 
 
 
+
+class OfflineOrderItem(BaseModel):
+    id: Optional[int] = 0
+    name: str
+    price: float = 0.0
+    quantity: int = 1
+    customizations: Optional[List[Any]] = []
+    notes: Optional[str] = None
+
+class OfflineOrderSyncItem(BaseModel):
+    order_type: str = "صالة"
+    table_number: Optional[int] = 1
+    customer_name: Optional[str] = "ترابيزة 1"
+    items: List[OfflineOrderItem]
+    payment_method: str = "كاش"
+    notes: Optional[str] = None
+    discount_amount: Optional[float] = 0.0
+    promo_code: Optional[str] = None
+    offline_created_at: Optional[str] = None
+
+class OfflineSyncRequest(BaseModel):
+    orders: List[OfflineOrderSyncItem]
+
 class InventoryWasteCreateRequest(BaseModel):
     inventory_item_id: Optional[int] = None
     item_name: str
@@ -2485,4 +2508,88 @@ def get_tables_sales_report(period: str = "today", db: Session = Depends(get_db)
             "top_table": top_table_obj
         },
         "tables": tables_data
+    }
+
+
+# ==========================================
+# 9. دعم العمليات أوفلاين والمزامنة السحابية (Offline Mode & Cloud Sync)
+# ==========================================
+
+@app.get("/api/ping")
+@app.get("/api/cezar/ping")
+def ping_server():
+    return {"status": "ok", "timestamp": datetime.utcnow().isoformat(), "server": "ceZar POS Cloud/Local Engine v2.0"}
+
+
+@app.post("/api/pos/sync-offline")
+@app.post("/api/cezar/pos/sync-offline")
+async def sync_offline_orders(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    orders_list = data.get("orders", [])
+    synced = []
+    current_shift = db.query(Shift).filter(Shift.status == "مفتوح").order_by(desc(Shift.start_time)).first()
+
+    for item in orders_list:
+        table_num = item.get("table_number") or 1
+        cust_name = item.get("customer_name") or f"ترابيزة {table_num}"
+        pay_method = item.get("payment_method") or "كاش"
+        disc_amt = float(item.get("discount_amount") or 0.0)
+        p_code = item.get("promo_code") or ""
+        items_raw = item.get("items") or []
+
+        lines = []
+        total_p = 0.0
+        for it in items_raw:
+            price = float(it.get("price") or 0.0)
+            customs = it.get("customizations") or []
+            for c in customs:
+                if isinstance(c, dict):
+                    price += float(c.get("extra_price") or 0.0)
+            qty = int(it.get("quantity") or 1)
+            subtotal = price * qty
+            total_p += subtotal
+            notes_str = f" (ملاحظات: {it.get('notes')})" if it.get("notes") else ""
+            lines.append(f"- {qty}x {it.get('name')} = {subtotal} ج{notes_str}")
+
+        grand_total = max(0.0, total_p - disc_amt)
+        summary = "\n".join(lines)
+        if p_code:
+            summary += f"\n[كود خصم {p_code}: -{disc_amt} ج]"
+
+        offline_note = "[أوردر مسجل أوفلاين - مزامنة سحابية]"
+        final_notes = f"{item.get('notes') or ''} {offline_note}".strip()
+
+        order = TableOrder(
+            table_number=table_num,
+            order_type="صالة",
+            customer_name=cust_name,
+            items_summary=summary,
+            total_price=grand_total,
+            discount_amount=disc_amt,
+            promo_code=p_code,
+            payment_method=pay_method,
+            status="تم التقديم",
+            notes=final_notes,
+            shift_id=current_shift.id if current_shift else None
+        )
+        db.add(order)
+
+        if current_shift:
+            current_shift.total_sales += grand_total
+            if pay_method == "فيزا":
+                current_shift.visa_sales += grand_total
+            else:
+                current_shift.cash_sales += grand_total
+
+        synced.append(order)
+
+    db.commit()
+    for o in synced:
+        db.refresh(o)
+
+    return {
+        "status": "success",
+        "synced_count": len(synced),
+        "order_ids": [o.id for o in synced],
+        "message": f"تمت مزامنة {len(synced)} طلبات أوفلاين بنجاح مع السيرفر"
     }

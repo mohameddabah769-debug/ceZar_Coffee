@@ -687,6 +687,13 @@
 
         <div class="nav-actions">
             <!-- Active Shift Badge -->
+            <!-- Network Online / Offline / Cloud Sync Badge -->
+            <div id="navNetworkBadge" onclick="triggerManualSync()" style="background: rgba(40, 167, 69, 0.25); border: 1px solid #28a745; color: #86EFAC; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; cursor: pointer;" title="حالة الاتصال بالسيرفر والمزامنة السحابية (اضغط للمزامنة اليدوية)">
+                <i class="fa-solid fa-cloud" id="navNetworkIcon" style="color: #4ADE80;"></i>
+                <span id="navNetworkText">متصل بالخادم</span>
+                <span id="navOfflineQueueCount" style="background: #EF4444; color: white; border-radius: 8px; padding: 0 6px; font-size: 10px; font-weight: 900; display: none;">0</span>
+            </div>
+
             <div id="navShiftBadge" style="background: rgba(40, 167, 69, 0.2); border: 1px solid #28a745; color: #d4edda; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; cursor: pointer;" onclick="switchTab('shifts', document.querySelector('[data-tab=shifts]'))">
                 <i class="fa-solid fa-clock"></i>
                 <span id="navShiftText">جاري تحميل الشيفت...</span>
@@ -851,6 +858,9 @@
             <div class="pos-catalog">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap;">
                     <h3 style="font-size: 16px; font-weight: 900; color: var(--primary-espresso);"><i class="fa-solid fa-mug-saucer" style="color: var(--cezar-orange);"></i> قائمة الأصناف السريعة</h3>
+                    <button id="posSyncOfflineBtn" onclick="triggerManualSync()" style="display: none; background: #DC2626; color: white; border: none; border-radius: 8px; padding: 6px 12px; font-weight: 800; font-size: 12px; cursor: pointer; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-arrows-rotate fa-spin"></i> مزامنة (<span id="posOfflineCountText">0</span>) طلب معلق للسيرفر
+                    </button>
                     <input type="text" id="posSearch" placeholder="بحث سريع عن مشروب أو حلوى..." oninput="filterPosCatalog()" class="form-control" style="max-width: 260px; margin: 0;">
                 </div>
 
@@ -3481,6 +3491,263 @@
             // hall tables only
             document.getElementById('posCartGrandTotal').textContent = grandTotal + ' ج';
         }
+
+        
+        // ====================================================
+        // OFFLINE MODE & CLOUD SYNC MANAGER (دعم العمليات أوفلاين)
+        // ====================================================
+        const CEZAR_OFFLINE_QUEUE_KEY = 'cezar_offline_orders_queue';
+        const CEZAR_CACHED_CATALOG_KEY = 'cezar_cached_pos_catalog';
+
+        var isOnline = navigator.onLine;
+        var isSyncingOffline = false;
+
+        function getOfflineQueue() {
+            try {
+                return JSON.parse(localStorage.getItem(CEZAR_OFFLINE_QUEUE_KEY) || '[]');
+            } catch(e) {
+                return [];
+            }
+        }
+
+        function saveToOfflineQueue(order) {
+            const queue = getOfflineQueue();
+            queue.push(order);
+            localStorage.setItem(CEZAR_OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+            updateOfflineStatusUI();
+        }
+
+        function clearOfflineQueue() {
+            localStorage.removeItem(CEZAR_OFFLINE_QUEUE_KEY);
+            updateOfflineStatusUI();
+        }
+
+        function updateOfflineStatusUI() {
+            const badge = document.getElementById('navNetworkBadge');
+            const text = document.getElementById('navNetworkText');
+            const icon = document.getElementById('navNetworkIcon');
+            const countBadge = document.getElementById('navOfflineQueueCount');
+            const posSyncBtn = document.getElementById('posSyncOfflineBtn');
+            const posCountText = document.getElementById('posOfflineCountText');
+
+            const queue = getOfflineQueue();
+            const pendingCount = queue.length;
+
+            if (posSyncBtn) {
+                if (pendingCount > 0) {
+                    posSyncBtn.style.display = 'inline-flex';
+                    if (posCountText) posCountText.textContent = pendingCount;
+                } else {
+                    posSyncBtn.style.display = 'none';
+                }
+            }
+
+            if (countBadge) {
+                if (pendingCount > 0) {
+                    countBadge.style.display = 'inline-block';
+                    countBadge.textContent = pendingCount;
+                } else {
+                    countBadge.style.display = 'none';
+                }
+            }
+
+            if (isSyncingOffline) {
+                if (badge) { badge.style.background = 'rgba(234, 179, 8, 0.25)'; badge.style.borderColor = '#EAB308'; badge.style.color = '#FEF08A'; }
+                if (icon) { icon.className = 'fa-solid fa-arrows-rotate fa-spin'; icon.style.color = '#FACC15'; }
+                if (text) text.textContent = `جاري المزامنة (${pendingCount})...`;
+                return;
+            }
+
+            if (isOnline) {
+                if (pendingCount > 0) {
+                    if (badge) { badge.style.background = 'rgba(249, 115, 22, 0.25)'; badge.style.borderColor = '#F97316'; badge.style.color = '#FED7AA'; }
+                    if (icon) { icon.className = 'fa-solid fa-cloud-arrow-up'; icon.style.color = '#FB923C'; }
+                    if (text) text.textContent = `متصل (${pendingCount} معلق)`;
+                } else {
+                    if (badge) { badge.style.background = 'rgba(40, 167, 69, 0.25)'; badge.style.borderColor = '#28a745'; badge.style.color = '#86EFAC'; }
+                    if (icon) { icon.className = 'fa-solid fa-cloud'; icon.style.color = '#4ADE80'; }
+                    if (text) text.textContent = 'متصل بالخادم';
+                }
+            } else {
+                if (badge) { badge.style.background = 'rgba(239, 68, 68, 0.25)'; badge.style.borderColor = '#EF4444'; badge.style.color = '#FCA5A5'; }
+                if (icon) { icon.className = 'fa-solid fa-cloud-slash fa-beat'; icon.style.color = '#F87171'; }
+                if (text) text.textContent = `أوفلاين (${pendingCount} معلق)`;
+            }
+        }
+
+        async function pingServer() {
+            try {
+                const ctrl = new AbortController();
+                const tid = setTimeout(() => ctrl.abort(), 3000);
+                const res = await fetch('/api/ping', { signal: ctrl.signal });
+                clearTimeout(tid);
+                if (res.ok) {
+                    const wasOffline = !isOnline;
+                    isOnline = true;
+                    updateOfflineStatusUI();
+                    if (wasOffline && getOfflineQueue().length > 0) {
+                        syncOfflineOrdersToServer();
+                    }
+                } else {
+                    isOnline = false;
+                    updateOfflineStatusUI();
+                }
+            } catch(e) {
+                isOnline = false;
+                updateOfflineStatusUI();
+            }
+        }
+
+        async function syncOfflineOrdersToServer() {
+            const queue = getOfflineQueue();
+            if (queue.length === 0 || isSyncingOffline) return;
+
+            isSyncingOffline = true;
+            updateOfflineStatusUI();
+
+            try {
+                const res = await fetch('/api/pos/sync-offline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orders: queue })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    const count = data.synced_count || queue.length;
+                    clearOfflineQueue();
+                    isSyncingOffline = false;
+                    updateOfflineStatusUI();
+                    if (typeof fetchOrders === 'function') fetchOrders();
+                    if (typeof fetchCurrentShift === 'function') fetchCurrentShift();
+                    alert(`✅ تمت مزامنة (${count}) أوردر مسجل أوفلاين بنجاح مع السيرفر!`);
+                } else {
+                    isSyncingOffline = false;
+                    updateOfflineStatusUI();
+                }
+            } catch(e) {
+                console.warn('Offline sync failed, will retry next ping', e);
+                isSyncingOffline = false;
+                updateOfflineStatusUI();
+            }
+        }
+
+        function triggerManualSync() {
+            const queue = getOfflineQueue();
+            if (queue.length === 0) {
+                alert(isOnline ? '🟢 السيرفر متصل بالسحابة ولا توجد أي طلبات معلقة للمزامنة.' : '🔴 أنت حالياً غير متصل بالسيرفر (أوفلاين).');
+                return;
+            }
+            if (!isOnline) {
+                alert('⚠️ لا يمكن المزامنة الآن لعدم وجود اتصال بالسيرفر. ستتم المزامنة تلقائياً فور عودة الشبكة.');
+                return;
+            }
+            syncOfflineOrdersToServer();
+        }
+
+        function saveOrderLocally(payload, printReceipt = false) {
+            const offlineId = 'OFF-' + Date.now().toString().slice(-6);
+            const offlineOrder = {
+                ...payload,
+                id: offlineId,
+                offline_created_at: new Date().toLocaleTimeString('ar-EG')
+            };
+            saveToOfflineQueue(offlineOrder);
+
+            if (printReceipt) {
+                openOfflineThermalReceipt(offlineOrder);
+            } else {
+                alert('⚡ تم حفظ الأوردر محلياً في وضع الأوفلاين بنجاح!\nسيتم إرساله ومزامنته مع السيرفر تلقائياً فور عودة الاتصال.');
+            }
+
+            posCartItems = [];
+            posAppliedPromo = null;
+            const pInp = document.getElementById('posPromoCodeInput');
+            if (pInp) pInp.value = '';
+            const pRow = document.getElementById('posPromoAppliedRow');
+            if (pRow) pRow.style.display = 'none';
+            renderPosCart();
+        }
+
+        function openOfflineThermalReceipt(order) {
+            const printWindow = window.open('', '_blank', 'width=380,height=600');
+            const itemsHtml = order.items.map(it => {
+                let p = it.price;
+                if (it.customizations) {
+                    it.customizations.forEach(c => p += c.extra_price);
+                }
+                const sub = p * it.quantity;
+                return `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span>${it.quantity}x ${it.name}</span>
+                        <span>${sub} ج</span>
+                    </div>
+                `;
+            }).join('');
+
+            const total = order.items.reduce((acc, it) => {
+                let p = it.price;
+                if (it.customizations) it.customizations.forEach(c => p += c.extra_price);
+                return acc + (p * it.quantity);
+            }, 0) - (order.discount_amount || 0);
+
+            const receiptHtml = `
+                <!DOCTYPE html>
+                <html dir="rtl" lang="ar">
+                <head>
+                    <meta charset="utf-8">
+                    <title>فاتورة كاشير - ceZar Coffee</title>
+                    <style>
+                        body { font-family: 'Courier New', monospace, sans-serif; width: 280px; margin: 0 auto; padding: 10px; font-size: 12px; color: #000; text-align: center; }
+                        .line { border-bottom: 1px dashed #000; margin: 8px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h2 style="margin: 0; font-size: 16px;">☕ سيزر كافيه (ceZar Coffee)</h2>
+                    <p style="margin: 2px 0; font-size: 11px;">فاتورة صالة (وضع الأوفلاين السحابي)</p>
+                    <div class="line"></div>
+                    <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                        <span>ترابيزة: ${order.table_number}</span>
+                        <span>رقم: ${order.id}</span>
+                    </div>
+                    <div style="font-size: 10px; text-align: right; color: #444; margin-top: 2px;">
+                        الوقت: ${order.offline_created_at || new Date().toLocaleTimeString('ar-EG')}
+                    </div>
+                    <div class="line"></div>
+                    <div style="text-align: right; margin: 8px 0;">
+                        ${itemsHtml}
+                    </div>
+                    <div class="line"></div>
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px;">
+                        <span>الإجمالي المطلوب:</span>
+                        <span>${total} ج</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 4px;">
+                        <span>طريقة الدفع:</span>
+                        <span>${order.payment_method}</span>
+                    </div>
+                    <div class="line"></div>
+                    <p style="font-size: 10px; margin: 0;">شكراً لزيارتكم سيزر كافيه! نتمنى لكم يوماً سعيداً ☕</p>
+                </body>
+                </html>
+            `;
+            printWindow.document.write(receiptHtml);
+            printWindow.document.close();
+            setTimeout(() => { printWindow.focus(); printWindow.print(); }, 400);
+        }
+
+        window.addEventListener('online', () => {
+            isOnline = true;
+            pingServer();
+        });
+
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            updateOfflineStatusUI();
+        });
+
+        setInterval(pingServer, 10000);
+        // Initial setup
+        setTimeout(() => { updateOfflineStatusUI(); pingServer(); }, 1000);
 
         async function submitPosOrder(printReceipt = false) {
             if (posCartItems.length === 0) {

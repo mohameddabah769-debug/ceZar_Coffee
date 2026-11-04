@@ -1953,3 +1953,73 @@ def get_tables_sales_report():
             },
             "tables": tables_data
         })
+
+
+# ==========================================
+# 9. دعم العمليات أوفلاين والمزامنة السحابية (Offline Mode & Cloud Sync - Flask)
+# ==========================================
+
+@app.route("/api/ping", methods=["GET"])
+def ping_server_flask():
+    return jsonify({"status": "ok", "timestamp": datetime.utcnow().isoformat(), "server": "ceZar POS Cloud/Local Engine v2.0"})
+
+
+@app.route("/api/pos/sync-offline", methods=["POST"])
+def sync_offline_orders_flask():
+    db = SessionLocal()
+    try:
+        data = request.get_json(silent=True) or {}
+        orders_data = data.get("orders") or []
+        current_shift = db.query(Shift).filter(Shift.status == "مفتوح").order_by(desc(Shift.start_time)).first()
+
+        synced_ids = []
+        for item in orders_data:
+            items_list = item.get("items") or []
+            lines = []
+            total_p = 0.0
+            for it in items_list:
+                price = float(it.get("price") or 0.0)
+                customs = it.get("customizations") or []
+                for c in customs:
+                    price += float(c.get("extra_price") or 0.0)
+                qty = int(it.get("quantity") or 1)
+                subtotal = price * qty
+                total_p += subtotal
+                lines.append(f"- {qty}x {it.get('name')} = {subtotal} ج")
+
+            disc = float(item.get("discount_amount") or 0.0)
+            grand_total = max(0.0, total_p - disc)
+            summary = "\n".join(lines)
+            t_num = item.get("table_number") or 1
+
+            order = TableOrder(
+                table_number=t_num,
+                order_type="صالة",
+                customer_name=item.get("customer_name") or f"ترابيزة {t_num}",
+                items_summary=summary,
+                total_price=grand_total,
+                discount_amount=disc,
+                promo_code=item.get("promo_code") or "",
+                payment_method=item.get("payment_method") or "كاش",
+                status="تم التقديم",
+                notes=f"{item.get('notes') or ''} [أوردر مسجل أوفلاين]".strip(),
+                shift_id=current_shift.id if current_shift else None
+            )
+            db.add(order)
+            if current_shift:
+                current_shift.total_sales += grand_total
+                if item.get("payment_method") == "فيزا":
+                    current_shift.visa_sales += grand_total
+                else:
+                    current_shift.cash_sales += grand_total
+
+            synced_ids.append(order)
+
+        db.commit()
+        return jsonify({
+            "status": "success",
+            "synced_count": len(synced_ids),
+            "message": f"تمت مزامنة {len(synced_ids)} طلبات أوفلاين بنجاح"
+        })
+    finally:
+        db.close()
