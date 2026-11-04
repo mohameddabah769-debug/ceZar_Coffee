@@ -1866,3 +1866,89 @@ def download_db_backup_flask():
     db_file = os.path.abspath("cezar_coffee.db")
     timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     return send_file(db_file, as_attachment=True, download_name=f"cezar_coffee_backup_{timestamp}.db")
+
+@app.route("/api/reports/tables", methods=["GET"])
+@app.route("/api/cezar/reports/tables", methods=["GET"])
+def get_tables_sales_report():
+    import re
+    from datetime import timedelta
+    period = request.args.get("period", "today")
+    now = datetime.utcnow()
+    
+    if period == "week":
+        start_date = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+        period_label = "تقرير مبيعات الترابيزات لآخر 7 أيام"
+    elif period == "month":
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        period_label = f"تقرير مبيعات الترابيزات لشهر ({now.strftime('%m-%Y')})"
+    else:
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        period_label = f"تقرير مبيعات الترابيزات لليوم ({now.strftime('%Y-%m-%d')})"
+
+    with get_db() as db:
+        orders = db.query(TableOrder).filter(TableOrder.created_at >= start_date, TableOrder.status != "ملغي").all()
+        configs = db.query(CafeTableConfig).all()
+        config_map = {c.table_number: c for c in configs}
+
+        max_t = 25
+        if configs: max_t = max(max_t, max(c.table_number for c in configs))
+        if orders:
+            valid_table_nums = [o.table_number for o in orders if o.table_number and o.table_number > 0]
+            if valid_table_nums: max_t = max(max_t, max(valid_table_nums))
+
+        total_revenue_all = sum(o.total_price for o in orders)
+        total_orders_all = len(orders)
+        tables_data = []
+        top_table_obj = None
+        max_rev = -1
+
+        for t_num in range(1, max_t + 1):
+            t_orders = [o for o in orders if o.table_number == t_num]
+            rev = sum(o.total_price for o in t_orders)
+            cnt = len(t_orders)
+            avg = round(rev / cnt, 1) if cnt > 0 else 0.0
+
+            item_counts = {}
+            for o in t_orders:
+                text_sum = o.items_summary or ""
+                matches = re.findall(r'-?\s*(\d+)x?\s*([^:\[\r\n]+)', text_sum)
+                for qty_str, name in matches:
+                    name_clean = name.strip()
+                    if name_clean: item_counts[name_clean] = item_counts.get(name_clean, 0) + int(qty_str)
+
+            top_items_list = sorted(item_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+            top_items_str = "، ".join([f"{name} ({q})" for name, q in top_items_list]) if top_items_list else "لا توجد طلبات"
+
+            cfg = config_map.get(t_num)
+            zone = cfg.zone if cfg else ("VIP" if t_num > 20 else "صالة رئيسية")
+            capacity = cfg.capacity if cfg else 4
+            is_active = cfg.is_active if cfg else True
+            pct = round((rev / total_revenue_all) * 100, 1) if total_revenue_all > 0 else 0.0
+
+            if rev > max_rev and rev > 0:
+                max_rev = rev
+                top_table_obj = {"table_number": t_num, "revenue": rev, "orders_count": cnt, "zone": zone}
+
+            tables_data.append({
+                "table_number": t_num, "zone": zone, "capacity": capacity, "is_active": is_active,
+                "orders_count": cnt, "total_revenue": rev, "avg_order_value": avg,
+                "top_items": top_items_str, "revenue_percent": pct
+            })
+
+        active_tables_count = sum(1 for t in tables_data if t["orders_count"] > 0)
+        avg_per_table = round(total_revenue_all / max_t, 1) if max_t > 0 else 0.0
+
+        return jsonify({
+            "status": "success",
+            "period": period,
+            "period_label": period_label,
+            "summary": {
+                "total_revenue": total_revenue_all,
+                "total_orders": total_orders_all,
+                "active_tables_count": active_tables_count,
+                "total_tables_count": max_t,
+                "avg_revenue_per_table": avg_per_table,
+                "top_table": top_table_obj
+            },
+            "tables": tables_data
+        })

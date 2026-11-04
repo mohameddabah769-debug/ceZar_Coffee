@@ -878,17 +878,10 @@
             <!-- Right: Order Cart -->
             <div class="pos-cart">
                 <div>
-                    <!-- Order Type Selector -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px;">
-                        <button class="filter-pill active" id="btnTypeHall" onclick="setPosOrderType('صالة')" style="justify-content: center;">
-                            <i class="fa-solid fa-chair"></i> صالة
-                        </button>
-                        <button class="filter-pill" id="btnTypeTakeaway" onclick="setPosOrderType('تيك أواي')" style="justify-content: center;">
-                            <i class="fa-solid fa-bag-shopping"></i> سفري
-                        </button>
-                        <button class="filter-pill" id="btnTypeDelivery" onclick="setPosOrderType('دليفري')" style="justify-content: center;">
-                            <i class="fa-solid fa-motorcycle"></i> دليفري
-                        </button>
+                    <!-- Order Type: Hall Tables Only -->
+                    <div style="background: #FDFBF7; padding: 10px 14px; border-radius: 12px; border: 1.5px solid #E2D9CF; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-weight: 800; font-size: 13px; color: var(--primary-espresso);"><i class="fa-solid fa-chair" style="color: var(--cezar-orange); margin-left: 6px;"></i> نظام صالة وطاولات فقط</span>
+                        <span style="background: #DCFCE7; color: #15803D; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 800;"><i class="fa-solid fa-check"></i> نشط</span>
                     </div>
 
                     <!-- Fields depending on type -->
@@ -998,9 +991,14 @@
                 <span><span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #ffc107;"></span> طلبت حساب</span>
                 <span><span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #007bff;"></span> طلبت ويتر</span>
             </div>
-            <button onclick="fetchTablesStatus()" class="nav-btn" style="background: var(--primary-espresso);">
-                <i class="fa-solid fa-rotate"></i> تحديث الصالة
-            </button>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button onclick="switchTab('analytics'); setTimeout(() => filterTablesReport('today'), 150);" class="nav-btn" style="background: #0284C7;">
+                    <i class="fa-solid fa-chart-pie"></i> تقرير مبيعات كل ترابيزة
+                </button>
+                <button onclick="fetchTablesStatus()" class="nav-btn" style="background: var(--primary-espresso);">
+                    <i class="fa-solid fa-rotate"></i> تحديث الصالة
+                </button>
+            </div>
         </div>
 
         <div class="tables-map-grid" id="tablesMapGrid">
@@ -1261,22 +1259,100 @@
             </div>
         </div>
 
-        <!-- Sales by Channel Grid -->
-        <div style="background: white; border-radius: 16px; padding: 18px; border: 1px solid var(--border-color); box-shadow: 0 3px 12px rgba(43, 24, 16, 0.05);">
-            <h4 style="font-size: 15px; font-weight: 900; margin-bottom: 14px; color: var(--primary-espresso);"><i class="fa-solid fa-pie-chart" style="color: #0284C7;"></i> توزيع المبيعات حسب القنوات</h4>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; text-align: center;">
-                <div style="background: #FFF7ED; padding: 14px; border-radius: 12px; border: 1px solid #FFEDD5;">
-                    <div style="font-size: 12px; color: #C2410C; font-weight: 800;"><i class="fa-solid fa-chair"></i> مبيعات الصالة</div>
-                    <div style="font-size: 20px; font-weight: 900; color: #9A3412;" id="analyticsSalesHall">0 ج</div>
+        <!-- ==================================================== -->
+        <!-- Table Sales & Usage Report (تقرير كل ترابيزة فاليوم والأسبوع والشهر) -->
+        <!-- ==================================================== -->
+        <div style="background: white; border-radius: 16px; padding: 18px; border: 1.5px solid var(--border-color); box-shadow: 0 3px 12px rgba(43, 24, 16, 0.05); margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1.5px solid #EDE8E1; padding-bottom: 12px;">
+                <div>
+                    <h4 style="font-size: 17px; font-weight: 900; margin: 0; color: var(--primary-espresso);">
+                        <i class="fa-solid fa-chair" style="color: var(--cezar-orange);"></i> تقرير مبيعات وأداء كل ترابيزة (اليوم - الأسبوع - الشهر)
+                    </h4>
+                    <div style="font-size: 12px; color: #666; font-weight: 700; margin-top: 3px;" id="tableReportPeriodLabel">
+                        جاري تحميل تقرير الترابيزات...
+                    </div>
                 </div>
-                <div style="background: #FAF5FF; padding: 14px; border-radius: 12px; border: 1px solid #F3E8FF;">
-                    <div style="font-size: 12px; color: #7E22CE; font-weight: 800;"><i class="fa-solid fa-bag-shopping"></i> مبيعات التيك أواي</div>
-                    <div style="font-size: 20px; font-weight: 900; color: #6B21A8;" id="analyticsSalesTakeaway">0 ج</div>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <div style="display: flex; gap: 6px; background: #F8F5F0; padding: 4px; border-radius: 10px; border: 1px solid #E2D9CF;">
+                        <button class="filter-pill active" id="btnTablePeriodToday" onclick="filterTablesReport('today')" style="padding: 6px 14px; font-size: 12px;">
+                            <i class="fa-solid fa-calendar-day"></i> اليوم
+                        </button>
+                        <button class="filter-pill" id="btnTablePeriodWeek" onclick="filterTablesReport('week')" style="padding: 6px 14px; font-size: 12px;">
+                            <i class="fa-solid fa-calendar-week"></i> هذا الأسبوع
+                        </button>
+                        <button class="filter-pill" id="btnTablePeriodMonth" onclick="filterTablesReport('month')" style="padding: 6px 14px; font-size: 12px;">
+                            <i class="fa-solid fa-calendar-days"></i> هذا الشهر
+                        </button>
+                    </div>
+                    <button class="pin-btn" onclick="printTablesReport()" style="margin: 0; width: auto; padding: 7px 16px; background: var(--primary-espresso); font-size: 12px;">
+                        <i class="fa-solid fa-print"></i> طباعة تقرير الترابيزات
+                    </button>
                 </div>
-                <div style="background: #F0F9FF; padding: 14px; border-radius: 12px; border: 1px solid #E0F2FE;">
-                    <div style="font-size: 12px; color: #0369A1; font-weight: 800;"><i class="fa-solid fa-motorcycle"></i> مبيعات الدليفري</div>
-                    <div style="font-size: 20px; font-weight: 900; color: #075985;" id="analyticsSalesDelivery">0 ج</div>
+            </div>
+
+            <!-- KPI Cards for Tables Report -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                <div style="background: #FFF7ED; padding: 14px; border-radius: 12px; border: 1.5px solid #FFEDD5; display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: #FFEDD5; color: #C2410C; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #9A3412; font-weight: 800;">أعلى ترابيزة مبيعاً</div>
+                        <div style="font-size: 18px; font-weight: 900; color: #7C2D12;" id="kpiTopTableTitle">-</div>
+                    </div>
                 </div>
+
+                <div style="background: #F0FDF4; padding: 14px; border-radius: 12px; border: 1.5px solid #DCFCE7; display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fa-solid fa-money-bill-trend-up"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #15803D; font-weight: 800;">إجمالي إيراد الصالة</div>
+                        <div style="font-size: 18px; font-weight: 900; color: #166534;" id="kpiTablesTotalRev">0 ج</div>
+                    </div>
+                </div>
+
+                <div style="background: #EFF6FF; padding: 14px; border-radius: 12px; border: 1.5px solid #DBEAFE; display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: #DBEAFE; color: #1D4ED8; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #1E40AF; font-weight: 800;">إجمالي طلبات الترابيزات</div>
+                        <div style="font-size: 18px; font-weight: 900; color: #1E3A8A;" id="kpiTablesTotalOrders">0 طلب</div>
+                    </div>
+                </div>
+
+                <div style="background: #FAF5FF; padding: 14px; border-radius: 12px; border: 1.5px solid #F3E8FF; display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fa-solid fa-calculator"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #6B21A8; font-weight: 800;">متوسط مبيعات الترابيزة</div>
+                        <div style="font-size: 18px; font-weight: 900; color: #581C87;" id="kpiTablesAvgRev">0 ج</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Tables Performance Table -->
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">الترابيزة</th>
+                            <th>المنطقة والسعة</th>
+                            <th style="text-align: center;">عدد الطلبات</th>
+                            <th>إجمالي المبيعات</th>
+                            <th>متوسط قيمة الطلب</th>
+                            <th>أكثر الأصناف طلباً على الترابيزة</th>
+                            <th style="min-width: 160px;">نسبة المساهمة من الصالة</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablesReportTableBody">
+                        <!-- Loaded dynamically by JS -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>
@@ -3960,14 +4036,8 @@
             const tagline = currentOwnerSettings.cafe_tagline || 'Specialty Coffee & Roastery';
             const header = currentOwnerSettings.receipt_header || 'أهلاً بكم في كافيه سيزر';
             const footer = currentOwnerSettings.receipt_footer || 'شكراً لزيارتكم كافيه سيزر ☕ نتشرف بكم دائماً!';
-            const phone = currentOwnerSettings.cafe_phone ? `<div>هاتف: ${currentOwnerSettings.cafe_phone}</div>` : '';
-            const showWifi = (currentOwnerSettings.receipt_show_wifi !== 'false' && currentOwnerSettings.wifi_ssid);
-            const wifiHtml = showWifi ? `
-                <div class="divider"></div>
-                <div style="font-size: 10px; text-align: center; border: 1px dashed #666; padding: 4px; border-radius: 4px;">
-                    📶 واي فاي: <b>${currentOwnerSettings.wifi_ssid}</b> | باسورد: <b>${currentOwnerSettings.wifi_password || ''}</b>
-                </div>
-            ` : '';
+            const phone = ''; // Removed as requested
+            const wifiHtml = ''; // Removed as requested
 
             container.innerHTML = `
                 <h2>${cafeName}</h2>
@@ -4287,6 +4357,217 @@
         // ====================================================
         // ANALYTICS & CHARTS LOGIC
         // ====================================================
+        
+        // ====================================================
+        // TABLE SALES REPORT LOGIC (تقرير كل ترابيزة فاليوم والأسبوع والشهر)
+        // ====================================================
+        var currentTablesReportData = null;
+        var currentTablesPeriod = 'today';
+
+        async function filterTablesReport(period) {
+            currentTablesPeriod = period;
+            document.querySelectorAll('#btnTablePeriodToday, #btnTablePeriodWeek, #btnTablePeriodMonth').forEach(b => b.classList.remove('active'));
+            if (period === 'today') {
+                const b = document.getElementById('btnTablePeriodToday');
+                if (b) b.classList.add('active');
+            } else if (period === 'week') {
+                const b = document.getElementById('btnTablePeriodWeek');
+                if (b) b.classList.add('active');
+            } else if (period === 'month') {
+                const b = document.getElementById('btnTablePeriodMonth');
+                if (b) b.classList.add('active');
+            }
+
+            try {
+                const res = await fetch(`/api/reports/tables?period=${period}`);
+                const data = await res.json();
+                if (!res.ok || data.status !== 'success') return;
+
+                currentTablesReportData = data;
+                const s = data.summary;
+
+                if (document.getElementById('tableReportPeriodLabel')) {
+                    document.getElementById('tableReportPeriodLabel').innerHTML = `<i class="fa-regular fa-clock"></i> ${data.period_label}`;
+                }
+
+                // Top Table Card
+                const topEl = document.getElementById('kpiTopTableTitle');
+                if (topEl) {
+                    if (s.top_table) {
+                        topEl.innerHTML = `ترابيزة ${s.top_table.table_number} <span style="font-size: 13px; font-weight: 800; color: #C2410C;">(${s.top_table.revenue} ج - ${s.top_table.orders_count} طلب)</span>`;
+                    } else {
+                        topEl.textContent = 'لا توجد مبيعات مسجلة';
+                    }
+                }
+
+                if (document.getElementById('kpiTablesTotalRev')) document.getElementById('kpiTablesTotalRev').textContent = `${s.total_revenue} ج`;
+                if (document.getElementById('kpiTablesTotalOrders')) document.getElementById('kpiTablesTotalOrders').textContent = `${s.total_orders} طلب`;
+                if (document.getElementById('kpiTablesAvgRev')) document.getElementById('kpiTablesAvgRev').textContent = `${s.avg_revenue_per_table} ج`;
+
+                const tbody = document.getElementById('tablesReportTableBody');
+                if (tbody) {
+                    tbody.innerHTML = (data.tables || []).map(t => {
+                        const isActive = t.orders_count > 0;
+                        const statusBadge = isActive 
+                            ? `<span style="background: #DCFCE7; color: #15803D; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800;">${t.orders_count} طلب</span>`
+                            : `<span style="background: #F3F4F6; color: #9CA3AF; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">0 طلب</span>`;
+
+                        return `
+                            <tr style="${isActive ? 'background: #FFFAF5;' : ''}">
+                                <td style="font-weight: 900; color: var(--primary-espresso); font-size: 14px;">
+                                    <i class="fa-solid fa-chair" style="color: ${isActive ? 'var(--cezar-orange)' : '#BBB'}; margin-left: 4px;"></i> ترابيزة ${t.table_number}
+                                </td>
+                                <td>
+                                    <span style="background: #F8F5F0; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; color: #555;">
+                                        ${t.zone} (${t.capacity} كراسي)
+                                    </span>
+                                </td>
+                                <td style="text-align: center;">${statusBadge}</td>
+                                <td style="font-weight: 900; color: ${t.total_revenue > 0 ? '#16A34A' : '#888'}; font-size: 14px;">
+                                    ${t.total_revenue} ج
+                                </td>
+                                <td style="font-weight: 800; color: #555;">
+                                    ${t.avg_order_value} ج
+                                </td>
+                                <td style="font-size: 12px; color: #444; max-width: 250px;">
+                                    ${t.top_items}
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="flex: 1; background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden;">
+                                            <div style="background: linear-gradient(90deg, #D97706, #16A34A); width: ${Math.min(t.revenue_percent, 100)}%; height: 100%;"></div>
+                                        </div>
+                                        <span style="font-size: 11px; font-weight: 900; color: #444; min-width: 38px;">${t.revenue_percent}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button onclick="openTableDetails(${t.table_number})" style="background: #F0F9FF; color: #0284C7; border: 1px solid #BAE6FD; border-radius: 6px; padding: 4px 8px; font-weight: 800; font-size: 11px; cursor: pointer;">
+                                        <i class="fa-solid fa-eye"></i> فتح الترابيزة
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+            } catch(e) {
+                console.error("Error fetching tables report", e);
+            }
+        }
+
+        function printTablesReport() {
+            if (!currentTablesReportData) {
+                alert('جاري تحميل بيانات تقرير الترابيزات...');
+                return;
+            }
+            const d = currentTablesReportData;
+            const s = d.summary;
+
+            const printWin = window.open('', '_blank', 'width=880,height=900');
+            if (!printWin) {
+                alert('يرجى السماح بالنوافذ المنبثقة للطباعة');
+                return;
+            }
+
+            const rows = (d.tables || []).map(t => `
+                <tr style="${t.orders_count > 0 ? 'background: #fdfbf7;' : ''}">
+                    <td style="text-align: center; font-weight: 900;">ترابيزة ${t.table_number}</td>
+                    <td>${t.zone} (${t.capacity} مقاعد)</td>
+                    <td style="text-align: center; font-weight: bold;">${t.orders_count}</td>
+                    <td style="text-align: center; font-weight: 900; color: #166534;">${t.total_revenue} ج</td>
+                    <td style="text-align: center;">${t.avg_order_value} ج</td>
+                    <td>${t.top_items}</td>
+                    <td style="text-align: center; font-weight: bold;">${t.revenue_percent}%</td>
+                </tr>
+            `).join('');
+
+            const htmlContent = `
+            <!DOCTYPE html>
+            <html lang="ar" dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <title>تقرير مبيعات وأداء ترابيزات الصالة - ceZar Coffee</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; color: #111; direction: rtl; }
+                    .header { text-align: center; border-bottom: 2px solid #2B1810; padding-bottom: 12px; margin-bottom: 20px; }
+                    .logo-text { font-size: 24px; font-weight: 900; color: #2B1810; }
+                    .title { font-size: 17px; font-weight: 800; color: #D97706; margin-top: 4px; }
+                    .meta-box { display: flex; justify-content: space-between; background: #f9f6f0; border: 1px solid #e5dec9; padding: 10px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
+                    .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+                    .card { border: 1px solid #ccc; padding: 10px; border-radius: 6px; text-align: center; }
+                    .card-title { font-size: 11px; color: #666; font-weight: bold; margin-bottom: 5px; }
+                    .card-val { font-size: 16px; font-weight: 900; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+                    th, td { border: 1px solid #ddd; padding: 7px 10px; text-align: right; }
+                    th { background: #f3ece4; font-weight: 800; }
+                    @media print { body { padding: 10px; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="logo-text">☕ ceZar Coffee - تقرير مبيعات ترابيزات الصالة</div>
+                    <div class="title">${d.period_label}</div>
+                </div>
+                <div class="meta-box">
+                    <div><strong>تاريخ استخراج التقرير:</strong> ${new Date().toLocaleDateString('ar-EG')} - ${new Date().toLocaleTimeString('ar-EG')}</div>
+                    <div><strong>نطاق الفترة:</strong> ${d.period === 'today' ? 'اليوم' : (d.period === 'week' ? 'هذا الأسبوع' : 'هذا الشهر')}</div>
+                    <div><strong>إدارة كافيه سيزر</strong></div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card" style="background: #fff7ed;">
+                        <div class="card-title">أعلى ترابيزة مبيعاً</div>
+                        <div class="card-val" style="color: #c2410c;">${s.top_table ? 'ترابيزة ' + s.top_table.table_number + ' (' + s.top_table.revenue + ' ج)' : '-'}</div>
+                    </div>
+                    <div class="card" style="background: #f0fdf4;">
+                        <div class="card-title">إجمالي إيراد الصالة</div>
+                        <div class="card-val" style="color: #15803d;">${s.total_revenue} ج</div>
+                    </div>
+                    <div class="card" style="background: #eff6ff;">
+                        <div class="card-title">إجمالي طلبات الصالة</div>
+                        <div class="card-val" style="color: #1e40af;">${s.total_orders} طلب</div>
+                    </div>
+                    <div class="card" style="background: #faf5ff;">
+                        <div class="card-title">متوسط مبيعات الترابيزة</div>
+                        <div class="card-val" style="color: #7e22ce;">${s.avg_revenue_per_table} ج</div>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 80px; text-align: center;">الترابيزة</th>
+                            <th>المنطقة والسعة</th>
+                            <th style="text-align: center;">الطلبات</th>
+                            <th style="text-align: center;">إجمالي المبيعات</th>
+                            <th style="text-align: center;">متوسط الطلب</th>
+                            <th>أكثر الأصناف طلباً</th>
+                            <th style="text-align: center;">نسبة الصالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+                <div style="display: flex; justify-content: space-between; margin-top: 40px; padding: 0 40px;">
+                    <div style="text-align: center; font-weight: bold; font-size: 13px;">
+                        <div>توقيع كابتن الصالة / الكاشير</div>
+                        <div style="margin-top: 40px; border-top: 1px dashed #333; width: 180px;"></div>
+                    </div>
+                    <div style="text-align: center; font-weight: bold; font-size: 13px;">
+                        <div>اعتماد مدير الكافيه</div>
+                        <div style="margin-top: 40px; border-top: 1px dashed #333; width: 180px;"></div>
+                    </div>
+                </div>
+                <script>
+                    window.onload = function() { window.print(); };
+                <\/script>
+            </body>
+            </html>
+            `;
+            printWin.document.open();
+            printWin.document.write(htmlContent);
+            printWin.document.close();
+        }
+
         async function fetchAnalytics() {
             try {
                 const res = await fetch('/api/analytics');
@@ -5509,9 +5790,10 @@
             if (document.getElementById('prevGrandTotal')) document.getElementById('prevGrandTotal').textContent = grand.toFixed(2) + ' ج';
 
             if (document.getElementById('prevWifiBox')) {
-                document.getElementById('prevWifiBox').style.display = showWifi ? 'block' : 'none';
-                document.getElementById('prevWifiSsid').textContent = wifiSsid;
-                document.getElementById('prevWifiPass').textContent = wifiPass;
+                document.getElementById('prevWifiBox').style.display = 'none';
+            }
+            if (document.getElementById('prevPhone')) {
+                document.getElementById('prevPhone').style.display = 'none';
             }
         }
 
