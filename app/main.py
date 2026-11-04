@@ -1766,6 +1766,14 @@ def record_salary_payment(req: SalaryPaymentCreateRequest, db: Session = Depends
     return {"status": "success", "message": f"تم تسجيل صرف {req.payment_type} للموظف ({emp.name}) بقيمة {req.amount} ج بنجاح!"}
 
 @app.delete("/api/salaries/{pay_id}")
+@app.delete("/api/cezar/salaries/{pay_id}")
+def delete_salary_payment(pay_id: int, db: Session = Depends(get_db)):
+    pay = db.query(SalaryPayment).filter(SalaryPayment.id == pay_id).first()
+    if pay:
+        db.delete(pay)
+        db.commit()
+    return {"status": "success", "message": "تم حذف سجل الصرف بنجاح"}
+
 @app.get("/api/employees/{emp_id}/monthly-ledger")
 @app.get("/api/cezar/employees/{emp_id}/monthly-ledger")
 def get_employee_monthly_ledger(emp_id: int, month: Optional[str] = None, db: Session = Depends(get_db)):
