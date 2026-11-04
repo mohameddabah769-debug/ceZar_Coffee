@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal, get_db
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment
 from .seed import seed_menu
 
 # إنشاء الجداول تلقائياً
@@ -1039,6 +1039,7 @@ def close_shift(req: ShiftCloseRequest, db: Session = Depends(get_db)):
             "cash_sales": cash_sales,
             "visa_sales": visa_sales,
             "total_expenses": total_expenses,
+        "total_salaries": total_salaries,
             "expected_cash": round(expected_cash, 2),
             "actual_cash": req.actual_cash,
             "difference": round(difference, 2)
@@ -1496,7 +1497,8 @@ def get_analytics(db: Session = Depends(get_db)):
     # Estimate COGS based on sold items (approx 32% food cost)
     total_cogs = round(gross_sales * 0.32, 2)
     total_expenses = db.query(func.sum(Expense.amount)).scalar() or 0.0
-    net_profit = round(max(0.0, gross_sales - total_cogs - total_expenses), 2)
+    total_salaries = db.query(func.sum(SalaryPayment.amount)).scalar() or 0.0
+    net_profit = round(max(0.0, gross_sales - total_cogs - total_expenses - total_salaries), 2)
     profit_margin_pct = round((net_profit / gross_sales) * 100, 1) if gross_sales > 0 else 0.0
 
     by_channel = {"صالة": sales_by_type.get("صالة", 0.0), "تيك أواي": sales_by_type.get("تيك أواي", 0.0), "دليفري": sales_by_type.get("دليفري", 0.0)}
@@ -1505,7 +1507,10 @@ def get_analytics(db: Session = Depends(get_db)):
         "status": "success",
         "gross_sales": gross_sales,
         "total_cogs": total_cogs,
+        "total_sales": gross_sales,
+        "cogs": total_cogs,
         "total_expenses": total_expenses,
+        "total_salaries": total_salaries,
         "net_profit": net_profit,
         "profit_margin_pct": profit_margin_pct,
         "top_sellers": top_items,
@@ -1605,6 +1610,181 @@ def generate_table_qr(table_number: int, request: Request, host: Optional[str] =
 
 
 # ==========================================
+
+# ==========================================
+# 11. شؤون الموظفين، الرواتب، وإدارة المستخدمين (HR, Payroll & Users)
+# ==========================================
+
+class EmployeeCreateRequest(BaseModel):
+    id: Optional[int] = None
+    name: str
+    role: str = "باريستا"
+    phone: Optional[str] = ""
+    salary: float = 4000.0
+    hire_date: Optional[str] = None
+    status: str = "نشط"
+    notes: Optional[str] = ""
+
+class SalaryPaymentCreateRequest(BaseModel):
+    employee_id: int
+    amount: float
+    payment_type: str = "راتب شهري"
+    month: str = "2026-11"
+    notes: Optional[str] = ""
+
+class UserAccountRequest(BaseModel):
+    id: Optional[int] = None
+    username: str
+    password: Optional[str] = None
+    manager_name: str = "موظف"
+    role: str = "cashier"
+
+@app.get("/api/employees")
+@app.get("/api/cezar/employees")
+def get_employees(db: Session = Depends(get_db)):
+    employees = db.query(Employee).order_by(Employee.id.desc()).all()
+    total_salary = sum(e.salary for e in employees if e.status == "نشط")
+    return {
+        "status": "success",
+        "employees": [{
+            "id": e.id, "name": e.name, "role": e.role, "phone": e.phone or "",
+            "salary": e.salary, "hire_date": e.hire_date or "", "status": e.status, "notes": e.notes or ""
+        } for e in employees],
+        "total_payroll": total_salary,
+        "active_count": sum(1 for e in employees if e.status == "نشط")
+    }
+
+@app.post("/api/employees")
+@app.post("/api/cezar/employees")
+def save_employee(req: EmployeeCreateRequest, db: Session = Depends(get_db)):
+    if req.id:
+        emp = db.query(Employee).filter(Employee.id == req.id).first()
+        if not emp:
+            raise HTTPException(status_code=404, detail="الموظف غير موجود")
+        emp.name = req.name.strip()
+        emp.role = req.role.strip()
+        emp.phone = (req.phone or "").strip()
+        emp.salary = req.salary
+        emp.hire_date = req.hire_date
+        emp.status = req.status
+        emp.notes = req.notes
+    else:
+        emp = Employee(
+            name=req.name.strip(),
+            role=req.role.strip(),
+            phone=(req.phone or "").strip(),
+            salary=req.salary,
+            hire_date=req.hire_date or datetime.utcnow().strftime("%Y-%m-%d"),
+            status=req.status,
+            notes=req.notes or ""
+        )
+        db.add(emp)
+    db.commit()
+    return {"status": "success", "message": "تم حفظ بيانات الموظف بنجاح!"}
+
+@app.delete("/api/employees/{emp_id}")
+@app.delete("/api/cezar/employees/{emp_id}")
+def delete_employee(emp_id: int, db: Session = Depends(get_db)):
+    emp = db.query(Employee).filter(Employee.id == emp_id).first()
+    if not emp:
+        raise HTTPException(status_code=404, detail="الموظف غير موجود")
+    db.delete(emp)
+    db.commit()
+    return {"status": "success", "message": "تم حذف الموظف بنجاح"}
+
+@app.get("/api/salaries")
+@app.get("/api/cezar/salaries")
+def get_salary_payments(db: Session = Depends(get_db)):
+    payments = db.query(SalaryPayment).order_by(SalaryPayment.id.desc()).all()
+    emps = {e.id: e.name for e in db.query(Employee).all()}
+    return {
+        "status": "success",
+        "payments": [{
+            "id": p.id,
+            "employee_id": p.employee_id,
+            "employee_name": emps.get(p.employee_id, "موظف"),
+            "amount": p.amount,
+            "payment_type": p.payment_type,
+            "month": p.month,
+            "payment_date": p.payment_date.strftime("%Y-%m-%d %I:%M %p") if p.payment_date else "",
+            "notes": p.notes or ""
+        } for p in payments],
+        "total_paid": sum(p.amount for p in payments)
+    }
+
+@app.post("/api/salaries")
+@app.post("/api/cezar/salaries")
+def record_salary_payment(req: SalaryPaymentCreateRequest, db: Session = Depends(get_db)):
+    emp = db.query(Employee).filter(Employee.id == req.employee_id).first()
+    if not emp:
+        raise HTTPException(status_code=404, detail="الموظف غير موجود")
+    
+    pay = SalaryPayment(
+        employee_id=req.employee_id,
+        amount=req.amount,
+        payment_type=req.payment_type,
+        month=req.month,
+        notes=req.notes or ""
+    )
+    db.add(pay)
+    db.commit()
+    return {"status": "success", "message": f"تم تسجيل صرف {req.payment_type} للموظف ({emp.name}) بقيمة {req.amount} ج بنجاح!"}
+
+@app.delete("/api/salaries/{pay_id}")
+@app.delete("/api/cezar/salaries/{pay_id}")
+def delete_salary_payment(pay_id: int, db: Session = Depends(get_db)):
+    pay = db.query(SalaryPayment).filter(SalaryPayment.id == pay_id).first()
+    if pay:
+        db.delete(pay)
+        db.commit()
+    return {"status": "success", "message": "تم حذف سجل الصرف بنجاح"}
+
+@app.get("/api/auth/users")
+@app.get("/api/cezar/auth/users")
+def list_system_users(db: Session = Depends(get_db)):
+    users = db.query(ManagerAccount).all()
+    return {
+        "status": "success",
+        "users": [{"id": u.id, "username": u.username, "manager_name": u.manager_name, "role": u.role or "admin"} for u in users]
+    }
+
+@app.post("/api/auth/users")
+@app.post("/api/cezar/auth/users")
+def save_system_user(req: UserAccountRequest, db: Session = Depends(get_db)):
+    if req.id:
+        u = db.query(ManagerAccount).filter(ManagerAccount.id == req.id).first()
+        if not u:
+            raise HTTPException(status_code=404, detail="المستخدم غير موجود")
+        u.username = req.username.strip()
+        u.manager_name = req.manager_name.strip()
+        u.role = req.role.strip()
+        if req.password:
+            u.password = req.password.strip()
+    else:
+        if db.query(ManagerAccount).filter(ManagerAccount.username == req.username.strip()).first():
+            raise HTTPException(status_code=400, detail="اسم المستخدم مستخدم بالفعل!")
+        u = ManagerAccount(
+            username=req.username.strip(),
+            password=req.password.strip() if req.password else "1234",
+            manager_name=req.manager_name.strip(),
+            role=req.role.strip()
+        )
+        db.add(u)
+    db.commit()
+    return {"status": "success", "message": "تم حفظ بيانات المستخدم وصلاحياته بنجاح!"}
+
+@app.delete("/api/auth/users/{user_id}")
+@app.delete("/api/cezar/auth/users/{user_id}")
+def delete_system_user(user_id: int, db: Session = Depends(get_db)):
+    u = db.query(ManagerAccount).filter(ManagerAccount.id == user_id).first()
+    if not u:
+        raise HTTPException(status_code=404, detail="المستخدم غير موجود")
+    if u.username == "admin":
+        raise HTTPException(status_code=400, detail="لا يمكن حذف حساب المدير العام الرئيسي!")
+    db.delete(u)
+    db.commit()
+    return {"status": "success", "message": "تم حذف المستخدم بنجاح"}
+
 # 10. نظام تسجيل دخول المدير وتغيير البيانات
 # ==========================================
 

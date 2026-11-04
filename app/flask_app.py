@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment
 from .seed import seed_menu
 
 Base.metadata.create_all(bind=engine)
@@ -1312,8 +1312,23 @@ def get_analytics():
             t = o.order_type or "صالة"
             sales_by_type[t] = sales_by_type.get(t, 0.0) + o.total_price
 
+        gross_sales = sum(o.total_price for o in orders)
+        total_cogs = round(gross_sales * 0.32, 2)
+        total_expenses = db.query(func.sum(Expense.amount)).scalar() or 0.0
+        total_salaries = db.query(func.sum(SalaryPayment.amount)).scalar() or 0.0
+        net_profit = round(max(0.0, gross_sales - total_cogs - total_expenses - total_salaries), 2)
+        profit_margin_pct = round((net_profit / gross_sales) * 100, 1) if gross_sales > 0 else 0.0
+
         return jsonify({
             "status": "success",
+            "gross_sales": gross_sales,
+            "total_sales": gross_sales,
+            "total_cogs": total_cogs,
+            "cogs": total_cogs,
+            "total_expenses": total_expenses,
+            "total_salaries": total_salaries,
+            "net_profit": net_profit,
+            "profit_margin_pct": profit_margin_pct,
             "top_sellers": top_items,
             "peak_hours": peak_hours,
             "sales_by_type": sales_by_type,
@@ -1414,6 +1429,167 @@ def change_credentials():
         db.commit()
         return jsonify({"status": "success", "message": "تم تحديث بيانات الدخول بنجاح!", "username": account.username})
 
+
+
+# ==========================================
+# HR, Salaries & Users Endpoints
+# ==========================================
+
+@app.route("/api/employees", methods=["GET"])
+@app.route("/api/cezar/employees", methods=["GET"])
+def get_employees():
+    with get_db() as db:
+        employees = db.query(Employee).order_by(Employee.id.desc()).all()
+        total_salary = sum(e.salary for e in employees if e.status == "نشط")
+        return jsonify({
+            "status": "success",
+            "employees": [{
+                "id": e.id, "name": e.name, "role": e.role, "phone": e.phone or "",
+                "salary": e.salary, "hire_date": e.hire_date or "", "status": e.status, "notes": e.notes or ""
+            } for e in employees],
+            "total_payroll": total_salary,
+            "active_count": sum(1 for e in employees if e.status == "نشط")
+        })
+
+@app.route("/api/employees", methods=["POST"])
+@app.route("/api/cezar/employees", methods=["POST"])
+def save_employee():
+    data = request.get_json() or {}
+    emp_id = data.get("id")
+    with get_db() as db:
+        if emp_id:
+            emp = db.query(Employee).filter(Employee.id == emp_id).first()
+            if not emp: return jsonify({"detail": "الموظف غير موجود"}), 404
+            emp.name = data.get("name", "").strip()
+            emp.role = data.get("role", "").strip()
+            emp.phone = (data.get("phone") or "").strip()
+            emp.salary = float(data.get("salary") or 0.0)
+            emp.hire_date = data.get("hire_date")
+            emp.status = data.get("status", "نشط")
+            emp.notes = data.get("notes")
+        else:
+            emp = Employee(
+                name=data.get("name", "").strip(),
+                role=data.get("role", "").strip(),
+                phone=(data.get("phone") or "").strip(),
+                salary=float(data.get("salary") or 0.0),
+                hire_date=data.get("hire_date") or datetime.utcnow().strftime("%Y-%m-%d"),
+                status=data.get("status", "نشط"),
+                notes=data.get("notes", "")
+            )
+            db.add(emp)
+        db.commit()
+        return jsonify({"status": "success", "message": "تم حفظ بيانات الموظف بنجاح!"})
+
+@app.route("/api/employees/<int:emp_id>", methods=["DELETE"])
+@app.route("/api/cezar/employees/<int:emp_id>", methods=["DELETE"])
+def delete_employee(emp_id):
+    with get_db() as db:
+        emp = db.query(Employee).filter(Employee.id == emp_id).first()
+        if not emp: return jsonify({"detail": "الموظف غير موجود"}), 404
+        db.delete(emp)
+        db.commit()
+        return jsonify({"status": "success", "message": "تم حذف الموظف بنجاح"})
+
+@app.route("/api/salaries", methods=["GET"])
+@app.route("/api/cezar/salaries", methods=["GET"])
+def get_salary_payments():
+    with get_db() as db:
+        payments = db.query(SalaryPayment).order_by(SalaryPayment.id.desc()).all()
+        emps = {e.id: e.name for e in db.query(Employee).all()}
+        return jsonify({
+            "status": "success",
+            "payments": [{
+                "id": p.id,
+                "employee_id": p.employee_id,
+                "employee_name": emps.get(p.employee_id, "موظف"),
+                "amount": p.amount,
+                "payment_type": p.payment_type,
+                "month": p.month,
+                "payment_date": p.payment_date.strftime("%Y-%m-%d %I:%M %p") if p.payment_date else "",
+                "notes": p.notes or ""
+            } for p in payments],
+            "total_paid": sum(p.amount for p in payments)
+        })
+
+@app.route("/api/salaries", methods=["POST"])
+@app.route("/api/cezar/salaries", methods=["POST"])
+def record_salary_payment():
+    data = request.get_json() or {}
+    emp_id = data.get("employee_id")
+    with get_db() as db:
+        emp = db.query(Employee).filter(Employee.id == emp_id).first()
+        if not emp: return jsonify({"detail": "الموظف غير موجود"}), 404
+        pay = SalaryPayment(
+            employee_id=emp_id,
+            amount=float(data.get("amount") or 0.0),
+            payment_type=data.get("payment_type", "راتب شهري"),
+            month=data.get("month", "2026-11"),
+            notes=data.get("notes", "")
+        )
+        db.add(pay)
+        db.commit()
+        return jsonify({"status": "success", "message": f"تم تسجيل صرف {pay.payment_type} للموظف ({emp.name}) بنجاح!"})
+
+@app.route("/api/salaries/<int:pay_id>", methods=["DELETE"])
+@app.route("/api/cezar/salaries/<int:pay_id>", methods=["DELETE"])
+def delete_salary_payment(pay_id):
+    with get_db() as db:
+        pay = db.query(SalaryPayment).filter(SalaryPayment.id == pay_id).first()
+        if pay:
+            db.delete(pay)
+            db.commit()
+        return jsonify({"status": "success", "message": "تم حذف سجل الصرف بنجاح"})
+
+@app.route("/api/auth/users", methods=["GET"])
+@app.route("/api/cezar/auth/users", methods=["GET"])
+def list_system_users():
+    with get_db() as db:
+        users = db.query(ManagerAccount).all()
+        return jsonify({
+            "status": "success",
+            "users": [{"id": u.id, "username": u.username, "manager_name": u.manager_name, "role": u.role or "admin"} for u in users]
+        })
+
+@app.route("/api/auth/users", methods=["POST"])
+@app.route("/api/cezar/auth/users", methods=["POST"])
+def save_system_user():
+    data = request.get_json() or {}
+    u_id = data.get("id")
+    with get_db() as db:
+        if u_id:
+            u = db.query(ManagerAccount).filter(ManagerAccount.id == u_id).first()
+            if not u: return jsonify({"detail": "المستخدم غير موجود"}), 404
+            u.username = data.get("username", "").strip()
+            u.manager_name = data.get("manager_name", "").strip()
+            u.role = data.get("role", "cashier").strip()
+            if data.get("password"):
+                u.password = data.get("password", "").strip()
+        else:
+            username = data.get("username", "").strip()
+            if db.query(ManagerAccount).filter(ManagerAccount.username == username).first():
+                return jsonify({"detail": "اسم المستخدم مستخدم بالفعل!"}), 400
+            u = ManagerAccount(
+                username=username,
+                password=data.get("password", "1234").strip(),
+                manager_name=data.get("manager_name", "موظف").strip(),
+                role=data.get("role", "cashier").strip()
+            )
+            db.add(u)
+        db.commit()
+        return jsonify({"status": "success", "message": "تم حفظ بيانات المستخدم وصلاحياته بنجاح!"})
+
+@app.route("/api/auth/users/<int:user_id>", methods=["DELETE"])
+@app.route("/api/cezar/auth/users/<int:user_id>", methods=["DELETE"])
+def delete_system_user(user_id):
+    with get_db() as db:
+        u = db.query(ManagerAccount).filter(ManagerAccount.id == user_id).first()
+        if not u: return jsonify({"detail": "المستخدم غير موجود"}), 404
+        if u.username == "admin":
+            return jsonify({"detail": "لا يمكن حذف حساب المدير العام الرئيسي!"}), 400
+        db.delete(u)
+        db.commit()
+        return jsonify({"status": "success", "message": "تم حذف المستخدم بنجاح"})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)

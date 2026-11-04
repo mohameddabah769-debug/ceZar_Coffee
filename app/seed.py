@@ -7,12 +7,19 @@ except Exception:
     pass
 
 from sqlalchemy.orm import Session
-from .models import MenuItem, InventoryItem, PromoCode, ManagerAccount, MenuItemRecipe
+from .models import MenuItem, InventoryItem, PromoCode, ManagerAccount, MenuItemRecipe, Employee, SalaryPayment
 
 DEFAULT_STAFF_USERS = [
     {"username": "admin", "password": "0000", "manager_name": "المدير العام (ceZar)", "role": "admin"},
     {"username": "cashier", "password": "1234", "manager_name": "كاشير الصالة السريع", "role": "cashier"},
     {"username": "barista", "password": "1234", "manager_name": "باريستا البار الرئيسي", "role": "barista"},
+]
+
+DEFAULT_EMPLOYEES = [
+    {"name": "كريم أحمد", "role": "رئيس باريستا", "phone": "01011223344", "salary": 6000.0, "hire_date": "2025-01-10", "status": "نشط"},
+    {"name": "محمود سامح", "role": "كاشير رئيسي", "phone": "01122334455", "salary": 4500.0, "hire_date": "2025-02-01", "status": "نشط"},
+    {"name": "عمر خالد", "role": "كابتن صالة وويتر", "phone": "01233445566", "salary": 3800.0, "hire_date": "2025-03-15", "status": "نشط"},
+    {"name": "يوسف إبراهيم", "role": "باريستا مساعد", "phone": "01544556677", "salary": 4000.0, "hire_date": "2025-04-01", "status": "نشط"},
 ]
 
 CEZAR_MENU_DATA = [
@@ -180,3 +187,29 @@ def seed_menu(db: Session):
         item.cost_price = round(item.price * 0.32, 2)  # 32% food cost standard
     if items_without_cost:
         db.commit()
+
+    # Seed Employees (شؤون الموظفين)
+    if db.query(Employee).count() == 0:
+        for emp in DEFAULT_EMPLOYEES:
+            db.add(Employee(
+                name=emp["name"],
+                role=emp["role"],
+                phone=emp["phone"],
+                salary=emp["salary"],
+                hire_date=emp["hire_date"],
+                status=emp["status"]
+            ))
+        db.commit()
+
+    # Seed Sample Salary Payment if none
+    if db.query(SalaryPayment).count() == 0:
+        first_emp = db.query(Employee).first()
+        if first_emp:
+            db.add(SalaryPayment(
+                employee_id=first_emp.id,
+                amount=first_emp.salary,
+                payment_type="راتب شهري",
+                month="2026-11",
+                notes="صرف راتب شهر نوفمبر 2026"
+            ))
+            db.commit()

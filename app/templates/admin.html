@@ -759,6 +759,11 @@
             <span>الخصومات والبروموكود</span>
         </button>
 
+        <button class="tab-btn" data-tab="staff" onclick="switchTab('staff', this)">
+            <i class="fa-solid fa-users-gear"></i>
+            <span>شؤون الموظفين والرواتب</span>
+        </button>
+
         <button class="tab-btn" data-tab="reservations" onclick="switchTab('reservations', this)">
             <i class="fa-solid fa-calendar-check"></i>
             <span>الحجوزات وقائمة الانتظار</span>
@@ -1952,6 +1957,7 @@
             if (tabName === 'inventory') fetchInventory();
             if (tabName === 'analytics') fetchAnalytics();
             if (tabName === 'promos') fetchPromoCodes();
+            if (tabName === 'staff') { fetchEmployees(); fetchSalaries(); fetchSystemUsers(); }
         }
 
         function openModal(id) {
@@ -3272,6 +3278,7 @@
                 if (document.getElementById('kpiGrossSales')) document.getElementById('kpiGrossSales').textContent = `${(data.gross_sales || 0):g} ج`;
                 if (document.getElementById('kpiTotalCogs')) document.getElementById('kpiTotalCogs').textContent = `${(data.total_cogs || 0):g} ج`;
                 if (document.getElementById('kpiTotalExpenses')) document.getElementById('kpiTotalExpenses').textContent = `${(data.total_expenses || 0):g} ج`;
+                if (document.getElementById('kpiTotalSalaries')) document.getElementById('kpiTotalSalaries').textContent = `${(data.total_salaries || 0):g} ج`;
                 if (document.getElementById('kpiNetProfit')) document.getElementById('kpiNetProfit').textContent = `${(data.net_profit || 0):g} ج`;
                 if (document.getElementById('kpiProfitMargin')) document.getElementById('kpiProfitMargin').textContent = `${(data.profit_margin_pct || 0)}%`;
 
@@ -3380,6 +3387,392 @@
                 alert('تعذر الحذف');
             }
         }
+
+        // ====================================================
+        // HR, PAYROLL & SYSTEM USERS LOGIC
+        // ====================================================
+        var allEmployees = [];
+        var allSalaries = [];
+        var allSystemUsers = [];
+
+        function switchStaffSubTab(sub) {
+            document.querySelectorAll('#tabStaff .filter-pill').forEach(b => b.classList.remove('active'));
+            document.getElementById('subTabEmployees').style.display = 'none';
+            document.getElementById('subTabPayroll').style.display = 'none';
+            document.getElementById('subTabUsers').style.display = 'none';
+
+            if (sub === 'employees') {
+                document.getElementById('pillStaffEmployees').classList.add('active');
+                document.getElementById('subTabEmployees').style.display = 'block';
+                fetchEmployees();
+            } else if (sub === 'payroll') {
+                document.getElementById('pillStaffPayroll').classList.add('active');
+                document.getElementById('subTabPayroll').style.display = 'block';
+                fetchSalaries();
+            } else if (sub === 'users') {
+                document.getElementById('pillStaffUsers').classList.add('active');
+                document.getElementById('subTabUsers').style.display = 'block';
+                fetchSystemUsers();
+            }
+        }
+
+        async function fetchEmployees() {
+            try {
+                const res = await fetch('/api/employees');
+                const data = await res.json();
+                allEmployees = data.employees || [];
+
+                document.getElementById('staffCountBadge').textContent = data.active_count || allEmployees.length;
+                document.getElementById('staffTotalPayroll').textContent = `${(data.total_payroll || 0):g} ج`;
+
+                const tbody = document.getElementById('employeesTableBody');
+                if (allEmployees.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #888;">لا يوجد موظفين مسجلين حالياً</td></tr>';
+                } else {
+                    tbody.innerHTML = allEmployees.map(emp => {
+                        const statusBadge = emp.status === 'نشط' 
+                            ? '<span style="background: #DCFCE7; color: #16A34A; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;">نشط</span>'
+                            : '<span style="background: #FEE2E2; color: #DC2626; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;">إجازة</span>';
+
+                        return `<tr>
+                            <td style="font-weight: 900; color: var(--primary-espresso);">${emp.name}</td>
+                            <td><span style="background: #F3F4F6; padding: 4px 8px; border-radius: 8px; font-weight: 800; font-size: 12px;">${emp.role}</span></td>
+                            <td style="direction: ltr; text-align: right;">${emp.phone || '-'}</td>
+                            <td style="font-weight: 900; color: #28a745;">${emp.salary} ج</td>
+                            <td style="color: #666; font-size: 12px;">${emp.hire_date || '-'}</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <div style="display: flex; gap: 4px;">
+                                    <button onclick="openPayForEmployee(${emp.id})" title="صرف راتب أو سلفة" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
+                                        <i class="fa-solid fa-hand-holding-dollar"></i> صرف
+                                    </button>
+                                    <button onclick="openEditEmployee(${emp.id})" title="تعديل البيانات" style="background: #F0F9FF; color: #0284C7; border: 1px solid #BAE6FD; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button onclick="deleteEmployeeItem(${emp.id})" title="حذف" style="background: #FFEBEE; color: #DC2626; border: 1px solid #FECACA; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
+            } catch(e) {
+                console.error("Error fetching employees", e);
+            }
+        }
+
+        function openAddEmployeeModal() {
+            document.getElementById('empEditId').value = '';
+            document.getElementById('modalEmployeeHeader').innerHTML = '<i class="fa-solid fa-user-plus" style="color: var(--cezar-orange);"></i> إضافة موظف جديد';
+            document.getElementById('empName').value = '';
+            document.getElementById('empPhone').value = '';
+            document.getElementById('empSalary').value = '4000';
+            document.getElementById('empNotes').value = '';
+            openModal('addEmployeeModal');
+        }
+
+        function openEditEmployee(id) {
+            const emp = allEmployees.find(e => e.id === id);
+            if (!emp) return;
+            document.getElementById('empEditId').value = emp.id;
+            document.getElementById('modalEmployeeHeader').innerHTML = '<i class="fa-solid fa-pen" style="color: #0284C7;"></i> تعديل بيانات الموظف';
+            document.getElementById('empName').value = emp.name;
+            document.getElementById('empRole').value = emp.role;
+            document.getElementById('empPhone').value = emp.phone || '';
+            document.getElementById('empSalary').value = emp.salary;
+            document.getElementById('empStatus').value = emp.status;
+            document.getElementById('empNotes').value = emp.notes || '';
+            openModal('addEmployeeModal');
+        }
+
+        async function submitEmployeeForm() {
+            const idVal = document.getElementById('empEditId').value;
+            const name = document.getElementById('empName').value.trim();
+            const role = document.getElementById('empRole').value;
+            const phone = document.getElementById('empPhone').value.trim();
+            const salary = parseFloat(document.getElementById('empSalary').value || 0);
+            const status = document.getElementById('empStatus').value;
+            const notes = document.getElementById('empNotes').value.trim();
+
+            if (!name) {
+                alert('يرجى إدخال اسم الموظف!');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/employees', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: idVal ? parseInt(idVal) : null,
+                        name: name,
+                        role: role,
+                        phone: phone,
+                        salary: salary,
+                        status: status,
+                        notes: notes
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    closeModal('addEmployeeModal');
+                    fetchEmployees();
+                    alert('✅ تم حفظ بيانات الموظف بنجاح!');
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر الحفظ'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function deleteEmployeeItem(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا الموظف من السيستم؟')) return;
+            try {
+                await fetch(`/api/employees/${id}`, { method: 'DELETE' });
+                fetchEmployees();
+            } catch(e) {
+                alert('تعذر الحذف');
+            }
+        }
+
+        // Salaries & Payroll Logic
+        async function fetchSalaries() {
+            try {
+                const res = await fetch('/api/salaries');
+                const data = await res.json();
+                allSalaries = data.payments || [];
+
+                document.getElementById('payrollTotalPaid').textContent = `${(data.total_paid || 0):g} ج`;
+
+                const tbody = document.getElementById('salariesTableBody');
+                if (allSalaries.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #888;">لا توجد سندات صرف رواتب مسجلة حتى الآن</td></tr>';
+                } else {
+                    tbody.innerHTML = allSalaries.map(pay => {
+                        const typeBadge = pay.payment_type.includes('سلفة') 
+                            ? '<span style="background: #FFF7ED; color: #C2410C; padding: 4px 8px; border-radius: 8px; font-weight: 800; font-size: 11px;">سلفة</span>'
+                            : '<span style="background: #F0FDF4; color: #16A34A; padding: 4px 8px; border-radius: 8px; font-weight: 800; font-size: 11px;">راتب شهري</span>';
+
+                        return `<tr>
+                            <td style="font-weight: 900; color: var(--primary-espresso);">${pay.employee_name}</td>
+                            <td>${typeBadge}</td>
+                            <td style="font-weight: 800;">${pay.month}</td>
+                            <td style="font-size: 15px; font-weight: 900; color: #28a745;">${pay.amount} ج</td>
+                            <td style="color: #666; font-size: 11px;">${pay.payment_date}</td>
+                            <td style="color: #555; font-size: 12px;">${pay.notes || '-'}</td>
+                            <td>
+                                <button onclick="deleteSalarySlip(${pay.id})" style="background: #FFEBEE; color: #DC2626; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer;">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
+            } catch(e) {
+                console.error("Error fetching salaries", e);
+            }
+        }
+
+        async function openRecordSalaryModal() {
+            // Load employee options
+            if (allEmployees.length === 0) await fetchEmployees();
+            const selectEl = document.getElementById('salEmpSelect');
+            selectEl.innerHTML = allEmployees.map(e => `<option value="${e.id}" data-salary="${e.salary}">${e.name} (${e.role}) - ${e.salary} ج</option>`).join('');
+            autoFillSalaryAmount();
+            openModal('recordSalaryModal');
+        }
+
+        function openPayForEmployee(empId) {
+            openRecordSalaryModal();
+            setTimeout(() => {
+                document.getElementById('salEmpSelect').value = empId;
+                autoFillSalaryAmount();
+            }, 100);
+        }
+
+        function autoFillSalaryAmount() {
+            const selectEl = document.getElementById('salEmpSelect');
+            const selectedOpt = selectEl.options[selectEl.selectedIndex];
+            if (selectedOpt) {
+                const s = selectedOpt.getAttribute('data-salary');
+                document.getElementById('salAmount').value = s || 4000;
+            }
+        }
+
+        async function submitSalaryPaymentForm() {
+            const empId = parseInt(document.getElementById('salEmpSelect').value);
+            const pType = document.getElementById('salPaymentType').value;
+            const month = document.getElementById('salMonth').value.trim();
+            const amount = parseFloat(document.getElementById('salAmount').value || 0);
+            const notes = document.getElementById('salNotes').value.trim();
+
+            if (!empId || amount <= 0) {
+                alert('يرجى اختيار الموظف وتحديد المبلغ المصروف!');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/salaries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employee_id: empId,
+                        payment_type: pType,
+                        month: month,
+                        amount: amount,
+                        notes: notes
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    closeModal('recordSalaryModal');
+                    fetchSalaries();
+                    alert(data.message || '✅ تم تسجيل الصرف بنجاح!');
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر تسجيل الصرف'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function deleteSalarySlip(id) {
+            if (!confirm('هل أنت متأكد من حذف سند الصرف هذا؟')) return;
+            try {
+                await fetch(`/api/salaries/${id}`, { method: 'DELETE' });
+                fetchSalaries();
+            } catch(e) {
+                alert('تعذر الحذف');
+            }
+        }
+
+        // Users & Roles Editor Logic
+        async function fetchSystemUsers() {
+            try {
+                const res = await fetch('/api/auth/users');
+                const data = await res.json();
+                allSystemUsers = data.users || [];
+
+                const tbody = document.getElementById('systemUsersTableBody');
+                if (allSystemUsers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #888;">لا يوجد مستخدمين مسجلين</td></tr>';
+                } else {
+                    tbody.innerHTML = allSystemUsers.map(u => {
+                        let roleBadge = '';
+                        let screenAccess = '';
+                        if (u.role === 'admin') {
+                            roleBadge = '<span style="background: #FAF5FF; color: #7E22CE; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;">👑 مدير عام</span>';
+                            screenAccess = 'كامل الشاشات والتقارير والأرباح والمخزون';
+                        } else if (u.role === 'cashier') {
+                            roleBadge = '<span style="background: #FFF7ED; color: #C2410C; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;">💵 كاشير</span>';
+                            screenAccess = 'الـ POS السريع، الصالة، الطلبات والشيفت';
+                        } else if (u.role === 'barista') {
+                            roleBadge = '<span style="background: #F0FDF4; color: #16A34A; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;">☕ باريستا</span>';
+                            screenAccess = 'شاشة البار والمطبخ KDS فقط';
+                        }
+
+                        return `<tr>
+                            <td style="font-weight: 900; color: var(--primary-espresso); font-family: monospace; font-size: 13px;">${u.username}</td>
+                            <td style="font-weight: 800;">${u.manager_name}</td>
+                            <td>${roleBadge}</td>
+                            <td style="font-size: 11px; color: #666;">${screenAccess}</td>
+                            <td>
+                                <div style="display: flex; gap: 4px;">
+                                    <button onclick="openEditSystemUser(${u.id})" title="تعديل الصلاحية أو كلمة المرور" style="background: #F0F9FF; color: #0284C7; border: 1px solid #BAE6FD; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
+                                        <i class="fa-solid fa-pen-to-square"></i> تعديل
+                                    </button>
+                                    ${u.username !== 'admin' ? `
+                                    <button onclick="deleteSystemUserItem(${u.id})" title="حذف" style="background: #FFEBEE; color: #DC2626; border: 1px solid #FECACA; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>` : ''}
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
+            } catch(e) {
+                console.error("Error fetching system users", e);
+            }
+        }
+
+        function openAddUserModal() {
+            document.getElementById('userEditId').value = '';
+            document.getElementById('modalUserHeader').innerHTML = '<i class="fa-solid fa-user-shield" style="color: #6f42c1;"></i> إنشاء مستخدم جديد وتحديد الصلاحية';
+            document.getElementById('userUsername').value = '';
+            document.getElementById('userUsername').disabled = false;
+            document.getElementById('userManagerName').value = '';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userRole').value = 'cashier';
+            openModal('addUserModal');
+        }
+
+        function openEditSystemUser(id) {
+            const u = allSystemUsers.find(x => x.id === id);
+            if (!u) return;
+            document.getElementById('userEditId').value = u.id;
+            document.getElementById('modalUserHeader').innerHTML = `<i class="fa-solid fa-pen" style="color: #0284C7;"></i> تعديل صلاحيات المستخدم (${u.username})`;
+            document.getElementById('userUsername').value = u.username;
+            document.getElementById('userUsername').disabled = (u.username === 'admin');
+            document.getElementById('userManagerName').value = u.manager_name;
+            document.getElementById('userRole').value = u.role || 'cashier';
+            document.getElementById('userPassword').value = '';
+            openModal('addUserModal');
+        }
+
+        async function submitSystemUserForm() {
+            const idVal = document.getElementById('userEditId').value;
+            const username = document.getElementById('userUsername').value.trim();
+            const managerName = document.getElementById('userManagerName').value.trim() || 'موظف';
+            const role = document.getElementById('userRole').value;
+            const password = document.getElementById('userPassword').value.trim();
+
+            if (!username) {
+                alert('يرجى إدخال اسم المستخدم!');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: idVal ? parseInt(idVal) : null,
+                        username: username,
+                        manager_name: managerName,
+                        role: role,
+                        password: password || null
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    closeModal('addUserModal');
+                    fetchSystemUsers();
+                    alert('✅ تم حفظ بيانات المستخدم وصلاحيته بنجاح!');
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر الحفظ'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function deleteSystemUserItem(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟ لن يتمكن من تسجيل الدخول بعد الآن.')) return;
+            try {
+                const res = await fetch(`/api/auth/users/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    fetchSystemUsers();
+                } else {
+                    alert(data.detail || 'تعذر الحذف');
+                }
+            } catch(e) {
+                alert('تعذر الحذف');
+            }
+        }
+
 
         checkManagerAuth();
     </script>

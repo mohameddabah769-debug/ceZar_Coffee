@@ -155,3 +155,32 @@ class MenuItemRecipe(Base):
     inventory_item_id = Column(Integer, ForeignKey("inventory_items.id"), nullable=False, index=True)
     amount_used = Column(Float, nullable=False, default=0.02)  # مثلا 0.018 كجم بن أو 0.2 لتر حليب
 
+
+class Employee(Base):
+    """شؤون الموظفين وبيانات العاملين في كافيه سيزر."""
+    __tablename__ = "employees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), nullable=False, index=True)
+    role = Column(String(60), default="باريستا")  # باريستا | كاشير | ويتر | شيف | كابتن صالة | نظافة
+    phone = Column(String(30), nullable=True)
+    salary = Column(Float, default=4000.0)  # الراتب الشهري الأساسي
+    hire_date = Column(String(50), nullable=True)
+    status = Column(String(30), default="نشط")  # نشط | إجازة | موقوف
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class SalaryPayment(Base):
+    """سجل صرف الرواتب الشهرية، السلف، والمكافآت والخصومات."""
+    __tablename__ = "salary_payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False, index=True)
+    amount = Column(Float, nullable=False)
+    payment_type = Column(String(40), default="راتب شهري")  # راتب شهري | سلفة | مكافأة | خصم
+    month = Column(String(30), default="2026-11")
+    payment_date = Column(DateTime, default=datetime.utcnow)
+    notes = Column(Text, nullable=True)
+
+
