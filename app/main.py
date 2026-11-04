@@ -17,14 +17,14 @@ except Exception:
 
 import qrcode
 from fastapi import FastAPI, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, Response, RedirectResponse
+from fastapi.responses import HTMLResponse, Response, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal, get_db
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, CafeSetting, CafeTableConfig
 from .seed import seed_menu
 
 # إنشاء الجداول تلقائياً
@@ -1826,6 +1826,174 @@ def change_credentials(data: ChangeCredentialsRequest, db: Session = Depends(get
         "username": account.username
     }
 
+
+# ==========================================
+# ==========================================
+# 11. إعدادات المالك والتحكم الشامل (Owner Master Control & Settings)
+# ==========================================
+
+class SettingsUpdateRequest(BaseModel):
+    settings: dict
+
+class BulkPriceAdjustRequest(BaseModel):
+    category: Optional[str] = "all"
+    adjust_type: str = "percentage"  # percentage | fixed
+    value: float = 0.0
+    round_to_five: bool = False
+
+class CategoryActionRequest(BaseModel):
+    old_name: str
+    new_name: Optional[str] = ""
+
+class TableConfigUpdateRequest(BaseModel):
+    table_number: int
+    capacity: Optional[int] = 4
+    zone: Optional[str] = "صالة رئيسية"
+    is_active: Optional[bool] = True
+
+class BatchTablesUpdateRequest(BaseModel):
+    tables_count: int
+
+@app.get("/api/settings")
+@app.get("/api/cezar/settings")
+def get_cafe_settings(db: Session = Depends(get_db)):
+    settings = db.query(CafeSetting).all()
+    res = {s.key: s.value for s in settings}
+    return {"status": "success", "settings": res}
+
+@app.post("/api/settings")
+@app.post("/api/cezar/settings")
+def update_cafe_settings(req: SettingsUpdateRequest, db: Session = Depends(get_db)):
+    for k, v in req.settings.items():
+        s = db.query(CafeSetting).filter(CafeSetting.key == k).first()
+        if s:
+            s.value = str(v)
+        else:
+            db.add(CafeSetting(key=k, value=str(v), description="تخصيص المالك"))
+    db.commit()
+    return {"status": "success", "message": "تم حفظ وتحديث إعدادات الكافيه بنجاح!"}
+
+@app.get("/api/tables/configs")
+@app.get("/api/cezar/tables/configs")
+def get_tables_configs(db: Session = Depends(get_db)):
+    configs = db.query(CafeTableConfig).order_by(CafeTableConfig.table_number.asc()).all()
+    return {
+        "status": "success",
+        "tables": [{"table_number": c.table_number, "capacity": c.capacity, "zone": c.zone, "is_active": c.is_active} for c in configs]
+    }
+
+@app.post("/api/tables/configs")
+@app.post("/api/cezar/tables/configs")
+def update_table_config(req: TableConfigUpdateRequest, db: Session = Depends(get_db)):
+    cfg = db.query(CafeTableConfig).filter(CafeTableConfig.table_number == req.table_number).first()
+    if not cfg:
+        cfg = CafeTableConfig(table_number=req.table_number)
+        db.add(cfg)
+    cfg.capacity = req.capacity
+    cfg.zone = req.zone
+    cfg.is_active = req.is_active
+    db.commit()
+    return {"status": "success", "message": f"تم تحديث بيانات ترابيزة {req.table_number} بنجاح"}
+
+@app.post("/api/tables/batch-count")
+@app.post("/api/cezar/tables/batch-count")
+def update_batch_tables_count(req: BatchTablesUpdateRequest, db: Session = Depends(get_db)):
+    count = max(1, min(100, req.tables_count))
+    existing = {c.table_number: c for c in db.query(CafeTableConfig).all()}
+    for t in range(1, count + 1):
+        if t in existing:
+            existing[t].is_active = True
+        else:
+            db.add(CafeTableConfig(table_number=t, capacity=4, zone="صالة رئيسية", is_active=True))
+    for t, cfg in existing.items():
+        if t > count:
+            cfg.is_active = False
+    
+    s = db.query(CafeSetting).filter(CafeSetting.key == "tables_count").first()
+    if s:
+        s.value = str(count)
+    else:
+        db.add(CafeSetting(key="tables_count", value=str(count)))
+        
+    db.commit()
+    return {"status": "success", "message": f"تم تحديث إجمالي عدد الترابيزات في الصالة إلى {count} ترابيزة بنجاح!"}
+
+@app.post("/api/menu/bulk-adjust-prices")
+@app.post("/api/cezar/menu/bulk-adjust-prices")
+def bulk_adjust_prices(req: BulkPriceAdjustRequest, db: Session = Depends(get_db)):
+    query = db.query(MenuItem)
+    if req.category and req.category != "all":
+        query = query.filter(MenuItem.category == req.category.strip())
+    items = query.all()
+    count = 0
+    for item in items:
+        old_price = item.price
+        if req.adjust_type == "percentage":
+            new_price = old_price * (1.0 + (req.value / 100.0))
+        else:
+            new_price = old_price + req.value
+            
+        if req.round_to_five:
+            new_price = round(new_price / 5.0) * 5.0
+        else:
+            new_price = round(new_price, 2)
+            
+        new_price = max(1.0, new_price)
+        item.price = new_price
+        item.cost_price = round(new_price * 0.32, 2)
+        count += 1
+    db.commit()
+    return {"status": "success", "message": f"تم تعديل أسعار {count} صنف بنجاح!", "updated_count": count}
+
+@app.post("/api/menu/categories/rename")
+@app.post("/api/cezar/menu/categories/rename")
+def rename_menu_category(req: CategoryActionRequest, db: Session = Depends(get_db)):
+    old_cat = req.old_name.strip()
+    new_cat = (req.new_name or "").strip()
+    if not old_cat or not new_cat:
+        raise HTTPException(status_code=400, detail="يرجى كتابة الاسم القديم والاسم الجديد")
+    items = db.query(MenuItem).filter(MenuItem.category == old_cat).all()
+    for item in items:
+        item.category = new_cat
+    db.commit()
+    return {"status": "success", "message": f"تم تعديل اسم القسم من ({old_cat}) إلى ({new_cat}) لعدد {len(items)} صنف بنجاح!"}
+
+@app.post("/api/menu/categories/delete")
+@app.post("/api/cezar/menu/categories/delete")
+def delete_menu_category(req: CategoryActionRequest, db: Session = Depends(get_db)):
+    cat = req.old_name.strip()
+    items = db.query(MenuItem).filter(MenuItem.category == cat).all()
+    for item in items:
+        db.delete(item)
+    db.commit()
+    return {"status": "success", "message": f"تم حذف قسم ({cat}) وجميع أصنافه ({len(items)} صنف) بنجاح"}
+
+@app.get("/api/admin/backup-db")
+@app.get("/api/cezar/admin/backup-db")
+def download_db_backup():
+    db_file = os.path.abspath("cezar_coffee.db")
+    if not os.path.exists(db_file):
+        raise HTTPException(status_code=404, detail="ملف قاعدة البيانات غير موجود")
+    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    return FileResponse(
+        path=db_file,
+        filename=f"cezar_coffee_backup_{timestamp}.db",
+        media_type="application/octet-stream"
+    )
+
+@app.post("/api/admin/reset-test-data")
+@app.post("/api/cezar/admin/reset-test-data")
+def reset_test_data(db: Session = Depends(get_db)):
+    db.query(TableOrder).delete()
+    db.query(Reservation).delete()
+    db.query(WaitingList).delete()
+    db.query(Expense).delete()
+    open_shifts = db.query(Shift).filter(Shift.status == "مفتوح").all()
+    for s in open_shifts:
+        s.status = "مغلق"
+        s.end_time = datetime.utcnow()
+    db.commit()
+    return {"status": "success", "message": "تم تصفير كافة الطلبات والحجوزات والمصروفات التجريبية بنجاح مع الحفاظ الكامل على المنيو والمخزون والإعدادات!"}
 
 # ==========================================
 # WSGI Compatibility (PythonAnywhere Support)

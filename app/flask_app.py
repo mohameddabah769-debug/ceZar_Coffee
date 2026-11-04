@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, CafeSetting, CafeTableConfig
 from .seed import seed_menu
 
 Base.metadata.create_all(bind=engine)
@@ -1593,3 +1593,118 @@ def delete_system_user(user_id):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
+
+# ==========================================
+# 11. إعدادات المالك والتحكم الشامل (Flask)
+# ==========================================
+
+@app.route("/api/settings", methods=["GET"])
+@app.route("/api/cezar/settings", methods=["GET"])
+def get_cafe_settings_flask():
+    with SessionLocal() as db:
+        settings = db.query(CafeSetting).all()
+        return jsonify({"status": "success", "settings": {s.key: s.value for s in settings}})
+
+@app.route("/api/settings", methods=["POST"])
+@app.route("/api/cezar/settings", methods=["POST"])
+def update_cafe_settings_flask():
+    data = request.get_json() or {}
+    settings_dict = data.get("settings", {})
+    with SessionLocal() as db:
+        for k, v in settings_dict.items():
+            s = db.query(CafeSetting).filter(CafeSetting.key == k).first()
+            if s:
+                s.value = str(v)
+            else:
+                db.add(CafeSetting(key=k, value=str(v), description="تخصيص المالك"))
+        db.commit()
+        return jsonify({"status": "success", "message": "تم حفظ وتحديث إعدادات الكافيه بنجاح!"})
+
+@app.route("/api/tables/configs", methods=["GET"])
+@app.route("/api/cezar/tables/configs", methods=["GET"])
+def get_tables_configs_flask():
+    with SessionLocal() as db:
+        configs = db.query(CafeTableConfig).order_by(CafeTableConfig.table_number.asc()).all()
+        return jsonify({
+            "status": "success",
+            "tables": [{"table_number": c.table_number, "capacity": c.capacity, "zone": c.zone, "is_active": c.is_active} for c in configs]
+        })
+
+@app.route("/api/tables/configs", methods=["POST"])
+@app.route("/api/cezar/tables/configs", methods=["POST"])
+def update_table_config_flask():
+    data = request.get_json() or {}
+    t_num = data.get("table_number")
+    with SessionLocal() as db:
+        cfg = db.query(CafeTableConfig).filter(CafeTableConfig.table_number == t_num).first()
+        if not cfg:
+            cfg = CafeTableConfig(table_number=t_num)
+            db.add(cfg)
+        cfg.capacity = data.get("capacity", 4)
+        cfg.zone = data.get("zone", "صالة رئيسية")
+        cfg.is_active = data.get("is_active", True)
+        db.commit()
+        return jsonify({"status": "success", "message": f"تم تحديث بيانات ترابيزة {t_num} بنجاح"})
+
+@app.route("/api/tables/batch-count", methods=["POST"])
+@app.route("/api/cezar/tables/batch-count", methods=["POST"])
+def update_batch_tables_count_flask():
+    data = request.get_json() or {}
+    count = max(1, min(100, int(data.get("tables_count", 25))))
+    with SessionLocal() as db:
+        existing = {c.table_number: c for c in db.query(CafeTableConfig).all()}
+        for t in range(1, count + 1):
+            if t in existing:
+                existing[t].is_active = True
+            else:
+                db.add(CafeTableConfig(table_number=t, capacity=4, zone="صالة رئيسية", is_active=True))
+        for t, cfg in existing.items():
+            if t > count:
+                cfg.is_active = False
+        s = db.query(CafeSetting).filter(CafeSetting.key == "tables_count").first()
+        if s:
+            s.value = str(count)
+        else:
+            db.add(CafeSetting(key="tables_count", value=str(count)))
+        db.commit()
+        return jsonify({"status": "success", "message": f"تم تحديث إجمالي عدد الترابيزات إلى {count} ترابيزة"})
+
+@app.route("/api/menu/bulk-adjust-prices", methods=["POST"])
+@app.route("/api/cezar/menu/bulk-adjust-prices", methods=["POST"])
+def bulk_adjust_prices_flask():
+    data = request.get_json() or {}
+    category = data.get("category", "all")
+    adj_type = data.get("adjust_type", "percentage")
+    val = float(data.get("value", 0.0))
+    round_five = bool(data.get("round_to_five", False))
+    with SessionLocal() as db:
+        query = db.query(MenuItem)
+        if category and category != "all":
+            query = query.filter(MenuItem.category == category.strip())
+        items = query.all()
+        count = 0
+        for item in items:
+            old_p = item.price
+            if adj_type == "percentage":
+                new_p = old_p * (1.0 + (val / 100.0))
+            else:
+                new_p = old_p + val
+            if round_five:
+                new_p = round(new_p / 5.0) * 5.0
+            else:
+                new_p = round(new_p, 2)
+            new_p = max(1.0, new_p)
+            item.price = new_p
+            item.cost_price = round(new_p * 0.32, 2)
+            count += 1
+        db.commit()
+        return jsonify({"status": "success", "message": f"تم تعديل أسعار {count} صنف بنجاح!", "updated_count": count})
+
+@app.route("/api/admin/backup-db", methods=["GET"])
+@app.route("/api/cezar/admin/backup-db", methods=["GET"])
+def download_db_backup_flask():
+    import os
+    from flask import send_file
+    db_file = os.path.abspath("cezar_coffee.db")
+    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    return send_file(db_file, as_attachment=True, download_name=f"cezar_coffee_backup_{timestamp}.db")

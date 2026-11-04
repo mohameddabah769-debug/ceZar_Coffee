@@ -182,5 +182,22 @@ class SalaryPayment(Base):
     month = Column(String(30), default="2026-11")
     payment_date = Column(DateTime, default=datetime.utcnow)
     notes = Column(Text, nullable=True)
+class CafeSetting(Base):
+    """إعدادات وهوية الكافيه الشاملة وصلاحيات تحكم المالك."""
+    __tablename__ = "cafe_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(100), unique=True, nullable=False, index=True)
+    value = Column(Text, nullable=True)
+    description = Column(String(200), nullable=True)
 
 
+class CafeTableConfig(Base):
+    """تخصيص ترابيزات الصالة وسعاتها وأماكنها للمالك."""
+    __tablename__ = "cafe_table_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    table_number = Column(Integer, unique=True, nullable=False, index=True)
+    capacity = Column(Integer, default=4)
+    zone = Column(String(60), default="صالة رئيسية")  # صالة رئيسية | تراس خارجي | ركن عائلي | VIP
+    is_active = Column(Boolean, default=True)

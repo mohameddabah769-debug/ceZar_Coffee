@@ -774,6 +774,11 @@
             <i class="fa-solid fa-sliders"></i>
             <span>المنيو والأسعار (157 صنف)</span>
         </button>
+    
+        <button class="tab-btn" data-tab="owner" onclick="switchTab('owner', this)" style="background: linear-gradient(135deg, #2b1810 0%, #150a05 100%); color: #D4AF37; border: 1.5px solid #D4AF37; font-weight: 900; box-shadow: 0 2px 8px rgba(212, 175, 55, 0.25);">
+            <i class="fa-solid fa-crown" style="color: #D4AF37;"></i>
+            <span>لوحة تحكم وإعدادات المالك 👑</span>
+        </button>
     </nav>
 
     <!-- ==================================================== -->
@@ -1264,8 +1269,762 @@
     </main>
 
     <!-- ==================================================== -->
+    
+    <!-- ==================================================== -->
+    <!-- TAB 10: Staff Directory, Payroll & Permissions       -->
+    <!-- ==================================================== -->
+    <main class="tab-content" id="tabStaff">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; background: white; padding: 12px 18px; border-radius: 14px; border: 1px solid var(--border-color);">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="filter-pill active" id="pillStaffEmployees" onclick="switchStaffSubTab('employees')">
+                    <i class="fa-solid fa-users"></i> دليل الموظفين (<span id="staffCountBadge">0</span>)
+                </button>
+                <button class="filter-pill" id="pillStaffPayroll" onclick="switchStaffSubTab('payroll')">
+                    <i class="fa-solid fa-hand-holding-dollar"></i> مسيرات الرواتب والسلف
+                </button>
+                <button class="filter-pill" id="pillStaffUsers" onclick="switchStaffSubTab('users')">
+                    <i class="fa-solid fa-user-lock"></i> مستخدمو السيستم والصلاحيات
+                </button>
+            </div>
+            <div id="staffTopActions">
+                <button class="pin-btn" onclick="openAddEmployeeModal()" style="margin: 0; width: auto; padding: 8px 18px; font-size: 13px;">
+                    <i class="fa-solid fa-user-plus"></i> إضافة موظف جديد
+                </button>
+            </div>
+        </div>
+
+        <!-- SubTab 1: Employees Directory -->
+        <div id="subTabEmployees">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #666; font-weight: 800;">إجمالي فريق العمل</div>
+                        <div style="font-size: 18px; font-weight: 900; color: var(--primary-espresso);" id="staffTotalEmployeesCard">4 موظفين</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fa-solid fa-money-bill-wave"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #666; font-weight: 800;">إجمالي الرواتب الأساسية</div>
+                        <div style="font-size: 18px; font-weight: 900; color: #059669;" id="staffTotalPayroll">0 ج</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم الموظف</th>
+                            <th>الوظيفة / التخصص</th>
+                            <th>رقم الهاتف</th>
+                            <th>الراتب الأساسي</th>
+                            <th>تاريخ التعيين</th>
+                            <th>الحالة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeesTableBody">
+                        <!-- Loaded by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SubTab 2: Payroll & Salary Advances -->
+        <div id="subTabPayroll" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="font-size: 14px; font-weight: 900; color: var(--primary-espresso);">
+                    <i class="fa-solid fa-receipt" style="color: var(--cezar-orange);"></i> سجل صرف الرواتب والسلف والمكافآت والخصومات
+                </div>
+                <button class="pin-btn" onclick="openRecordSalaryModal()" style="margin: 0; width: auto; padding: 7px 16px; background: #059669; font-size: 12px;">
+                    <i class="fa-solid fa-plus"></i> تسجيل صرف راتب / سلفة
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>رقم السجل</th>
+                            <th>اسم الموظف</th>
+                            <th>نوع الصرف</th>
+                            <th>المبلغ</th>
+                            <th>شهر الاستحقاق</th>
+                            <th>تاريخ ووقت الصرف</th>
+                            <th>ملاحظات</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salariesTableBody">
+                        <!-- Loaded by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SubTab 3: System Users & Roles -->
+        <div id="subTabUsers" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="font-size: 14px; font-weight: 900; color: var(--primary-espresso);">
+                    <i class="fa-solid fa-shield-halved" style="color: #6f42c1;"></i> حسابات دخول السيستم ومستويات الصلاحيات
+                </div>
+                <button class="pin-btn" onclick="openAddUserModal()" style="margin: 0; width: auto; padding: 7px 16px; background: #6f42c1; font-size: 12px;">
+                    <i class="fa-solid fa-user-plus"></i> إضافة مستخدم وتحديد صلاحيته
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم المستخدم (Login)</th>
+                            <th>الاسم الظاهر</th>
+                            <th>مستوى الصلاحية</th>
+                            <th>الصلاحيات المتاحة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="systemUsersTableBody">
+                        <!-- Loaded by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+
+
+    <!-- ==================================================== -->
+    <!-- TAB 11: Owner Master Control & Global Settings 👑   -->
+    <!-- ==================================================== -->
+    <main class="tab-content" id="tabOwner">
+        <!-- Luxury Top Header for the Owner -->
+        <div style="background: linear-gradient(135deg, #1f110a 0%, #361b0d 50%, #150a05 100%); border: 2px solid #D4AF37; border-radius: 16px; padding: 18px 24px; margin-bottom: 16px; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.25);">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 52px; height: 52px; border-radius: 14px; background: rgba(212, 175, 55, 0.15); border: 1.5px solid #D4AF37; display: flex; align-items: center; justify-content: center; font-size: 26px; color: #D4AF37;">
+                    <i class="fa-solid fa-crown"></i>
+                </div>
+                <div>
+                    <h2 style="font-size: 18px; font-weight: 900; margin: 0; color: #FFF8E7; display: flex; align-items: center; gap: 8px;">
+                        لوحة تحكم المالك والإعدادات التنفيذية
+                        <span style="background: #D4AF37; color: #1a0c06; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 900;">Master Admin</span>
+                    </h2>
+                    <p style="font-size: 12px; color: #D4AF37; margin: 4px 0 0; font-weight: 700;">
+                        تحكم شامل وتعديل فوري في كافة تفاصيل الكافيه: الهوية، الضرائب والرسوم، الفواتير، أسعار المنيو، الصالة، وقاعدة البيانات.
+                    </p>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button onclick="downloadDbBackup()" style="background: rgba(212, 175, 55, 0.2); color: #FFF8E7; border: 1.5px solid #D4AF37; padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-download"></i> نسخة احتياطية (Backup)
+                </button>
+            </div>
+        </div>
+
+        <!-- Owner Sub-Tabs Navigation Pills -->
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; flex-wrap: wrap; background: white; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--border-color);">
+            <button class="filter-pill active" id="pillOwnerProfile" onclick="switchOwnerSubTab('profile')">
+                <i class="fa-solid fa-store" style="color: var(--cezar-orange);"></i> هوية وبيانات الكافيه
+            </button>
+            <button class="filter-pill" id="pillOwnerReceipt" onclick="switchOwnerSubTab('receipt')">
+                <i class="fa-solid fa-receipt" style="color: #059669;"></i> الفاتورة الحرارية والرسوم
+            </button>
+            <button class="filter-pill" id="pillOwnerMenu" onclick="switchOwnerSubTab('menu')">
+                <i class="fa-solid fa-sliders" style="color: #6f42c1;"></i> المنيو وتعديل الأسعار الجماعي
+            </button>
+            <button class="filter-pill" id="pillOwnerTables" onclick="switchOwnerSubTab('tables')">
+                <i class="fa-solid fa-chair" style="color: #0284C7;"></i> الصالة وسعات الترابيزات
+            </button>
+            <button class="filter-pill" id="pillOwnerAudio" onclick="switchOwnerSubTab('audio')">
+                <i class="fa-solid fa-volume-high" style="color: #D97706;"></i> التنبيهات والأصوات الحية
+            </button>
+            <button class="filter-pill" id="pillOwnerMaintenance" onclick="switchOwnerSubTab('maintenance')">
+                <i class="fa-solid fa-database" style="color: #DC2626;"></i> النسخ الاحتياطي والصيانة
+            </button>
+        </div>
+
+        <!-- 1. Store Profile & Branding -->
+        <div id="ownerSubProfile" class="owner-panel">
+            <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px; box-shadow: 0 4px 14px rgba(43, 24, 16, 0.04);">
+                <h3 style="font-size: 16px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-id-card" style="color: var(--cezar-orange);"></i> هوية الكافيه والعلامة التجارية (Branding)
+                </h3>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800; color: #555;">اسم الكافيه بالعربي:</label>
+                        <input type="text" id="setCafeNameAr" class="form-control" placeholder="كافيه سيزر">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800; color: #555;">اسم الكافيه بالإنجليزي:</label>
+                        <input type="text" id="setCafeNameEn" class="form-control" placeholder="ceZar COFFEE">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800; color: #555;">السلوجان / الوصف التسويقي:</label>
+                        <input type="text" id="setCafeTagline" class="form-control" placeholder="Specialty Coffee & Roastery">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800; color: #555;">رابط شعار الكافيه (Logo URL):</label>
+                        <input type="text" id="setCafeLogoUrl" class="form-control" placeholder="/static/images/cezar_logo.jpg">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800; color: #555;">رقم هاتف الكافيه / الخط الساخن:</label>
+                        <input type="text" id="setCafePhone" class="form-control" placeholder="01023456789">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800; color: #555;">رقم واتساب خدمة العملاء والطلبات:</label>
+                        <input type="text" id="setCafeWhatsapp" class="form-control" placeholder="01023456789">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800; color: #555;">اسم شبكة الواي فاي للزبائن (SSID):</label>
+                        <input type="text" id="setWifiSsid" class="form-control" placeholder="ceZar_Coffee_5G">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800; color: #555;">كلمة مرور الواي فاي (WiFi Password):</label>
+                        <input type="text" id="setWifiPass" class="form-control" placeholder="cezar_coffee_vip">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800; color: #555;">ساعات العمل اليومية:</label>
+                        <input type="text" id="setOperatingHours" class="form-control" placeholder="08:00 AM - 02:00 AM">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800; color: #555;">العملة الرسمية بالسيستم:</label>
+                        <input type="text" id="setCurrency" class="form-control" placeholder="ج.م">
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        <label style="font-size: 12px; font-weight: 800; color: #555;">عنوان ومقر الكافيه:</label>
+                        <input type="text" id="setCafeAddress" class="form-control" placeholder="شارع الجمهورية - وسط البلد - القاهرة">
+                    </div>
+                </div>
+
+                <div style="margin-top: 18px; text-align: left;">
+                    <button class="pin-btn" onclick="saveOwnerProfileSettings()" style="width: auto; padding: 10px 28px; margin: 0; font-size: 13px;">
+                        <i class="fa-solid fa-floppy-disk"></i> حفظ إعدادات الهوية والعلامة التجارية
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Taxes, Service Fees & Thermal Receipt -->
+        <div id="ownerSubReceipt" class="owner-panel" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px;">
+                <!-- Form Inputs -->
+                <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px;">
+                    <h3 style="font-size: 16px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 14px;">
+                        <i class="fa-solid fa-percent" style="color: #059669;"></i> الضرائب، رسوم الخدمة، وتوصيل الدليفري
+                    </h3>
+
+                    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <label style="font-size: 13px; font-weight: 800; color: var(--primary-espresso); cursor: pointer;">
+                                <input type="checkbox" id="setTaxEnabled" onchange="updateLiveReceiptPreview()"> تفعيل ضريبة القيمة المضافة (VAT)
+                            </label>
+                            <span style="font-size: 11px; color: #666;">تُضاف تلقائياً للإجمالي</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 12px; font-weight: 700;">نسبة الضريبة:</span>
+                            <input type="number" id="setTaxRate" class="form-control" style="width: 100px; margin: 0;" min="0" max="100" step="0.5" placeholder="14" oninput="updateLiveReceiptPreview()">
+                            <span style="font-size: 12px; font-weight: 800;">%</span>
+                        </div>
+                    </div>
+
+                    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <label style="font-size: 13px; font-weight: 800; color: var(--primary-espresso); cursor: pointer;">
+                                <input type="checkbox" id="setServiceEnabled" onchange="updateLiveReceiptPreview()"> تفعيل خدمة الصالة (Service Charge)
+                            </label>
+                            <span style="font-size: 11px; color: #666;">خاصة بطلبات الصالة</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 12px; font-weight: 700;">نسبة الخدمة:</span>
+                            <input type="number" id="setServiceRate" class="form-control" style="width: 100px; margin: 0;" min="0" max="100" step="0.5" placeholder="12" oninput="updateLiveReceiptPreview()">
+                            <span style="font-size: 12px; font-weight: 800;">%</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: 800;">رسوم الدليفري الافتراضية:</label>
+                            <input type="number" id="setDefaultDeliveryFee" class="form-control" placeholder="20" min="0">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 800;">الحد الأدنى للطلب (ج):</label>
+                            <input type="number" id="setMinOrderValue" class="form-control" placeholder="50" min="0">
+                        </div>
+                    </div>
+
+                    <h4 style="font-size: 14px; font-weight: 900; margin-top: 14px; margin-bottom: 8px;">نصوص الفاتورة الحرارية المطبوعة</h4>
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 12px; font-weight: 800;">نص رأس الفاتورة (Header):</label>
+                        <input type="text" id="setReceiptHeader" class="form-control" placeholder="ceZar COFFEE - أهلاً وسهلاً بكم" oninput="updateLiveReceiptPreview()">
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 12px; font-weight: 800;">رسالة الشكر أسفل الفاتورة (Footer):</label>
+                        <input type="text" id="setReceiptFooter" class="form-control" placeholder="شكراً لزيارتكم كافيه سيزر - نتشرف بكم دائماً ☕" oninput="updateLiveReceiptPreview()">
+                    </div>
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 12px; font-weight: 800; cursor: pointer;">
+                            <input type="checkbox" id="setReceiptShowWifi" onchange="updateLiveReceiptPreview()"> طباعة بيانات الواي فاي في الفاتورة للزبائن
+                        </label>
+                    </div>
+
+                    <button class="pin-btn" onclick="saveOwnerReceiptSettings()" style="background: #059669; font-size: 13px;">
+                        <i class="fa-solid fa-floppy-disk"></i> حفظ إعدادات الرسوم والفاتورة
+                    </button>
+                </div>
+
+                <!-- Live Receipt Preview Box -->
+                <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center;">
+                    <div style="font-size: 14px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <span><i class="fa-solid fa-eye" style="color: #0284C7;"></i> معاينة حية للفاتورة الحرارية (80mm)</span>
+                        <button onclick="testPrintReceipt()" style="background: #F3F4F6; border: 1px solid #D1D5DB; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer;">
+                            <i class="fa-solid fa-print"></i> تجربة الطباعة
+                        </button>
+                    </div>
+
+                    <!-- Thermal Paper Simulation -->
+                    <div id="liveReceiptPaper" style="width: 280px; background: #FFFEF9; border: 1px dashed #BBB; box-shadow: 0 4px 14px rgba(0,0,0,0.08); padding: 16px; font-family: monospace; font-size: 12px; line-height: 1.4; color: #111;">
+                        <div style="text-align: center; border-bottom: 1px dashed #999; padding-bottom: 8px; margin-bottom: 8px;">
+                            <div style="font-size: 16px; font-weight: 900;" id="prevCafeName">ceZar COFFEE</div>
+                            <div style="font-size: 10px; color: #444;" id="prevTagline">Specialty Coffee & Roastery</div>
+                            <div style="font-size: 10px;" id="prevHeader">أهلاً وسهلاً بكم</div>
+                            <div style="font-size: 10px;" id="prevAddress">شارع الجمهورية - وسط البلد</div>
+                            <div style="font-size: 10px;" id="prevPhone">هاتف: 01023456789</div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                            <span>طلب #1042</span>
+                            <span>ترابيزة 5 (صالة)</span>
+                        </div>
+                        <div style="font-size: 10px; color: #555; margin-bottom: 8px; border-bottom: 1px dashed #999; padding-bottom: 4px;">
+                            2026-11-04 05:40 PM | كاشير: أحمد
+                        </div>
+
+                        <!-- Sample Items -->
+                        <div style="border-bottom: 1px dashed #999; padding-bottom: 6px; margin-bottom: 6px;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>2x اسبريسو دبل</span>
+                                <span>110.00 ج</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>1x لاتيه كلاسيك</span>
+                                <span>65.00 ج</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>1x تشيز كيك كراميل</span>
+                                <span>85.00 ج</span>
+                            </div>
+                        </div>
+
+                        <!-- Subtotals -->
+                        <div style="font-size: 11px;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>المجموع الفرعي:</span>
+                                <span>260.00 ج</span>
+                            </div>
+                            <div id="prevTaxRow" style="display: flex; justify-content: space-between;">
+                                <span>ضريبة القيمة المضافة (<span id="prevTaxVal">0</span>%):</span>
+                                <span id="prevTaxAmount">0.00 ج</span>
+                            </div>
+                            <div id="prevServiceRow" style="display: flex; justify-content: space-between;">
+                                <span>خدمة صالة (<span id="prevServiceVal">0</span>%):</span>
+                                <span id="prevServiceAmount">0.00 ج</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 900; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;">
+                                <span>الإجمالي النهائي:</span>
+                                <span id="prevGrandTotal">260.00 ج</span>
+                            </div>
+                        </div>
+
+                        <!-- Wifi Box -->
+                        <div id="prevWifiBox" style="margin-top: 10px; border: 1px solid #777; border-radius: 6px; padding: 4px; text-align: center; font-size: 10px;">
+                            <div>📶 واي فاي الكافيه مجاناً</div>
+                            <div>الشبكة: <b id="prevWifiSsid">ceZar_Coffee_5G</b></div>
+                            <div>الرقم السري: <b id="prevWifiPass">cezar_coffee_vip</b></div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div style="text-align: center; margin-top: 10px; font-size: 10px; color: #444;" id="prevFooter">
+                            شكراً لزيارتكم كافيه سيزر - نتشرف بكم دائماً ☕
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Master Menu & Bulk Price Adjuster -->
+        <div id="ownerSubMenu" class="owner-panel" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 18px;">
+                <!-- Bulk Price Tool -->
+                <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                            <i class="fa-solid fa-arrow-trend-up"></i>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 15px; font-weight: 900; color: var(--primary-espresso); margin: 0;">أداة تعديل وتحديث الأسعار الجماعي</h3>
+                            <p style="font-size: 11px; color: #666; margin: 2px 0 0;">زيادة أو خفض أسعار المنيو بضغطة زر واحدة</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; font-weight: 800;">تطبيق التعديل على:</label>
+                        <select id="bulkPriceCategory" class="form-control">
+                            <option value="all">كل أصناف المنيو (157 صنف)</option>
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: 800;">طريقة التعديل:</label>
+                            <select id="bulkPriceType" class="form-control">
+                                <option value="percentage">نسبة مئوية (%)</option>
+                                <option value="fixed">مبلغ ثابت (ج.م)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 800;">القيمة (+ أو -):</label>
+                            <input type="number" id="bulkPriceValue" class="form-control" placeholder="مثلاً: 10 أو -5" step="0.5">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 12px; font-weight: 800; color: var(--primary-espresso); cursor: pointer;">
+                            <input type="checkbox" id="bulkPriceRound" checked> تقريب الأسعار الناتجة لأقرب 5 جنيهات ذكياً
+                        </label>
+                    </div>
+
+                    <button class="pin-btn" onclick="applyBulkPriceAdjustment()" style="background: linear-gradient(135deg, #7E22CE 0%, #6B21A8 100%); font-size: 13px;">
+                        <i class="fa-solid fa-bolt"></i> تطبيق تعديل الأسعار فوراً
+                    </button>
+                </div>
+
+                <!-- Category Manager -->
+                <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                            <i class="fa-solid fa-folder-tree"></i>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 15px; font-weight: 900; color: var(--primary-espresso); margin: 0;">إدارة وتعديل أقسام المنيو</h3>
+                            <p style="font-size: 11px; color: #666; margin: 2px 0 0;">إعادة تسمية قسم، نقله، أو حذفه</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; font-weight: 800;">اختر القسم المراد تعديله:</label>
+                        <select id="catRenameSelect" class="form-control" onchange="document.getElementById('catRenameNewName').value = this.value;">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 12px; font-weight: 800;">الاسم الجديد للقسم:</label>
+                        <input type="text" id="catRenameNewName" class="form-control" placeholder="الاسم الجديد للقسم">
+                    </div>
+
+                    <div style="display: flex; gap: 8px;">
+                        <button class="pin-btn" onclick="submitCategoryRename()" style="background: #D97706; font-size: 12px; margin: 0; flex: 2;">
+                            <i class="fa-solid fa-pen-to-square"></i> إعادة تسمية القسم
+                        </button>
+                        <button class="pin-btn" onclick="submitCategoryDelete()" style="background: rgba(220, 53, 69, 0.15); color: #DC2626; border: 1px solid #DC2626; font-size: 12px; margin: 0; flex: 1;">
+                            <i class="fa-solid fa-trash"></i> حذف القسم
+                        </button>
+                    </div>
+
+                    <div style="margin-top: 18px; border-top: 1px solid #eee; padding-top: 14px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 12px; font-weight: 800; color: #555;">هل تريد إضافة صنف جديد؟</span>
+                        <button onclick="openAddItemModal()" style="background: var(--cezar-orange); color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer;">
+                            <i class="fa-solid fa-plus"></i> إضافة صنف
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Tables Floor Master -->
+        <div id="ownerSubTables" class="owner-panel" style="display: none;">
+            <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="font-size: 16px; font-weight: 900; color: var(--primary-espresso); margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-border-all" style="color: #0284C7;"></i> إدارة صالة وترابيزات الكافيه
+                        </h3>
+                        <p style="font-size: 12px; color: #666; margin: 3px 0 0;">تحديد سعة كل ترابيزة، مكانها، وحالة تشغيلها أو صيانتها</p>
+                    </div>
+
+                    <!-- Batch update tables count -->
+                    <div style="display: flex; align-items: center; gap: 8px; background: #F0F9FF; border: 1.5px solid #BAE6FD; padding: 6px 14px; border-radius: 12px;">
+                        <span style="font-size: 12px; font-weight: 800; color: #0369A1;">إجمالي عدد ترابيزات الصالة:</span>
+                        <input type="number" id="ownerTablesCountInput" style="width: 65px; padding: 4px 8px; border: 1px solid #7DD3FC; border-radius: 8px; font-weight: 900; text-align: center;" min="1" max="100" value="25">
+                        <button onclick="updateOwnerBatchTables()" style="background: #0284C7; color: white; border: none; padding: 5px 12px; border-radius: 8px; font-weight: 800; font-size: 11px; cursor: pointer;">
+                            تحديث العدد
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>رقم الترابيزة</th>
+                                <th>المنطقة / المكان (Zone)</th>
+                                <th>السعة (عدد المقاعد)</th>
+                                <th>حالة الترابيزة</th>
+                                <th>كود الـ QR والطلب الذكي</th>
+                                <th>إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ownerTablesTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Sound & Alerts Control -->
+        <div id="ownerSubAudio" class="owner-panel" style="display: none;">
+            <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px;">
+                <h3 style="font-size: 16px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 14px;">
+                    <i class="fa-solid fa-volume-high" style="color: #D97706;"></i> إعدادات التنبيهات الصوتية الحية (Live Audio Alerts)
+                </h3>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+                    <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 14px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 900; color: var(--primary-espresso);">جرس الأوردر الجديد</div>
+                            <div style="font-size: 11px; color: #666;">يرن تلقائياً عند وصول أي طلب جديد</div>
+                        </div>
+                        <button onclick="testOwnerSound('order')" style="background: #D97706; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer;">
+                            <i class="fa-solid fa-play"></i> تجربة الصوت
+                        </button>
+                    </div>
+
+                    <div style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 14px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 900; color: var(--primary-espresso);">تنبيه نداء الويتر</div>
+                            <div style="font-size: 11px; color: #666;">عند ضغط الزبون على نداء الويتر من الترابيزة</div>
+                        </div>
+                        <button onclick="testOwnerSound('waiter')" style="background: #2563EB; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer;">
+                            <i class="fa-solid fa-play"></i> تجربة الصوت
+                        </button>
+                    </div>
+
+                    <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 14px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 900; color: var(--primary-espresso);">تنبيه طلب الحساب (الريسيت)</div>
+                            <div style="font-size: 11px; color: #666;">عند طلب الترابيزة الشيك والحساب</div>
+                        </div>
+                        <button onclick="testOwnerSound('bill')" style="background: #16A34A; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer;">
+                            <i class="fa-solid fa-play"></i> تجربة الصوت
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Backup, Export & Maintenance -->
+        <div id="ownerSubMaintenance" class="owner-panel" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+                <!-- DB Backup -->
+                <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 12px;">
+                        <i class="fa-solid fa-database"></i>
+                    </div>
+                    <h3 style="font-size: 15px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 6px;">نسخة احتياطية كاملة (Backup)</h3>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 16px;">تحميل ملف قاعدة البيانات بالكامل (SQLite DB) محتوياً على كافة الطلبات، المنيو، المخزون، الحسابات، والورديات.</p>
+                    <button class="pin-btn" onclick="downloadDbBackup()" style="background: #4F46E5; font-size: 13px;">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> تحميل ملف قاعدة البيانات (.db)
+                    </button>
+                </div>
+
+                <!-- CSV Export -->
+                <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 12px;">
+                        <i class="fa-solid fa-file-excel"></i>
+                    </div>
+                    <h3 style="font-size: 15px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 6px;">تصدير سجل المبيعات (Excel / CSV)</h3>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 16px;">تصدير كافة العمليات والفواتير والخصومات بترميز UTF-8 متوافق تماماً مع Microsoft Excel.</p>
+                    <a href="/api/export/sales-csv" download class="pin-btn" style="background: #059669; font-size: 13px; text-decoration: none;">
+                        <i class="fa-solid fa-file-csv"></i> تصدير المبيعات CSV
+                    </a>
+                </div>
+
+                <!-- Safe Reset -->
+                <div style="background: #FFF1F2; border: 1.5px solid #FECDD3; border-radius: 16px; padding: 20px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: #FFE4E6; color: #E11D48; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 12px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h3 style="font-size: 15px; font-weight: 900; color: #9F1239; margin-bottom: 6px;">تصفير الطلبات التجريبية بأمان</h3>
+                    <p style="font-size: 12px; color: #881337; margin-bottom: 16px;">مسح الطلبات والحجوزات والمصروفات التجريبية فقط، مع **الحفاظ التام على المنيو والأسعار، المخزون، الموظفين، والإعدادات**.</p>
+                    <button class="pin-btn" onclick="resetTestDataSafe()" style="background: #E11D48; font-size: 13px;">
+                        <i class="fa-solid fa-trash-can"></i> تصفير الطلبات التجريبية فقط
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
     <!-- MODALS & DIALOGS                                     -->
     <!-- ==================================================== -->
+
+    
+    <!-- Add / Edit Employee Modal -->
+    <div class="pin-modal-overlay" id="addEmployeeModal" style="display: none;">
+        <div class="pin-card" style="max-width: 440px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 17px; font-weight: 900; color: var(--primary-espresso);" id="modalEmpHeader">
+                    <i class="fa-solid fa-user-plus" style="color: var(--cezar-orange);"></i> إضافة موظف جديد
+                </h3>
+                <button onclick="closeModal('addEmployeeModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitEmployeeForm();">
+                <input type="hidden" id="empEditId">
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 800;">اسم الموظف بالكامل:</label>
+                    <input type="text" id="empName" class="form-control" placeholder="مثال: كريم أحمد" required>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 800;">المسمى الوظيفي / الدور:</label>
+                    <select id="empRole" class="form-control" required>
+                        <option value="رئيس باريستا">رئيس باريستا</option>
+                        <option value="باريستا">باريستا</option>
+                        <option value="مساعد باريستا">مساعد باريستا</option>
+                        <option value="كاشير رئيسي">كاشير رئيسي</option>
+                        <option value="كاشير">كاشير</option>
+                        <option value="كابتن صالة">كابتن صالة</option>
+                        <option value="ويتر صالة">ويتر صالة</option>
+                        <option value="شيف حلويات">شيف حلويات</option>
+                        <option value="مسؤول نظافة">مسؤول نظافة</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800;">رقم الهاتف:</label>
+                        <input type="text" id="empPhone" class="form-control" placeholder="010XXXXXXXX">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800;">الراتب الأساسي (ج):</label>
+                        <input type="number" id="empSalary" class="form-control" placeholder="4000" min="0" step="50" required>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800;">تاريخ التعيين:</label>
+                        <input type="date" id="empHireDate" class="form-control">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800;">الحالة:</label>
+                        <select id="empStatus" class="form-control">
+                            <option value="نشط">نشط</option>
+                            <option value="إجازة">إجازة</option>
+                            <option value="موقوف">موقوف</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <label style="font-size: 12px; font-weight: 800;">ملاحظات:</label>
+                    <input type="text" id="empNotes" class="form-control" placeholder="ملاحظات أو مواعيد الدوام">
+                </div>
+                <button type="submit" class="pin-btn">
+                    <i class="fa-solid fa-floppy-disk"></i> حفظ بيانات الموظف
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Record Salary Payment Modal -->
+    <div class="pin-modal-overlay" id="recordSalaryModal" style="display: none;">
+        <div class="pin-card" style="max-width: 420px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 17px; font-weight: 900; color: #059669;">
+                    <i class="fa-solid fa-money-bill-transfer"></i> تسجيل صرف راتب / سلفة
+                </h3>
+                <button onclick="closeModal('recordSalaryModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitSalaryPaymentForm();">
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 800;">الموظف:</label>
+                    <select id="salaryEmpSelect" class="form-control" required onchange="onSalaryEmployeeChange()">
+                        <!-- Loaded by JS -->
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800;">نوع الصرف:</label>
+                        <select id="salaryType" class="form-control" required>
+                            <option value="راتب شهري">راتب شهري كامل</option>
+                            <option value="سلفة">سلفة على الراتب</option>
+                            <option value="مكافأة">مكافأة وبونص</option>
+                            <option value="خصم">خصم أو جزاء</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 800;">المبلغ (ج):</label>
+                        <input type="number" id="salaryAmount" class="form-control" placeholder="المبلغ" min="1" step="10" required>
+                    </div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 800;">عن شهر:</label>
+                    <input type="month" id="salaryMonth" class="form-control" required>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <label style="font-size: 12px; font-weight: 800;">ملاحظات:</label>
+                    <input type="text" id="salaryNotes" class="form-control" placeholder="ملاحظات الصرف">
+                </div>
+                <button type="submit" class="pin-btn" style="background: #059669;">
+                    <i class="fa-solid fa-check"></i> تأكيد وحفظ الصرف
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add / Edit System User Modal -->
+    <div class="pin-modal-overlay" id="addUserModal" style="display: none;">
+        <div class="pin-card" style="max-width: 420px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 17px; font-weight: 900; color: #6f42c1;" id="modalUserHeader">
+                    <i class="fa-solid fa-user-shield"></i> إنشاء مستخدم جديد وتحديد الصلاحية
+                </h3>
+                <button onclick="closeModal('addUserModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitSystemUserForm();">
+                <input type="hidden" id="userEditId">
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 800;">اسم المستخدم (Login Username):</label>
+                    <input type="text" id="userUsername" class="form-control" placeholder="مثال: cashier2" required>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 800;">الاسم الظاهر بالسيستم:</label>
+                    <input type="text" id="userManagerName" class="form-control" placeholder="مثال: أحمد الكاشير" required>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 800;">مستوى الصلاحية (Role):</label>
+                    <select id="userRole" class="form-control" required>
+                        <option value="admin">👑 مدير عام (Admin) - صلاحية كاملة على كل شيء</option>
+                        <option value="cashier" selected>💳 كاشير (Cashier) - شاشة الـ POS والورديات والطلبات</option>
+                        <option value="barista">☕ باريستا (Barista) - شاشة المطبخ KDS والمخزون</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <label style="font-size: 12px; font-weight: 800;">كلمة المرور (اتركها فارغة إذا لم ترغب بتغييرها):</label>
+                    <input type="password" id="userPassword" class="form-control" placeholder="••••••••">
+                </div>
+                <button type="submit" class="pin-btn" style="background: #6f42c1;">
+                    <i class="fa-solid fa-floppy-disk"></i> حفظ بيانات المستخدم
+                </button>
+            </form>
+        </div>
+    </div>
+
 
     <!-- 0. Table Interactive Action Modal -->
     <div class="pin-modal-overlay" id="tableActionModal" style="display: none;">
@@ -1958,6 +2717,7 @@
             if (tabName === 'analytics') fetchAnalytics();
             if (tabName === 'promos') fetchPromoCodes();
             if (tabName === 'staff') { fetchEmployees(); fetchSalaries(); fetchSystemUsers(); }
+            if (tabName === 'owner') { fetchOwnerSettings(); fetchOwnerTables(); populateBulkPriceCategories(); }
         }
 
         function openModal(id) {
@@ -2915,9 +3675,24 @@
 
         function renderReceiptSlip(slip) {
             const container = document.getElementById('printableReceipt');
+            const cafeName = currentOwnerSettings.cafe_name_en || 'ceZar COFFEE';
+            const tagline = currentOwnerSettings.cafe_tagline || 'Specialty Coffee & Roastery';
+            const header = currentOwnerSettings.receipt_header || 'أهلاً بكم في كافيه سيزر';
+            const footer = currentOwnerSettings.receipt_footer || 'شكراً لزيارتكم كافيه سيزر ☕ نتشرف بكم دائماً!';
+            const phone = currentOwnerSettings.cafe_phone ? `<div>هاتف: ${currentOwnerSettings.cafe_phone}</div>` : '';
+            const showWifi = (currentOwnerSettings.receipt_show_wifi !== 'false' && currentOwnerSettings.wifi_ssid);
+            const wifiHtml = showWifi ? `
+                <div class="divider"></div>
+                <div style="font-size: 10px; text-align: center; border: 1px dashed #666; padding: 4px; border-radius: 4px;">
+                    📶 واي فاي: <b>${currentOwnerSettings.wifi_ssid}</b> | باسورد: <b>${currentOwnerSettings.wifi_password || ''}</b>
+                </div>
+            ` : '';
+
             container.innerHTML = `
-                <h2>ceZar COFFEE</h2>
-                <div style="font-size: 11px; text-align: center; margin-bottom: 6px;">Luxury Coffee & Drinks Experience</div>
+                <h2>${cafeName}</h2>
+                <div style="font-size: 11px; text-align: center; margin-bottom: 2px;">${tagline}</div>
+                <div style="font-size: 10px; text-align: center; margin-bottom: 6px; color: #555;">${header}</div>
+                ${phone}
                 <div class="divider"></div>
                 <div style="font-size: 12px; margin-bottom: 4px;">
                     <div><strong>نوع الطلب:</strong> ${slip.type || 'طلب'} (${slip.headerInfo || ''})</div>
@@ -2936,10 +3711,10 @@
                 <div style="font-size: 11px; margin-top: 4px;">
                     طريقة الدفع: ${slip.paymentMethod || 'كاش 💵'}
                 </div>
+                ${wifiHtml}
                 <div class="divider"></div>
                 <div style="text-align: center; font-size: 11px; margin-top: 6px;">
-                    شكراً لزيارتكم كافيه سيزر ☕✨<br>
-                    نسعد دائماً بخدمتكم!
+                    ${footer}
                 </div>
             `;
         }
@@ -3775,6 +4550,493 @@
 
 
         checkManagerAuth();
+    
+        // ====================================================
+        // OWNER MASTER CONTROL & SETTINGS LOGIC
+        // ====================================================
+        var currentOwnerSettings = {};
+        var currentOwnerTables = [];
+
+        function switchOwnerSubTab(sub) {
+            document.querySelectorAll('#tabOwner .filter-pill').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.owner-panel').forEach(p => p.style.display = 'none');
+
+            if (sub === 'profile') {
+                document.getElementById('pillOwnerProfile').classList.add('active');
+                document.getElementById('ownerSubProfile').style.display = 'block';
+            } else if (sub === 'receipt') {
+                document.getElementById('pillOwnerReceipt').classList.add('active');
+                document.getElementById('ownerSubReceipt').style.display = 'block';
+                updateLiveReceiptPreview();
+            } else if (sub === 'menu') {
+                document.getElementById('pillOwnerMenu').classList.add('active');
+                document.getElementById('ownerSubMenu').style.display = 'block';
+                populateBulkPriceCategories();
+            } else if (sub === 'tables') {
+                document.getElementById('pillOwnerTables').classList.add('active');
+                document.getElementById('ownerSubTables').style.display = 'block';
+                fetchOwnerTables();
+            } else if (sub === 'audio') {
+                document.getElementById('pillOwnerAudio').classList.add('active');
+                document.getElementById('ownerSubAudio').style.display = 'block';
+            } else if (sub === 'maintenance') {
+                document.getElementById('pillOwnerMaintenance').classList.add('active');
+                document.getElementById('ownerSubMaintenance').style.display = 'block';
+            }
+        }
+
+        async function fetchOwnerSettings() {
+            try {
+                const res = await fetch('/api/settings');
+                const data = await res.json();
+                if (data.status === 'success' && data.settings) {
+                    currentOwnerSettings = data.settings;
+
+                    // Fill Profile form
+                    if (document.getElementById('setCafeNameAr')) document.getElementById('setCafeNameAr').value = currentOwnerSettings.cafe_name_ar || 'كافيه سيزر';
+                    if (document.getElementById('setCafeNameEn')) document.getElementById('setCafeNameEn').value = currentOwnerSettings.cafe_name_en || 'ceZar COFFEE';
+                    if (document.getElementById('setCafeTagline')) document.getElementById('setCafeTagline').value = currentOwnerSettings.cafe_tagline || 'Specialty Coffee & Roastery';
+                    if (document.getElementById('setCafeLogoUrl')) document.getElementById('setCafeLogoUrl').value = currentOwnerSettings.cafe_logo_url || '/static/images/cezar_logo.jpg';
+                    if (document.getElementById('setCafePhone')) document.getElementById('setCafePhone').value = currentOwnerSettings.cafe_phone || '01023456789';
+                    if (document.getElementById('setCafeWhatsapp')) document.getElementById('setCafeWhatsapp').value = currentOwnerSettings.cafe_whatsapp || '01023456789';
+                    if (document.getElementById('setWifiSsid')) document.getElementById('setWifiSsid').value = currentOwnerSettings.wifi_ssid || 'ceZar_Coffee_5G';
+                    if (document.getElementById('setWifiPass')) document.getElementById('setWifiPass').value = currentOwnerSettings.wifi_password || 'cezar_coffee_vip';
+                    if (document.getElementById('setOperatingHours')) document.getElementById('setOperatingHours').value = currentOwnerSettings.operating_hours || '08:00 AM - 02:00 AM';
+                    if (document.getElementById('setCurrency')) document.getElementById('setCurrency').value = currentOwnerSettings.currency || 'ج.م';
+                    if (document.getElementById('setCafeAddress')) document.getElementById('setCafeAddress').value = currentOwnerSettings.cafe_address || 'شارع الجمهورية - وسط البلد';
+
+                    // Fill Receipt form
+                    if (document.getElementById('setTaxEnabled')) document.getElementById('setTaxEnabled').checked = (currentOwnerSettings.tax_enabled === 'true');
+                    if (document.getElementById('setTaxRate')) document.getElementById('setTaxRate').value = currentOwnerSettings.tax_rate || '0';
+                    if (document.getElementById('setServiceEnabled')) document.getElementById('setServiceEnabled').checked = (currentOwnerSettings.service_charge_enabled === 'true');
+                    if (document.getElementById('setServiceRate')) document.getElementById('setServiceRate').value = currentOwnerSettings.service_charge || '0';
+                    if (document.getElementById('setDefaultDeliveryFee')) document.getElementById('setDefaultDeliveryFee').value = currentOwnerSettings.default_delivery_fee || '20';
+                    if (document.getElementById('setMinOrderValue')) document.getElementById('setMinOrderValue').value = currentOwnerSettings.min_order_value || '50';
+                    if (document.getElementById('setReceiptHeader')) document.getElementById('setReceiptHeader').value = currentOwnerSettings.receipt_header || 'ceZar COFFEE - أهلاً وسهلاً بكم';
+                    if (document.getElementById('setReceiptFooter')) document.getElementById('setReceiptFooter').value = currentOwnerSettings.receipt_footer || 'شكراً لزيارتكم كافيه سيزر - نتشرف بكم دائماً ☕';
+                    if (document.getElementById('setReceiptShowWifi')) document.getElementById('setReceiptShowWifi').checked = (currentOwnerSettings.receipt_show_wifi !== 'false');
+
+                    if (document.getElementById('ownerTablesCountInput')) {
+                        document.getElementById('ownerTablesCountInput').value = currentOwnerSettings.tables_count || '25';
+                    }
+
+                    updateLiveReceiptPreview();
+                }
+            } catch(e) {
+                console.error("fetchOwnerSettings error", e);
+            }
+        }
+
+        async function saveOwnerProfileSettings() {
+            const payload = {
+                cafe_name_ar: document.getElementById('setCafeNameAr').value.trim(),
+                cafe_name_en: document.getElementById('setCafeNameEn').value.trim(),
+                cafe_tagline: document.getElementById('setCafeTagline').value.trim(),
+                cafe_logo_url: document.getElementById('setCafeLogoUrl').value.trim(),
+                cafe_phone: document.getElementById('setCafePhone').value.trim(),
+                cafe_whatsapp: document.getElementById('setCafeWhatsapp').value.trim(),
+                wifi_ssid: document.getElementById('setWifiSsid').value.trim(),
+                wifi_password: document.getElementById('setWifiPass').value.trim(),
+                operating_hours: document.getElementById('setOperatingHours').value.trim(),
+                currency: document.getElementById('setCurrency').value.trim(),
+                cafe_address: document.getElementById('setCafeAddress').value.trim()
+            };
+
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ settings: payload })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert('✅ ' + data.message);
+                    fetchOwnerSettings();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر الحفظ'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function saveOwnerReceiptSettings() {
+            const payload = {
+                tax_enabled: document.getElementById('setTaxEnabled').checked ? 'true' : 'false',
+                tax_rate: document.getElementById('setTaxRate').value.trim(),
+                service_charge_enabled: document.getElementById('setServiceEnabled').checked ? 'true' : 'false',
+                service_charge: document.getElementById('setServiceRate').value.trim(),
+                default_delivery_fee: document.getElementById('setDefaultDeliveryFee').value.trim(),
+                min_order_value: document.getElementById('setMinOrderValue').value.trim(),
+                receipt_header: document.getElementById('setReceiptHeader').value.trim(),
+                receipt_footer: document.getElementById('setReceiptFooter').value.trim(),
+                receipt_show_wifi: document.getElementById('setReceiptShowWifi').checked ? 'true' : 'false'
+            };
+
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ settings: payload })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert('✅ ' + data.message);
+                    fetchOwnerSettings();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر الحفظ'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        function updateLiveReceiptPreview() {
+            const cafeEn = document.getElementById('setCafeNameEn') ? document.getElementById('setCafeNameEn').value : 'ceZar COFFEE';
+            const tagline = document.getElementById('setCafeTagline') ? document.getElementById('setCafeTagline').value : '';
+            const header = document.getElementById('setReceiptHeader') ? document.getElementById('setReceiptHeader').value : '';
+            const footer = document.getElementById('setReceiptFooter') ? document.getElementById('setReceiptFooter').value : '';
+            const address = document.getElementById('setCafeAddress') ? document.getElementById('setCafeAddress').value : '';
+            const phone = document.getElementById('setCafePhone') ? document.getElementById('setCafePhone').value : '';
+            const wifiSsid = document.getElementById('setWifiSsid') ? document.getElementById('setWifiSsid').value : '';
+            const wifiPass = document.getElementById('setWifiPass') ? document.getElementById('setWifiPass').value : '';
+
+            const taxOn = document.getElementById('setTaxEnabled') && document.getElementById('setTaxEnabled').checked;
+            const taxRate = parseFloat(document.getElementById('setTaxRate')?.value || 0);
+            const srvOn = document.getElementById('setServiceEnabled') && document.getElementById('setServiceEnabled').checked;
+            const srvRate = parseFloat(document.getElementById('setServiceRate')?.value || 0);
+            const showWifi = document.getElementById('setReceiptShowWifi') && document.getElementById('setReceiptShowWifi').checked;
+
+            if (document.getElementById('prevCafeName')) document.getElementById('prevCafeName').textContent = cafeEn;
+            if (document.getElementById('prevTagline')) document.getElementById('prevTagline').textContent = tagline;
+            if (document.getElementById('prevHeader')) document.getElementById('prevHeader').textContent = header;
+            if (document.getElementById('prevFooter')) document.getElementById('prevFooter').textContent = footer;
+            if (document.getElementById('prevAddress')) document.getElementById('prevAddress').textContent = address;
+            if (document.getElementById('prevPhone')) document.getElementById('prevPhone').textContent = 'هاتف: ' + phone;
+
+            const baseTotal = 260.0;
+            let taxAmt = 0;
+            let srvAmt = 0;
+
+            if (taxOn && taxRate > 0) {
+                taxAmt = (baseTotal * taxRate) / 100.0;
+                document.getElementById('prevTaxRow').style.display = 'flex';
+                document.getElementById('prevTaxVal').textContent = taxRate;
+                document.getElementById('prevTaxAmount').textContent = taxAmt.toFixed(2) + ' ج';
+            } else {
+                document.getElementById('prevTaxRow').style.display = 'none';
+            }
+
+            if (srvOn && srvRate > 0) {
+                srvAmt = (baseTotal * srvRate) / 100.0;
+                document.getElementById('prevServiceRow').style.display = 'flex';
+                document.getElementById('prevServiceVal').textContent = srvRate;
+                document.getElementById('prevServiceAmount').textContent = srvAmt.toFixed(2) + ' ج';
+            } else {
+                document.getElementById('prevServiceRow').style.display = 'none';
+            }
+
+            const grand = baseTotal + taxAmt + srvAmt;
+            if (document.getElementById('prevGrandTotal')) document.getElementById('prevGrandTotal').textContent = grand.toFixed(2) + ' ج';
+
+            if (document.getElementById('prevWifiBox')) {
+                document.getElementById('prevWifiBox').style.display = showWifi ? 'block' : 'none';
+                document.getElementById('prevWifiSsid').textContent = wifiSsid;
+                document.getElementById('prevWifiPass').textContent = wifiPass;
+            }
+        }
+
+        function testPrintReceipt() {
+            const content = document.getElementById('liveReceiptPaper').innerHTML;
+            const win = window.open('', '_blank', 'width=380,height=600');
+            win.document.write(`
+                <html dir="rtl" lang="ar">
+                <head>
+                    <title>فاتورة تجريبية - ceZar COFFEE</title>
+                    <style>
+                        body { font-family: monospace; font-size: 12px; margin: 0; padding: 10px; line-height: 1.4; }
+                        @media print { body { padding: 0; } }
+                    </style>
+                </head>
+                <body onload="window.print(); window.close();">
+                    ${content}
+                </body>
+                </html>
+            `);
+            win.document.close();
+        }
+
+        async function fetchOwnerTables() {
+            try {
+                const res = await fetch('/api/tables/configs');
+                const data = await res.json();
+                currentOwnerTables = data.tables || [];
+                const tbody = document.getElementById('ownerTablesTableBody');
+                if (!tbody) return;
+
+                if (currentOwnerTables.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #888;">جاري تحميل ترابيزات الصالة...</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = currentOwnerTables.map(t => {
+                    const statusBadge = t.is_active 
+                        ? '<span style="background: #DCFCE7; color: #16A34A; padding: 3px 8px; border-radius: 8px; font-weight: 800; font-size: 11px;">نشطة ومتاحة</span>'
+                        : '<span style="background: #FEE2E2; color: #DC2626; padding: 3px 8px; border-radius: 8px; font-weight: 800; font-size: 11px;">صيانة وموقوفة</span>';
+
+                    return `<tr>
+                        <td style="font-weight: 900; color: var(--primary-espresso); font-size: 14px;">ترابيزة ${t.table_number}</td>
+                        <td>
+                            <select id="tblZone_${t.table_number}" style="padding: 4px 8px; border-radius: 8px; border: 1px solid #D1D5DB; font-size: 12px; font-weight: 700;">
+                                <option value="صالة رئيسية" ${t.zone === 'صالة رئيسية' ? 'selected' : ''}>صالة رئيسية</option>
+                                <option value="تراس خارجي" ${t.zone === 'تراس خارجي' ? 'selected' : ''}>تراس خارجي</option>
+                                <option value="ركن عائلي" ${t.zone === 'ركن عائلي' ? 'selected' : ''}>ركن عائلي</option>
+                                <option value="ركن VIP" ${t.zone === 'ركن VIP' ? 'selected' : ''}>ركن VIP</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" id="tblCap_${t.table_number}" value="${t.capacity || 4}" min="1" max="20" style="width: 55px; padding: 4px; border: 1px solid #D1D5DB; border-radius: 6px; text-align: center; font-weight: 800;"> أفراد
+                        </td>
+                        <td>
+                            <select id="tblActive_${t.table_number}" style="padding: 4px 8px; border-radius: 8px; border: 1px solid #D1D5DB; font-size: 12px; font-weight: 700;">
+                                <option value="true" ${t.is_active ? 'selected' : ''}>نشطة</option>
+                                <option value="false" ${!t.is_active ? 'selected' : ''}>موقوفة للصيانة</option>
+                            </select>
+                        </td>
+                        <td>
+                            <a href="/menu?table=${t.table_number}" target="_blank" style="color: var(--cezar-orange); font-weight: 800; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-qrcode"></i> فتح منيو الترابيزة
+                            </a>
+                        </td>
+                        <td>
+                            <button onclick="saveOwnerSingleTable(${t.table_number})" style="background: #0284C7; color: white; border: none; padding: 5px 12px; border-radius: 8px; font-weight: 800; font-size: 11px; cursor: pointer;">
+                                <i class="fa-solid fa-floppy-disk"></i> حفظ
+                            </button>
+                        </td>
+                    </tr>`;
+                }).join('');
+            } catch(e) {
+                console.error("fetchOwnerTables error", e);
+            }
+        }
+
+        async function saveOwnerSingleTable(tblNum) {
+            const zone = document.getElementById(`tblZone_${tblNum}`).value;
+            const cap = parseInt(document.getElementById(`tblCap_${tblNum}`).value) || 4;
+            const active = (document.getElementById(`tblActive_${tblNum}`).value === 'true');
+
+            try {
+                const res = await fetch('/api/tables/configs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table_number: tblNum,
+                        zone: zone,
+                        capacity: cap,
+                        is_active: active
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert('✅ ' + data.message);
+                    fetchTablesStatus();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر الحفظ'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function updateOwnerBatchTables() {
+            const count = parseInt(document.getElementById('ownerTablesCountInput').value) || 25;
+            if (!confirm(`هل تريد تعديل إجمالي عدد ترابيزات الصالة إلى ${count} ترابيزة؟`)) return;
+
+            try {
+                const res = await fetch('/api/tables/batch-count', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tables_count: count })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert('✅ ' + data.message);
+                    fetchOwnerTables();
+                    fetchTablesStatus();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر التحديث'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function populateBulkPriceCategories() {
+            try {
+                const res = await fetch('/api/menu-items?all_items=true');
+                const data = await res.json();
+                const cats = Object.keys(data.categories || {});
+
+                const selBulk = document.getElementById('bulkPriceCategory');
+                if (selBulk) {
+                    selBulk.innerHTML = '<option value="all">كل أصناف المنيو (157 صنف)</option>' +
+                        cats.map(c => `<option value="${c}">${c} (${data.categories[c].length} صنف)</option>`).join('');
+                }
+
+                const selCat = document.getElementById('catRenameSelect');
+                if (selCat) {
+                    selCat.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+                    if (cats.length > 0 && document.getElementById('catRenameNewName')) {
+                        document.getElementById('catRenameNewName').value = cats[0];
+                    }
+                }
+            } catch(e) {
+                console.error("populateBulkPriceCategories error", e);
+            }
+        }
+
+        async function applyBulkPriceAdjustment() {
+            const cat = document.getElementById('bulkPriceCategory').value;
+            const adjType = document.getElementById('bulkPriceType').value;
+            const val = parseFloat(document.getElementById('bulkPriceValue').value);
+            const roundFive = document.getElementById('bulkPriceRound').checked;
+
+            if (isNaN(val) || val === 0) {
+                alert('يرجى إدخال قيمة صحيحة ومختلفة عن 0 (مثلاً: 10 أو -5)');
+                return;
+            }
+
+            const targetDesc = (cat === 'all') ? 'كافة أصناف المنيو' : `قسم (${cat})`;
+            const modDesc = (adjType === 'percentage') ? `${val}%` : `${val} ج.م`;
+            if (!confirm(`تأكيد تعديل الأسعار:
+هل أنت متأكد من تطبيق تعديل بمقدار ${modDesc} على ${targetDesc}؟`)) return;
+
+            try {
+                const res = await fetch('/api/menu/bulk-adjust-prices', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        category: cat,
+                        adjust_type: adjType,
+                        value: val,
+                        round_to_five: roundFive
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert('🚀 ' + data.message);
+                    fetchAdminMenu();
+                    fetchPosCatalog();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر تعديل الأسعار'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function submitCategoryRename() {
+            const oldName = document.getElementById('catRenameSelect').value;
+            const newName = document.getElementById('catRenameNewName').value.trim();
+
+            if (!newName) {
+                alert('يرجى كتابة الاسم الجديد للقسم!');
+                return;
+            }
+            if (oldName === newName) {
+                alert('الاسم الجديد مطابق للاسم الحالي!');
+                return;
+            }
+
+            if (!confirm(`هل أنت متأكد من إعادة تسمية قسم (${oldName}) إلى (${newName})؟`)) return;
+
+            try {
+                const res = await fetch('/api/menu/categories/rename', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ old_name: oldName, new_name: newName })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert('✅ ' + data.message);
+                    populateBulkPriceCategories();
+                    fetchAdminMenu();
+                    fetchPosCatalog();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر إعادة التسمية'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function submitCategoryDelete() {
+            const oldName = document.getElementById('catRenameSelect').value;
+            if (!confirm(`⚠️ تحذير شديد:
+هل أنت متأكد من حذف قسم (${oldName}) وجميع الأصناف الموجودة بداخله؟
+لا يمكن التراجع عن هذه الخطوة!`)) return;
+
+            try {
+                const res = await fetch('/api/menu/categories/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ old_name: oldName })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert('🗑️ ' + data.message);
+                    populateBulkPriceCategories();
+                    fetchAdminMenu();
+                    fetchPosCatalog();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر الحذف'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        function testOwnerSound(type) {
+            if (type === 'order') {
+                const a = document.getElementById('audioNewOrder');
+                if (a) { a.currentTime = 0; a.play().catch(e => alert('اضغط على الشاشة لتفعيل إذن الصوت في المتصفح')); }
+            } else if (type === 'waiter') {
+                const a = document.getElementById('audioWaiter');
+                if (a) { a.currentTime = 0; a.play().catch(e => alert('اضغط على الشاشة لتفعيل إذن الصوت في المتصفح')); }
+            } else if (type === 'bill') {
+                const a = document.getElementById('audioBill');
+                if (a) { a.currentTime = 0; a.play().catch(e => alert('اضغط على الشاشة لتفعيل إذن الصوت في المتصفح')); }
+            }
+        }
+
+        function downloadDbBackup() {
+            window.location.href = '/api/admin/backup-db';
+        }
+
+        async function resetTestDataSafe() {
+            const pwd = prompt('⚠️ لتأكيد تصفير الطلبات التجريبية، يرجى كتابة (تأكيد):');
+            if (pwd !== 'تأكيد') {
+                alert('تم إلغاء التصفير');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/admin/reset-test-data', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert('🧹 ' + data.message);
+                    fetchOrders();
+                    fetchTablesStatus();
+                    fetchCurrentShift();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر التصفير'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+
     </script>
 </body>
 </html>

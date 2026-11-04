@@ -7,7 +7,7 @@ except Exception:
     pass
 
 from sqlalchemy.orm import Session
-from .models import MenuItem, InventoryItem, PromoCode, ManagerAccount, MenuItemRecipe, Employee, SalaryPayment
+from .models import MenuItem, InventoryItem, PromoCode, ManagerAccount, MenuItemRecipe, Employee, SalaryPayment, CafeSetting, CafeTableConfig
 
 DEFAULT_STAFF_USERS = [
     {"username": "admin", "password": "0000", "manager_name": "المدير العام (ceZar)", "role": "admin"},
@@ -213,3 +213,51 @@ def seed_menu(db: Session):
                 notes="صرف راتب شهر نوفمبر 2026"
             ))
             db.commit()
+
+    # Seed Cafe Settings (إعدادات وهوية الكافيه الشاملة)
+    default_settings = {
+        "cafe_name_ar": "كافيه سيزر",
+        "cafe_name_en": "ceZar COFFEE",
+        "cafe_tagline": "Specialty Coffee & Roastery",
+        "cafe_phone": "01023456789",
+        "cafe_whatsapp": "01023456789",
+        "cafe_address": "شارع الجمهورية - وسط البلد",
+        "wifi_ssid": "ceZar_Coffee_5G",
+        "wifi_password": "cezar_coffee_vip",
+        "currency": "ج.م",
+        "tax_rate": "0",
+        "tax_enabled": "false",
+        "service_charge": "0",
+        "service_charge_enabled": "false",
+        "default_delivery_fee": "20",
+        "min_order_value": "50",
+        "receipt_header": "ceZar COFFEE - أهلاً وسهلاً بكم",
+        "receipt_footer": "شكراً لزيارتكم كافيه سيزر - نتشرف بكم دائماً ☕",
+        "receipt_show_wifi": "true",
+        "tables_count": "25",
+        "sound_alerts_enabled": "true",
+        "operating_hours": "08:00 AM - 02:00 AM"
+    }
+    for k, v in default_settings.items():
+        if not db.query(CafeSetting).filter(CafeSetting.key == k).first():
+            db.add(CafeSetting(key=k, value=str(v), description="إعداد النظام الافتراضي"))
+    db.commit()
+
+    # Seed 25 Table Configs
+    if db.query(CafeTableConfig).count() == 0:
+        for t in range(1, 26):
+            if t <= 10:
+                zone = "صالة رئيسية"
+                cap = 4
+            elif t <= 18:
+                zone = "تراس خارجي"
+                cap = 4
+            elif t <= 22:
+                zone = "ركن عائلي"
+                cap = 6
+            else:
+                zone = "ركن VIP"
+                cap = 8
+            db.add(CafeTableConfig(table_number=t, capacity=cap, zone=zone, is_active=True))
+        db.commit()
+
