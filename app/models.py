@@ -1,7 +1,10 @@
 from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from .database import Base
+try:
+    from .database import Base
+except ImportError:
+    from database import Base
 
 
 class MenuItem(Base):

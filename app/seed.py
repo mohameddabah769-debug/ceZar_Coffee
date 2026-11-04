@@ -7,7 +7,10 @@ except Exception:
     pass
 
 from sqlalchemy.orm import Session
-from .models import MenuItem, InventoryItem, PromoCode, ManagerAccount, MenuItemRecipe, Employee, SalaryPayment, CafeSetting, CafeTableConfig
+try:
+    from .models import MenuItem, InventoryItem, PromoCode, ManagerAccount, MenuItemRecipe, Employee, SalaryPayment, CafeSetting, CafeTableConfig
+except ImportError:
+    from models import MenuItem, InventoryItem, PromoCode, ManagerAccount, MenuItemRecipe, Employee, SalaryPayment, CafeSetting, CafeTableConfig
 
 DEFAULT_STAFF_USERS = [
     {"username": "admin", "password": "0000", "manager_name": "المدير العام (ceZar)", "role": "admin"},

@@ -8,9 +8,14 @@ from flask import Flask, request, jsonify, redirect, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
-from .database import engine, Base, SessionLocal
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem
-from .seed import seed_menu
+try:
+    from .database import engine, Base, SessionLocal
+    from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem
+    from .seed import seed_menu
+except ImportError:
+    from database import engine, Base, SessionLocal
+    from models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem
+    from seed import seed_menu
 
 Base.metadata.create_all(bind=engine)
 
