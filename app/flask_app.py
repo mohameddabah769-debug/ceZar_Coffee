@@ -2,7 +2,10 @@ import os
 import sys
 import io
 import csv
-import qrcode
+try:
+    import qrcode
+except ImportError:
+    qrcode = None
 from datetime import datetime
 from flask import Flask, request, jsonify, redirect, Response
 from sqlalchemy.orm import Session
