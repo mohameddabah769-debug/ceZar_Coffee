@@ -362,13 +362,7 @@
             box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
         }
 
-        .order-card.takeaway {
-            border-left: 6px solid #6f42c1;
-        }
-
-        .order-card.delivery {
-            border-left: 6px solid #007bff;
-        }
+        
 
         .order-card.hall {
             border-left: 6px solid var(--cezar-orange);
@@ -835,12 +829,7 @@
                 <button class="filter-pill" id="pill-hall" onclick="setOrderFilter('hall')" style="color: var(--cezar-orange);">
                     <i class="fa-solid fa-chair"></i> صالة (<span id="pillCountHall">0</span>)
                 </button>
-                <button class="filter-pill" id="pill-takeaway" onclick="setOrderFilter('takeaway')" style="color: #6f42c1;">
-                    <i class="fa-solid fa-bag-shopping"></i> تيك أواي (<span id="pillCountTakeaway">0</span>)
-                </button>
-                <button class="filter-pill" id="pill-delivery" onclick="setOrderFilter('delivery')" style="color: #007bff;">
-                    <i class="fa-solid fa-motorcycle"></i> دليفري (<span id="pillCountDelivery">0</span>)
-                </button>
+
             </div>
 
             <button onclick="clearAllOrders()" style="background: rgba(220, 53, 69, 0.08); color: #dc3545; border: 1.5px solid #dc3545; padding: 6px 14px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
@@ -892,38 +881,6 @@
                         </select>
                     </div>
 
-                    <div id="posTakeawayFields" style="display: none; margin-bottom: 10px;">
-                        <label style="font-size: 12px; font-weight: 800;">اسم العميل (سفري):</label>
-                        <input type="text" id="posCustomerName" placeholder="مثال: أستاذ أحمد" class="form-control">
-                    </div>
-
-                    <div id="posDeliveryFields" style="display: none; margin-bottom: 10px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                            <div>
-                                <label style="font-size: 11px; font-weight: 800;">اسم العميل:</label>
-                                <input type="text" id="posDeliveryName" placeholder="الاسم" class="form-control">
-                            </div>
-                            <div>
-                                <label style="font-size: 11px; font-weight: 800;">رقم الهاتف:</label>
-                                <input type="text" id="posDeliveryPhone" placeholder="01xxxxxxxxx" class="form-control">
-                            </div>
-                        </div>
-                        <div style="margin-top: 6px;">
-                            <label style="font-size: 11px; font-weight: 800;">العنوان بالتفصيل:</label>
-                            <input type="text" id="posDeliveryAddress" placeholder="الشارع، العمارة، الشقة..." class="form-control">
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
-                            <div>
-                                <label style="font-size: 11px; font-weight: 800;">رسوم التوصيل:</label>
-                                <input type="number" id="posDeliveryFee" value="15" onchange="renderPosCart()" class="form-control">
-                            </div>
-                            <div>
-                                <label style="font-size: 11px; font-weight: 800;">الطيار / الموصل:</label>
-                                <input type="text" id="posDeliveryDriver" placeholder="اسم الطيار" class="form-control">
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Items Cart Table -->
                     <div style="border-top: 1px dashed var(--border-color); padding-top: 8px; margin-top: 8px;">
                         <div style="font-size: 12px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 6px;">الأصناف المختارة:</div>
@@ -949,10 +906,7 @@
                         <span>إجمالي الأصناف:</span>
                         <span id="posCartSubtotal">0 ج</span>
                     </div>
-                    <div id="posCartDeliveryRow" style="display: none; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 4px; color: #007bff;">
-                        <span>خدمة التوصيل:</span>
-                        <span id="posCartDeliveryFee">0 ج</span>
-                    </div>
+
                     <div style="display: flex; justify-content: space-between; font-size: 17px; font-weight: 900; color: var(--cezar-orange); margin-bottom: 10px;">
                         <span>الإجمالي المطلوب:</span>
                         <span id="posCartGrandTotal">0 ج</span>
@@ -1812,7 +1766,7 @@
                 <!-- Form Inputs -->
                 <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px;">
                     <h3 style="font-size: 16px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 14px;">
-                        <i class="fa-solid fa-percent" style="color: #059669;"></i> الضرائب، رسوم الخدمة، وتوصيل الدليفري
+                        <i class="fa-solid fa-percent" style="color: #059669;"></i> الضرائب ورسوم الخدمة للصالة
                     </h3>
 
                     <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; margin-bottom: 14px;">
@@ -1844,10 +1798,7 @@
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
-                        <div>
-                            <label style="font-size: 12px; font-weight: 800;">رسوم الدليفري الافتراضية:</label>
-                            <input type="number" id="setDefaultDeliveryFee" class="form-control" placeholder="20" min="0">
-                        </div>
+
                         <div>
                             <label style="font-size: 12px; font-weight: 800;">الحد الأدنى للطلب (ج):</label>
                             <input type="number" id="setMinOrderValue" class="form-control" placeholder="50" min="0">
@@ -3089,10 +3040,8 @@
                 document.getElementById('ordersCountBadge').textContent = data.stats.pending_orders || 0;
 
                 // Pill Counts
-                document.getElementById('pillCountAll').textContent = allOrders.length;
-                document.getElementById('pillCountHall').textContent = allOrders.filter(o => o.order_type === 'صالة').length;
-                document.getElementById('pillCountTakeaway').textContent = allOrders.filter(o => o.order_type === 'تيك أواي').length;
-                document.getElementById('pillCountDelivery').textContent = allOrders.filter(o => o.order_type === 'دليفري').length;
+                if (document.getElementById('pillCountAll')) document.getElementById('pillCountAll').textContent = allOrders.length;
+                if (document.getElementById('pillCountHall')) document.getElementById('pillCountHall').textContent = allOrders.length;
 
                 // Check for new incoming orders to trigger alarm
                 let hasNewUrgent = false;
@@ -3131,8 +3080,6 @@
 
             let list = allOrders;
             if (activeFilter === 'hall') list = list.filter(o => o.order_type === 'صالة');
-            else if (activeFilter === 'takeaway') list = list.filter(o => o.order_type === 'تيك أواي');
-            else if (activeFilter === 'delivery') list = list.filter(o => o.order_type === 'دليفري');
             else if (activeFilter === 'new') list = list.filter(o => o.status === 'جديد' || o.status === 'نداء ويتر' || (o.status && o.status.startsWith('طلب حساب')));
             else if (activeFilter === 'sales') list = list.filter(o => o.total_price > 0 && o.status !== 'ملغي');
 
@@ -3147,26 +3094,9 @@
                 const card = document.createElement('div');
                 card.id = `orderCard_${o.id}`;
                 const isUrgent = (o.status === 'جديد' || o.status === 'نداء ويتر' || (o.status && o.status.startsWith('طلب حساب')));
-                const typeClass = o.order_type === 'تيك أواي' ? 'takeaway' : (o.order_type === 'دليفري' ? 'delivery' : 'hall');
-                card.className = `order-card ${typeClass} ${isUrgent ? 'urgent' : ''}`;
-
+                card.className = `order-card hall ${isUrgent ? 'urgent' : ''}`;
                 let typeBadge = `<span style="background: #FFF3E0; color: #E65100; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 900;"><i class="fa-solid fa-chair"></i> صالة ترابيزة ${o.table_number}</span>`;
-                if (o.order_type === 'تيك أواي') {
-                    typeBadge = `<span style="background: #F3E8FF; color: #6f42c1; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 900;"><i class="fa-solid fa-bag-shopping"></i> تيك أواي سفري</span>`;
-                } else if (o.order_type === 'دليفري') {
-                    typeBadge = `<span style="background: #E0F2FE; color: #0284C7; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 900;"><i class="fa-solid fa-motorcycle"></i> دليفري (${o.delivery_status || 'قيد التجهيز'})</span>`;
-                }
-
-                let deliveryInfoHtml = '';
-                if (o.order_type === 'دليفري') {
-                    deliveryInfoHtml = `
-                        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 8px 10px; border-radius: 8px; font-size: 11px; margin-top: 6px;">
-                            <div><strong>📍 العنوان:</strong> ${o.delivery_address || 'غير محدد'}</div>
-                            <div><strong>📞 الهاتف:</strong> ${o.customer_phone || 'غير مسجل'}</div>
-                            <div><strong>🛵 الطيار:</strong> ${o.delivery_driver || 'لم يعين بعد'}</div>
-                        </div>
-                    `;
-                }
+                // tables only
 
                 card.innerHTML = `
                     <div>
@@ -3186,7 +3116,7 @@
                             ${o.items_summary}
                         </div>
 
-                        ${deliveryInfoHtml}
+                        
 
                         ${o.notes ? `<div style="font-size: 11px; color: var(--cezar-orange); font-weight: 800; margin-top: 6px;">📝 ملاحظة: ${o.notes}</div>` : ''}
                     </div>
@@ -3241,17 +3171,7 @@
         var posSelectedCategory = 'الكل';
 
         function setPosOrderType(type) {
-            posCurrentType = type;
-            document.querySelectorAll('#tabPOS .filter-pill').forEach(b => b.classList.remove('active'));
-            if (type === 'صالة') document.getElementById('btnTypeHall').classList.add('active');
-            else if (type === 'تيك أواي') document.getElementById('btnTypeTakeaway').classList.add('active');
-            else if (type === 'دليفري') document.getElementById('btnTypeDelivery').classList.add('active');
-
-            document.getElementById('posHallFields').style.display = (type === 'صالة') ? 'block' : 'none';
-            document.getElementById('posTakeawayFields').style.display = (type === 'تيك أواي') ? 'block' : 'none';
-            document.getElementById('posDeliveryFields').style.display = (type === 'دليفري') ? 'block' : 'none';
-            document.getElementById('posCartDeliveryRow').style.display = (type === 'دليفري') ? 'flex' : 'none';
-
+            posCurrentType = 'صالة';
             renderPosCart();
         }
 
@@ -3349,11 +3269,9 @@
                 listEl.appendChild(row);
             });
 
-            const deliveryFee = (posCurrentType === 'دليفري') ? parseFloat(document.getElementById('posDeliveryFee').value || 0) : 0;
-            const grandTotal = subtotal + deliveryFee;
-
+            const grandTotal = subtotal;
             document.getElementById('posCartSubtotal').textContent = subtotal + ' ج';
-            document.getElementById('posCartDeliveryFee').textContent = deliveryFee + ' ج';
+            // hall tables only
             document.getElementById('posCartGrandTotal').textContent = grandTotal + ' ج';
         }
 
@@ -3364,36 +3282,15 @@
             }
 
             const paymentMethod = document.querySelector('input[name="posPaymentMethod"]:checked').value;
-            let tableNum = 0;
-            let custName = '';
-            let custPhone = '';
-            let deliveryAddress = '';
-            let deliveryFee = 0;
-            let deliveryDriver = '';
-
-            if (posCurrentType === 'صالة') {
-                tableNum = parseInt(document.getElementById('posTableSelect').value || 1);
-                custName = `ترابيزة ${tableNum}`;
-            } else if (posCurrentType === 'تيك أواي') {
-                custName = document.getElementById('posCustomerName').value.trim() || 'عميل سفري';
-            } else if (posCurrentType === 'دليفري') {
-                custName = document.getElementById('posDeliveryName').value.trim() || 'عميل دليفري';
-                custPhone = document.getElementById('posDeliveryPhone').value.trim();
-                deliveryAddress = document.getElementById('posDeliveryAddress').value.trim();
-                deliveryFee = parseFloat(document.getElementById('posDeliveryFee').value || 0);
-                deliveryDriver = document.getElementById('posDeliveryDriver').value.trim();
-            }
+            const tableNum = parseInt(document.getElementById('posTableSelect').value || 1);
+            const custName = `ترابيزة ${tableNum}`;
 
             const payload = {
-                order_type: posCurrentType,
+                order_type: 'صالة',
                 table_number: tableNum,
                 customer_name: custName,
-                customer_phone: custPhone,
                 items: posCartItems,
                 payment_method: paymentMethod,
-                delivery_address: deliveryAddress,
-                delivery_fee: deliveryFee,
-                delivery_driver: deliveryDriver,
                 promo_code: posAppliedPromo ? posAppliedPromo.code : null,
                 discount_amount: posAppliedPromo ? posAppliedPromo.discount_amount : 0.0
             };
@@ -4020,7 +3917,7 @@
                 renderReceiptSlip({
                     orderId: data.id,
                     type: data.order_type,
-                    headerInfo: data.order_type === 'صالة' ? `ترابيزة رقم ${data.table_number}` : (data.order_type === 'تيك أواي' ? 'سفري / تيك أواي' : `توصيل منازل: ${data.delivery_address || ''}`),
+                    headerInfo: `ترابيزة رقم ${data.table_number}`,
                     items: data.items_summary,
                     total: data.total_price,
                     paymentMethod: data.payment_method,
@@ -4622,11 +4519,11 @@
                 // Channel Sales
                 const byChannel = data.by_channel || {};
                 const sHall = document.getElementById('analyticsSalesHall');
-                const sTake = document.getElementById('analyticsSalesTakeaway');
-                const sDeliv = document.getElementById('analyticsSalesDelivery');
+                
+                
                 if (sHall) sHall.textContent = `${(byChannel['صالة'] || 0)} ج`;
-                if (sTake) sTake.textContent = `${(byChannel['تيك أواي'] || 0)} ج`;
-                if (sDeliv) sDeliv.textContent = `${(byChannel['دليفري'] || 0)} ج`;
+                
+                
             } catch(e) {
                 console.error("Error fetching analytics", e);
             }
@@ -5660,8 +5557,7 @@
                     if (document.getElementById('setTaxRate')) document.getElementById('setTaxRate').value = currentOwnerSettings.tax_rate || '0';
                     if (document.getElementById('setServiceEnabled')) document.getElementById('setServiceEnabled').checked = (currentOwnerSettings.service_charge_enabled === 'true');
                     if (document.getElementById('setServiceRate')) document.getElementById('setServiceRate').value = currentOwnerSettings.service_charge || '0';
-                    if (document.getElementById('setDefaultDeliveryFee')) document.getElementById('setDefaultDeliveryFee').value = currentOwnerSettings.default_delivery_fee || '20';
-                    if (document.getElementById('setMinOrderValue')) document.getElementById('setMinOrderValue').value = currentOwnerSettings.min_order_value || '50';
+                                        if (document.getElementById('setMinOrderValue')) document.getElementById('setMinOrderValue').value = currentOwnerSettings.min_order_value || '50';
                     if (document.getElementById('setReceiptHeader')) document.getElementById('setReceiptHeader').value = currentOwnerSettings.receipt_header || 'ceZar COFFEE - أهلاً وسهلاً بكم';
                     if (document.getElementById('setReceiptFooter')) document.getElementById('setReceiptFooter').value = currentOwnerSettings.receipt_footer || 'شكراً لزيارتكم كافيه سيزر - نتشرف بكم دائماً ☕';
                     if (document.getElementById('setReceiptShowWifi')) document.getElementById('setReceiptShowWifi').checked = (currentOwnerSettings.receipt_show_wifi !== 'false');
@@ -5716,7 +5612,7 @@
                 tax_rate: document.getElementById('setTaxRate').value.trim(),
                 service_charge_enabled: document.getElementById('setServiceEnabled').checked ? 'true' : 'false',
                 service_charge: document.getElementById('setServiceRate').value.trim(),
-                default_delivery_fee: document.getElementById('setDefaultDeliveryFee').value.trim(),
+                
                 min_order_value: document.getElementById('setMinOrderValue').value.trim(),
                 receipt_header: document.getElementById('setReceiptHeader').value.trim(),
                 receipt_footer: document.getElementById('setReceiptFooter').value.trim(),

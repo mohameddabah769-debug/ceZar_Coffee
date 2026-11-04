@@ -331,12 +331,11 @@
         </div>
     </header>
 
-    <!-- Filter Bar -->
+    <!-- Filter Bar: Hall Tables Only -->
     <nav class="filter-bar">
-        <button class="filter-btn active" onclick="setKdsFilter('all', this)">الكل (<span id="countAll">0</span>)</button>
-        <button class="filter-btn" onclick="setKdsFilter('hall', this)">صالة ترابيزات (<span id="countHall">0</span>)</button>
-        <button class="filter-btn" onclick="setKdsFilter('takeaway', this)">تيك أواي سفري (<span id="countTakeaway">0</span>)</button>
-        <button class="filter-btn" onclick="setKdsFilter('delivery', this)">دليفري (<span id="countDelivery">0</span>)</button>
+        <button class="filter-btn active" style="cursor: default;">
+            <i class="fa-solid fa-chair" style="color: var(--cezar-orange);"></i> طلبات صالة الكافيه قيد التحضير (<span id="countAll">0</span>)
+        </button>
     </nav>
 
     <!-- Grid of Tickets -->
@@ -415,14 +414,11 @@
 
             let list = kdsOrders;
             if (activeFilter === 'hall') list = list.filter(o => o.order_type === 'صالة');
-            else if (activeFilter === 'takeaway') list = list.filter(o => o.order_type === 'تيك أواي');
-            else if (activeFilter === 'delivery') list = list.filter(o => o.order_type === 'دليفري');
+            
+            
 
             // Counts
-            document.getElementById('countAll').textContent = kdsOrders.length;
-            document.getElementById('countHall').textContent = kdsOrders.filter(o => o.order_type === 'صالة').length;
-            document.getElementById('countTakeaway').textContent = kdsOrders.filter(o => o.order_type === 'تيك أواي').length;
-            document.getElementById('countDelivery').textContent = kdsOrders.filter(o => o.order_type === 'دليفري').length;
+            if (document.getElementById('countAll')) document.getElementById('countAll').textContent = kdsOrders.length;
 
             const newCount = kdsOrders.filter(o => o.status === 'جديد').length;
             const prepCount = kdsOrders.filter(o => o.status === 'جاري التحضير' || o.status === 'قيد التحضير').length;
@@ -445,11 +441,6 @@
                 card.className = `ticket-card ${isNew ? 'new' : 'in-prep'}`;
 
                 let channelTitle = `<i class="fa-solid fa-chair" style="color: var(--cezar-orange);"></i> ترابيزة ${order.table_number}`;
-                if (order.order_type === 'تيك أواي') {
-                    channelTitle = `<i class="fa-solid fa-bag-shopping" style="color: #A855F7;"></i> سفري (${order.customer_name})`;
-                } else if (order.order_type === 'دليفري') {
-                    channelTitle = `<i class="fa-solid fa-motorcycle" style="color: #38BDF8;"></i> دليفري (${order.customer_name})`;
-                }
 
                 // Parse items lines
                 const lines = (order.items_summary || '').split('\n').filter(l => l.trim());
