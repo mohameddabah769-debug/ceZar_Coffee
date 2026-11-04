@@ -3215,11 +3215,16 @@
                 const res = await fetch('/api/shifts/current');
                 const data = await res.json();
                 const box = document.getElementById('shiftSummaryBox');
+                const badgeText = document.getElementById('navShiftText');
+                const badge = document.getElementById('navShiftBadge');
 
-                if (data.status === 'active') {
+                if (data && data.status === 'active' && data.shift) {
                     currentShiftData = data.shift;
-                    document.getElementById('navShiftText').textContent = `الوردية نشطة: ${currentShiftData.cashier_name}`;
-                    document.getElementById('navShiftBadge').style.borderColor = '#28a745';
+                    if (badgeText) badgeText.textContent = `الوردية نشطة: ${currentShiftData.cashier_name}`;
+                    if (badge) {
+                        badge.style.borderColor = '#28a745';
+                        badge.style.background = 'rgba(40, 167, 69, 0.2)';
+                    }
 
                     box.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
@@ -3262,8 +3267,13 @@
                     `;
                 } else {
                     currentShiftData = null;
-                    document.getElementById('navShiftText').textContent = 'لا توجد وردية مفتوحة';
-                    document.getElementById('navShiftBadge').style.borderColor = '#dc3545';
+                    const badgeText = document.getElementById('navShiftText');
+                    const badge = document.getElementById('navShiftBadge');
+                    if (badgeText) badgeText.textContent = 'لا توجد وردية مفتوحة (اضغط للفتح)';
+                    if (badge) {
+                        badge.style.borderColor = '#dc3545';
+                        badge.style.background = 'rgba(220, 53, 69, 0.2)';
+                    }
 
                     box.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -3278,9 +3288,12 @@
                     `;
                 }
 
-                fetchExpenses();
-                fetchShiftsHistory();
-            } catch(e) {}
+                try { fetchExpenses(); } catch(err) {}
+                try { fetchShiftsHistory(); } catch(err) {}
+            } catch(e) {
+                const badgeText = document.getElementById('navShiftText');
+                if (badgeText) badgeText.textContent = 'لا توجد وردية مفتوحة';
+            }
         }
 
         async function submitOpenShift() {
@@ -4050,11 +4063,11 @@
                 }
 
                 // Net Profit & Executive KPIs
-                if (document.getElementById('kpiGrossSales')) document.getElementById('kpiGrossSales').textContent = `${(data.gross_sales || 0):g} ج`;
-                if (document.getElementById('kpiTotalCogs')) document.getElementById('kpiTotalCogs').textContent = `${(data.total_cogs || 0):g} ج`;
-                if (document.getElementById('kpiTotalExpenses')) document.getElementById('kpiTotalExpenses').textContent = `${(data.total_expenses || 0):g} ج`;
-                if (document.getElementById('kpiTotalSalaries')) document.getElementById('kpiTotalSalaries').textContent = `${(data.total_salaries || 0):g} ج`;
-                if (document.getElementById('kpiNetProfit')) document.getElementById('kpiNetProfit').textContent = `${(data.net_profit || 0):g} ج`;
+                if (document.getElementById('kpiGrossSales')) document.getElementById('kpiGrossSales').textContent = `${(data.gross_sales || 0)} ج`;
+                if (document.getElementById('kpiTotalCogs')) document.getElementById('kpiTotalCogs').textContent = `${(data.total_cogs || 0)} ج`;
+                if (document.getElementById('kpiTotalExpenses')) document.getElementById('kpiTotalExpenses').textContent = `${(data.total_expenses || 0)} ج`;
+                if (document.getElementById('kpiTotalSalaries')) document.getElementById('kpiTotalSalaries').textContent = `${(data.total_salaries || 0)} ج`;
+                if (document.getElementById('kpiNetProfit')) document.getElementById('kpiNetProfit').textContent = `${(data.net_profit || 0)} ج`;
                 if (document.getElementById('kpiProfitMargin')) document.getElementById('kpiProfitMargin').textContent = `${(data.profit_margin_pct || 0)}%`;
 
                 // Channel Sales
@@ -4198,7 +4211,7 @@
                 allEmployees = data.employees || [];
 
                 document.getElementById('staffCountBadge').textContent = data.active_count || allEmployees.length;
-                document.getElementById('staffTotalPayroll').textContent = `${(data.total_payroll || 0):g} ج`;
+                document.getElementById('staffTotalPayroll').textContent = `${(data.total_payroll || 0)} ج`;
 
                 const tbody = document.getElementById('employeesTableBody');
                 if (allEmployees.length === 0) {
@@ -4319,7 +4332,7 @@
                 const data = await res.json();
                 allSalaries = data.payments || [];
 
-                document.getElementById('payrollTotalPaid').textContent = `${(data.total_paid || 0):g} ج`;
+                document.getElementById('payrollTotalPaid').textContent = `${(data.total_paid || 0)} ج`;
 
                 const tbody = document.getElementById('salariesTableBody');
                 if (allSalaries.length === 0) {
@@ -4549,6 +4562,7 @@
         }
 
 
+        fetchCurrentShift();
         checkManagerAuth();
     
         // ====================================================
