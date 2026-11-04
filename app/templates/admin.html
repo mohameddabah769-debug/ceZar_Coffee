@@ -1787,7 +1787,10 @@
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
             if (btnEl) btnEl.classList.add('active');
-            const target = document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+            let target = document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+            if (!target) {
+                target = document.getElementById('tab' + tabName.toUpperCase());
+            }
             if (target) target.classList.add('active');
 
             if (tabName === 'pos') fetchPosCatalog();
@@ -1800,10 +1803,18 @@
             if (tabName === 'promos') fetchPromoCodes();
         }
 
+        function openModal(id) {
+            const m = document.getElementById(id);
+            if (m) m.style.display = 'flex';
+        }
+
         function closeModal(id) {
             const m = document.getElementById(id);
             if (m) m.style.display = 'none';
         }
+
+        function openOpenShiftModal() { openModal('openShiftModal'); }
+        function openAddExpenseModal() { openModal('addExpenseModal'); }
 
         // ====================================================
         // ORDERS FETCH & RENDER
