@@ -1107,42 +1107,146 @@
     <!-- ==================================================== -->
     <!-- TAB 7: Inventory & Stock Alerts                      -->
     <!-- ==================================================== -->
-    <main class="tab-content" id="tabInventory">
-        <!-- Low Stock Alert Banner -->
-        <div id="inventoryAlertBanner" style="display: none; background: #FFEBEE; border: 2px solid #EF4444; border-radius: 14px; padding: 14px 18px; margin-bottom: 16px; color: #B91C1C; font-weight: 800; font-size: 13px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-triangle-exclamation fa-beat" style="font-size: 18px;"></i>
-                <span id="inventoryAlertText">تنبيه: هناك مواد خام قاربت على النفاد!</span>
-            </div>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-            <div style="font-size: 15px; font-weight: 900; color: var(--primary-espresso);">
-                <i class="fa-solid fa-boxes-stacked" style="color: var(--cezar-orange);"></i> رصيد المواد الخام وتنبيه النواقص
-            </div>
-            <button class="pin-btn" onclick="openAddInventoryModal()" style="margin: 0; width: auto; padding: 8px 18px; background: var(--cezar-orange);">
-                <i class="fa-solid fa-plus"></i> إضافة مادة خام جديدة
+        <main class="tab-content" id="tabInventory">
+        <!-- Top Sub-Tabs Navigation (Stock vs Waste & Shortage) -->
+        <div style="display: flex; gap: 10px; margin-bottom: 16px; border-bottom: 2px solid #E5E7EB; padding-bottom: 12px; flex-wrap: wrap;">
+            <button id="btnSubTabStock" class="subtab-pill" onclick="switchInventorySubTab('stock')" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 13px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; background: var(--cezar-orange); color: white; transition: all 0.2s;">
+                <i class="fa-solid fa-boxes-stacked"></i> أرصدة المواد الخام والنواقص
+            </button>
+            <button id="btnSubTabWaste" class="subtab-pill" onclick="switchInventorySubTab('waste')" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 13px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; background: #F3F4F6; color: #4B5563; transition: all 0.2s;">
+                <i class="fa-solid fa-trash-can"></i> إدارة الهالك والعجز والجرد
+                <span id="wasteCountBadge" style="background: #EF4444; color: white; border-radius: 8px; padding: 1px 7px; font-size: 11px; font-weight: 900; display: none;">0</span>
             </button>
         </div>
 
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>المادة الخام</th>
-                        <th>الوحدة</th>
-                        <th>الرصيد الحالي</th>
-                        <th>حد التنبيه</th>
-                        <th>تكلفة الوحدة</th>
-                        <th>الحالة</th>
-                        <th>تعديل سريع</th>
-                        <th>إجراء</th>
-                    </tr>
-                </thead>
-                <tbody id="inventoryTableBody">
-                    <!-- Rendered by JS -->
-                </tbody>
-            </table>
+        <!-- Section 1: Stock & Low Alert -->
+        <div id="sectionInventoryStock">
+            <!-- Low Stock Alert Banner -->
+            <div id="inventoryAlertBanner" style="display: none; background: #FFEBEE; border: 2px solid #EF4444; border-radius: 14px; padding: 14px 18px; margin-bottom: 16px; color: #B91C1C; font-weight: 800; font-size: 13px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-triangle-exclamation fa-beat" style="font-size: 18px;"></i>
+                    <span id="inventoryAlertText">تنبيه: هناك مواد خام قاربت على النفاد!</span>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <div style="font-size: 15px; font-weight: 900; color: var(--primary-espresso);">
+                    <i class="fa-solid fa-boxes-stacked" style="color: var(--cezar-orange);"></i> رصيد المواد الخام وتنبيه النواقص
+                </div>
+                <button class="pin-btn" onclick="openAddInventoryModal()" style="margin: 0; width: auto; padding: 8px 18px; background: var(--cezar-orange);">
+                    <i class="fa-solid fa-plus"></i> إضافة مادة خام جديدة
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المادة الخام</th>
+                            <th>الوحدة</th>
+                            <th>الرصيد الحالي</th>
+                            <th>حد التنبيه</th>
+                            <th>تكلفة الوحدة</th>
+                            <th>الحالة</th>
+                            <th>تعديل سريع</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 2: Waste & Inventory Variance (الهالك والعجز) -->
+        <div id="sectionInventoryWaste" style="display: none;">
+            <!-- Header & Action Buttons -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <div style="font-size: 16px; font-weight: 900; color: var(--primary-espresso);">
+                        <i class="fa-solid fa-trash-can" style="color: #DC2626;"></i> إدارة ومتابعة الهالك والعجز وتلف الخامات
+                    </div>
+                    <div style="font-size: 12px; color: #6B7280; font-weight: 700; margin-top: 2px;">
+                        تسجيل الهالك اليومي، عجز الجرد الفعلي، معايرة مطاحن البار، وتلف المواد مع الخصم التلقائي من المخزن.
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="pin-btn" onclick="openRecordWasteModal()" style="margin: 0; width: auto; padding: 8px 18px; background: #DC2626;">
+                        <i class="fa-solid fa-plus-circle"></i> تسجيل هالك / عجز جديد
+                    </button>
+                    <button class="pin-btn" onclick="printWasteReport()" style="margin: 0; width: auto; padding: 8px 18px; background: #4B5563;">
+                        <i class="fa-solid fa-print"></i> طباعة محضر الهالك
+                    </button>
+                </div>
+            </div>
+
+            <!-- Waste KPI Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                <div style="background: white; padding: 14px; border-radius: 14px; border: 1.5px solid #FCA5A5; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="font-size: 12px; font-weight: 800; color: #DC2626; margin-bottom: 4px;">
+                        <i class="fa-solid fa-sack-xmark"></i> إجمالي تكلفة الهالك (الخسارة)
+                    </div>
+                    <div style="font-size: 22px; font-weight: 900; color: #DC2626;" id="kpiWasteTotalCost">0.00 ج</div>
+                </div>
+                <div style="background: white; padding: 14px; border-radius: 14px; border: 1.5px solid #E2D9CF; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="font-size: 12px; font-weight: 800; color: #666; margin-bottom: 4px;">
+                        <i class="fa-solid fa-scale-unbalanced"></i> إجمالي الكميات المهدرة
+                    </div>
+                    <div style="font-size: 20px; font-weight: 900; color: var(--primary-espresso);" id="kpiWasteTotalQty">0 وحدة</div>
+                </div>
+                <div style="background: white; padding: 14px; border-radius: 14px; border: 1.5px solid #FCD34D; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="font-size: 12px; font-weight: 800; color: #D97706; margin-bottom: 4px;">
+                        <i class="fa-solid fa-file-invoice"></i> عدد محاضر الهالك
+                    </div>
+                    <div style="font-size: 20px; font-weight: 900; color: #D97706;" id="kpiWasteTotalCount">0 محضر</div>
+                </div>
+                <div style="background: white; padding: 14px; border-radius: 14px; border: 1.5px solid #C7D2FE; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="font-size: 12px; font-weight: 800; color: #4F46E5; margin-bottom: 4px;">
+                        <i class="fa-solid fa-fire"></i> أكثر صنف به هالك
+                    </div>
+                    <div style="font-size: 16px; font-weight: 900; color: #4338CA;" id="kpiWasteTopItem">لا يوجد</div>
+                </div>
+            </div>
+
+            <!-- Filters Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; background: white; padding: 10px 14px; border-radius: 12px; border: 1px solid #E5E7EB;">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="wasteTypeFilters">
+                    <button class="filter-pill active" onclick="filterWasteByType('الكل', this)" style="padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; border: none; cursor: pointer; background: var(--cezar-orange); color: white;">الكل</button>
+                    <button class="filter-pill" onclick="filterWasteByType('هالك تشغيل', this)" style="padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; border: 1px solid #E5E7EB; cursor: pointer; background: white; color: #4B5563;">☕ هالك تشغيل</button>
+                    <button class="filter-pill" onclick="filterWasteByType('عجز جرد', this)" style="padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; border: 1px solid #E5E7EB; cursor: pointer; background: white; color: #4B5563;">📉 عجز جرد</button>
+                    <button class="filter-pill" onclick="filterWasteByType('منتهي الصلاحية', this)" style="padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; border: 1px solid #E5E7EB; cursor: pointer; background: white; color: #4B5563;">⏳ منتهي الصلاحية</button>
+                    <button class="filter-pill" onclick="filterWasteByType('تلف بضاعة', this)" style="padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; border: 1px solid #E5E7EB; cursor: pointer; background: white; color: #4B5563;">📦 تلف بضاعة</button>
+                    <button class="filter-pill" onclick="filterWasteByType('معايرة بار', this)" style="padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; border: 1px solid #E5E7EB; cursor: pointer; background: white; color: #4B5563;">⚖️ معايرة بار</button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 12px; font-weight: 800; color: #4B5563;">تصفية بالشهر:</label>
+                    <input type="month" id="wasteMonthFilter" onchange="fetchWasteRecords()" class="form-control" style="padding: 4px 10px; width: auto; font-size: 12px; border-radius: 8px;">
+                    <button onclick="document.getElementById('wasteMonthFilter').value=''; fetchWasteRecords();" style="border: none; background: #eee; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer;">إلغاء الشهر</button>
+                </div>
+            </div>
+
+            <!-- Waste Records Table -->
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>المادة / الصنف</th>
+                            <th>نوع الهالك</th>
+                            <th>الكمية</th>
+                            <th>الوحدة</th>
+                            <th>الخسارة المالية</th>
+                            <th>المسئول</th>
+                            <th>السبب والملاحظات</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wasteTableBody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 
@@ -1176,6 +1280,10 @@
             <div style="background: white; padding: 14px; border-radius: 14px; border: 1.5px solid #C7D2FE; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size: 11px; font-weight: 800; color: #4F46E5; margin-bottom: 4px;"><i class="fa-solid fa-users-gear"></i> رواتب وسلف الموظفين</div>
                 <div style="font-size: 20px; font-weight: 900; color: #4F46E5;" id="kpiTotalSalaries">0 ج</div>
+            </div>
+            <div style="background: white; padding: 14px; border-radius: 14px; border: 1.5px solid #FCA5A5; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size: 11px; font-weight: 800; color: #DC2626; margin-bottom: 4px;"><i class="fa-solid fa-trash-can"></i> خسائر الهالك والعجز</div>
+                <div style="font-size: 20px; font-weight: 900; color: #DC2626;" id="kpiTotalWaste">0 ج</div>
             </div>
             <div id="kpiNetCard" style="background: #F0FDF4; padding: 14px; border-radius: 14px; border: 2px solid #22C55E; text-align: center; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);">
                 <div style="font-size: 11px; font-weight: 900; color: #15803D; margin-bottom: 4px;"><i class="fa-solid fa-chart-line"></i> صافي الربح الفعلي (Net Profit)</div>
@@ -2678,6 +2786,91 @@
         </div>
     </div>
 
+    <!-- 13. Record Waste & Variance Modal -->
+    <div class="pin-modal-overlay" id="recordWasteModal" style="display: none;">
+        <div class="pin-card" style="max-width: 480px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 900; color: #DC2626;">
+                    <i class="fa-solid fa-trash-can"></i> تسجيل محضر هالك أو عجز خامات
+                </h3>
+                <button onclick="closeModal('recordWasteModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: 800;">اختر المادة الخام من المخزن (أو اكتب اسماً يدوياً):</label>
+                <select id="wasteItemSelect" onchange="onWasteItemSelected()" class="form-control" style="margin-bottom: 6px;">
+                    <option value="">-- اختر خامة مسجلة بالمخزن --</option>
+                </select>
+                <input type="text" id="wasteItemCustomName" placeholder="أو اسم الصنف يدوياً (لو صنف جاهز أو غير مسجل)" class="form-control">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">نوع الهالك / العجز:</label>
+                    <select id="wasteTypeSelect" class="form-control">
+                        <option value="هالك تشغيل">☕ هالك تشغيل (باريستا / سكب / خطأ)</option>
+                        <option value="عجز جرد">📉 عجز جرد فعلي (فرق رصيد)</option>
+                        <option value="منتهي الصلاحية">⏳ انتهاء صلاحية / تخزين</option>
+                        <option value="تلف بضاعة">📦 تلف بضاعة / توريد</option>
+                        <option value="معايرة بار">⚖️ معايرة مطاحن البار (Calibration)</option>
+                        <option value="كسر أدوات">🔨 كسر أكواب / أدوات</option>
+                        <option value="أخرى">❓ أخرى</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">التاريخ:</label>
+                    <input type="date" id="wasteDateInput" class="form-control">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">الكمية المهدرة:</label>
+                    <input type="number" step="0.01" id="wasteQtyInput" value="1" oninput="calculateWasteLossPreview()" class="form-control">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">الوحدة:</label>
+                    <input type="text" id="wasteUnitInput" value="كجم" class="form-control">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800;">تكلفة الوحدة (ج):</label>
+                    <input type="number" step="0.5" id="wasteUnitCostInput" value="0" oninput="calculateWasteLossPreview()" class="form-control">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800; color: #DC2626;">إجمالي الخسارة (ج):</label>
+                    <input type="number" step="0.5" id="wasteLossCostInput" value="0" readonly class="form-control" style="background: #FEE2E2; color: #DC2626; font-weight: 900;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: 800;">المسئول (الباريستا / الكاشير / مستلم الوردية):</label>
+                <select id="wasteEmployeeSelect" onchange="if(this.value) document.getElementById('wasteResponsibleInput').value = this.value;" class="form-control" style="margin-bottom: 4px;">
+                    <option value="">-- اختياري: اختر موظف من النظام --</option>
+                </select>
+                <input type="text" id="wasteResponsibleInput" placeholder="أو اكتب اسم المسئول يدوياً" class="form-control">
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 800;">سبب الهالك / تفاصيل المحضر:</label>
+                <textarea id="wasteReasonInput" rows="2" placeholder="اكتب تفاصيل الواقعة (مثلاً: حرق شوتات بن أثناء ضبط درجة الطحن، انسكاب حليب...)" class="form-control"></textarea>
+            </div>
+
+            <div style="margin-bottom: 14px; background: #FFFBEB; padding: 8px 12px; border-radius: 8px; border: 1px solid #FCD34D;">
+                <label style="font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #92400E; margin: 0;">
+                    <input type="checkbox" id="wasteAutoDeductCheckbox" checked style="width: 16px; height: 16px;">
+                    خصم هذه الكمية تلقائياً من رصيد المخزن الفعلي
+                </label>
+            </div>
+
+            <button class="pin-btn" onclick="submitNewWasteRecord()" style="background: #DC2626; font-weight: 900;">
+                <i class="fa-solid fa-check"></i> اعتماد وحفظ محضر الهالك
+            </button>
+        </div>
+    </div>
+
     <!-- 12. Add Promo Code Modal -->
     <div class="pin-modal-overlay" id="addPromoModal" style="display: none;">
         <div class="pin-card" style="max-width: 420px;">
@@ -3018,7 +3211,7 @@
             if (tabName === 'shifts') fetchCurrentShift();
             if (tabName === 'reservations') { fetchReservations(); fetchWaitingList(); }
             if (tabName === 'menu') fetchAdminMenu();
-            if (tabName === 'inventory') fetchInventory();
+            if (tabName === 'inventory') { fetchInventory(); fetchWasteRecords(); }
             if (tabName === 'analytics') fetchAnalytics();
             if (tabName === 'promos') fetchPromoCodes();
             if (tabName === 'staff') { fetchEmployees(); fetchSalaries(); fetchSystemUsers(); }
@@ -4266,6 +4459,406 @@
         }
 
         // ====================================================
+        
+        // ====================================================
+        // WASTE & SHORTAGE MANAGEMENT (إدارة الهالك والعجز والجرد)
+        // ====================================================
+        var allWasteRecords = [];
+        var currentWasteFilterType = 'الكل';
+
+        function switchInventorySubTab(sub) {
+            const btnStock = document.getElementById('btnSubTabStock');
+            const btnWaste = document.getElementById('btnSubTabWaste');
+            const secStock = document.getElementById('sectionInventoryStock');
+            const secWaste = document.getElementById('sectionInventoryWaste');
+
+            if (sub === 'stock') {
+                if (btnStock) { btnStock.style.background = 'var(--cezar-orange)'; btnStock.style.color = 'white'; }
+                if (btnWaste) { btnWaste.style.background = '#F3F4F6'; btnWaste.style.color = '#4B5563'; }
+                if (secStock) secStock.style.display = 'block';
+                if (secWaste) secWaste.style.display = 'none';
+                fetchInventory();
+            } else {
+                if (btnWaste) { btnWaste.style.background = '#DC2626'; btnWaste.style.color = 'white'; }
+                if (btnStock) { btnStock.style.background = '#F3F4F6'; btnStock.style.color = '#4B5563'; }
+                if (secStock) secStock.style.display = 'none';
+                if (secWaste) secWaste.style.display = 'block';
+                fetchWasteRecords();
+            }
+        }
+
+        async function fetchWasteRecords() {
+            try {
+                const monthInput = document.getElementById('wasteMonthFilter');
+                const month = monthInput && monthInput.value ? monthInput.value : '';
+                const typeParam = currentWasteFilterType && currentWasteFilterType !== 'الكل' ? encodeURIComponent(currentWasteFilterType) : '';
+                const url = `/api/inventory/waste?month=${month}&waste_type=${typeParam}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.status !== 'success') return;
+
+                allWasteRecords = data.wastes || [];
+                const s = data.summary || {};
+
+                if (document.getElementById('kpiWasteTotalCost')) document.getElementById('kpiWasteTotalCost').textContent = `${(s.total_cost_loss || 0).toFixed(2)} ج`;
+                if (document.getElementById('kpiWasteTotalQty')) document.getElementById('kpiWasteTotalQty').textContent = `${(s.total_quantity || 0).toFixed(2)} وحدة`;
+                if (document.getElementById('kpiWasteTotalCount')) document.getElementById('kpiWasteTotalCount').textContent = `${s.total_records || 0} محضر`;
+                if (document.getElementById('kpiWasteTopItem')) document.getElementById('kpiWasteTopItem').textContent = s.top_wasted_item || 'لا يوجد';
+
+                const badge = document.getElementById('wasteCountBadge');
+                if (badge) {
+                    if (s.total_records > 0) {
+                        badge.style.display = 'inline-block';
+                        badge.textContent = s.total_records;
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+
+                renderWasteTable(allWasteRecords);
+            } catch (err) {
+                console.error('Error fetching waste records:', err);
+            }
+        }
+
+        function filterWasteByType(type, btn) {
+            currentWasteFilterType = type;
+            if (btn && btn.parentElement) {
+                btn.parentElement.querySelectorAll('.filter-pill').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'white';
+                    b.style.color = '#4B5563';
+                    b.style.border = '1px solid #E5E7EB';
+                });
+                btn.classList.add('active');
+                btn.style.background = 'var(--cezar-orange)';
+                btn.style.color = 'white';
+                btn.style.border = 'none';
+            }
+            fetchWasteRecords();
+        }
+
+        function renderWasteTable(records) {
+            const tbody = document.getElementById('wasteTableBody');
+            if (!tbody) return;
+
+            if (!records || records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #888; padding: 20px;">لا توجد محاضر هالك أو عجز مسجلة حالياً</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = records.map(r => {
+                let typeBadge = '';
+                if (r.waste_type === 'هالك تشغيل') {
+                    typeBadge = '<span style="background: #FEE2E2; color: #DC2626; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-mug-hot"></i> هالك تشغيل</span>';
+                } else if (r.waste_type === 'عجز جرد') {
+                    typeBadge = '<span style="background: #FEF3C7; color: #D97706; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-chart-line-down"></i> عجز جرد</span>';
+                } else if (r.waste_type === 'منتهي الصلاحية') {
+                    typeBadge = '<span style="background: #F3E8FF; color: #7E22CE; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-hourglass-end"></i> منتهي الصلاحية</span>';
+                } else if (r.waste_type === 'معايرة بار') {
+                    typeBadge = '<span style="background: #E0F2FE; color: #0284C7; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-sliders"></i> معايرة مطاحن</span>';
+                } else if (r.waste_type === 'تلف بضاعة') {
+                    typeBadge = '<span style="background: #FFEDD5; color: #C2410C; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-box-open"></i> تلف بضاعة</span>';
+                } else if (r.waste_type === 'كسر أدوات') {
+                    typeBadge = '<span style="background: #FCE7F3; color: #BE185D; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-wine-glass-crack"></i> كسر أدوات</span>';
+                } else {
+                    typeBadge = `<span style="background: #F3F4F6; color: #4B5563; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;">${r.waste_type || 'أخرى'}</span>`;
+                }
+
+                return `
+                    <tr>
+                        <td style="font-weight: 800; color: #555; white-space: nowrap;">
+                            <div>${r.date || '-'}</div>
+                            <small style="color: #999;">${r.created_at || ''}</small>
+                        </td>
+                        <td style="font-weight: 900; color: var(--primary-espresso); font-size: 14px;">${r.item_name}</td>
+                        <td>${typeBadge}</td>
+                        <td style="font-size: 15px; font-weight: 900; color: #B91C1C;">${r.quantity}</td>
+                        <td style="color: #666; font-weight: 800;">${r.unit || '-'}</td>
+                        <td style="font-weight: 900; color: #DC2626; font-size: 14px;">${r.cost_loss} ج</td>
+                        <td>
+                            <span style="background: #F3F4F6; color: #374151; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 11px;">
+                                ${r.responsible_name || 'غير محدد'}
+                            </span>
+                        </td>
+                        <td style="font-size: 12px; color: #555; max-width: 200px;">${r.reason || '-'}</td>
+                        <td>
+                            <button onclick="deleteWasteRecord(${r.id})" title="إلغاء المحضر واسترجاع الكمية للمخزن" style="border: none; background: #FEE2E2; color: #DC2626; padding: 6px 10px; border-radius: 8px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-trash-can"></i> حذف
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function openRecordWasteModal() {
+            // Default date to today
+            const todayStr = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('wasteDateInput');
+            if (dateInput) dateInput.value = todayStr;
+
+            // Ensure inventoryItems loaded
+            if (!inventoryItems || inventoryItems.length === 0) {
+                await fetchInventory();
+            }
+
+            // Populate Item Select
+            const itemSelect = document.getElementById('wasteItemSelect');
+            if (itemSelect) {
+                itemSelect.innerHTML = '<option value="">-- اختر خامة مسجلة بالمخزن --</option>' +
+                    inventoryItems.map(it => {
+                        const stock = it.current_stock !== undefined ? it.current_stock : (it.quantity || 0);
+                        const cost = it.cost_per_unit || 0;
+                        return `<option value="${it.id}" data-name="${it.name}" data-unit="${it.unit}" data-cost="${cost}" data-stock="${stock}">${it.name} (المتاح: ${stock} ${it.unit} - تكلفة: ${cost} ج)</option>`;
+                    }).join('');
+            }
+
+            // Populate Employee Select
+            if (!allEmployees || allEmployees.length === 0) {
+                if (typeof fetchEmployees === 'function') await fetchEmployees();
+            }
+            const empSelect = document.getElementById('wasteEmployeeSelect');
+            if (empSelect && allEmployees && allEmployees.length > 0) {
+                empSelect.innerHTML = '<option value="">-- اختياري: اختر موظف من النظام --</option>' +
+                    allEmployees.map(e => `<option value="${e.name}">${e.name} (${e.role})</option>`).join('');
+            }
+
+            // Reset inputs
+            document.getElementById('wasteItemCustomName').value = '';
+            document.getElementById('wasteQtyInput').value = '1';
+            document.getElementById('wasteUnitInput').value = 'كجم';
+            document.getElementById('wasteUnitCostInput').value = '0';
+            document.getElementById('wasteLossCostInput').value = '0';
+            document.getElementById('wasteResponsibleInput').value = '';
+            document.getElementById('wasteReasonInput').value = '';
+            document.getElementById('wasteAutoDeductCheckbox').checked = true;
+
+            calculateWasteLossPreview();
+            openModal('recordWasteModal');
+        }
+
+        function onWasteItemSelected() {
+            const select = document.getElementById('wasteItemSelect');
+            const customInput = document.getElementById('wasteItemCustomName');
+            const unitInput = document.getElementById('wasteUnitInput');
+            const costInput = document.getElementById('wasteUnitCostInput');
+
+            if (!select || !select.value) {
+                return;
+            }
+
+            const opt = select.options[select.selectedIndex];
+            if (opt) {
+                if (customInput) customInput.value = opt.getAttribute('data-name') || '';
+                if (unitInput) unitInput.value = opt.getAttribute('data-unit') || 'كجم';
+                if (costInput) costInput.value = opt.getAttribute('data-cost') || '0';
+            }
+            calculateWasteLossPreview();
+        }
+
+        function calculateWasteLossPreview() {
+            const qty = parseFloat(document.getElementById('wasteQtyInput')?.value || 0);
+            const unitCost = parseFloat(document.getElementById('wasteUnitCostInput')?.value || 0);
+            const total = Math.round(qty * unitCost * 100) / 100;
+            const lossInput = document.getElementById('wasteLossCostInput');
+            if (lossInput) lossInput.value = total;
+        }
+
+        async function submitNewWasteRecord() {
+            const select = document.getElementById('wasteItemSelect');
+            const customName = document.getElementById('wasteItemCustomName')?.value.trim();
+            const selectedOpt = select && select.value ? select.options[select.selectedIndex] : null;
+            
+            let itemName = '';
+            let invId = null;
+
+            if (selectedOpt && select.value) {
+                invId = parseInt(select.value);
+                itemName = selectedOpt.getAttribute('data-name') || '';
+            } else if (customName) {
+                itemName = customName;
+            }
+
+            if (!itemName) {
+                alert('يرجى اختيار مادة خام من القائمة أو كتابة اسم الصنف يدوياً');
+                return;
+            }
+
+            const qty = parseFloat(document.getElementById('wasteQtyInput')?.value || 0);
+            if (qty <= 0) {
+                alert('الكمية يجب أن تكون أكبر من صفر');
+                return;
+            }
+
+            const wasteType = document.getElementById('wasteTypeSelect')?.value || 'هالك تشغيل';
+            const unit = document.getElementById('wasteUnitInput')?.value.trim() || 'كجم';
+            const unitCost = parseFloat(document.getElementById('wasteUnitCostInput')?.value || 0);
+            const costLoss = parseFloat(document.getElementById('wasteLossCostInput')?.value || (qty * unitCost));
+            const resp = document.getElementById('wasteResponsibleInput')?.value.trim() || 'غير محدد';
+            const reason = document.getElementById('wasteReasonInput')?.value.trim() || '';
+            const date = document.getElementById('wasteDateInput')?.value || '';
+            const autoDeduct = document.getElementById('wasteAutoDeductCheckbox')?.checked ?? true;
+
+            const payload = {
+                inventory_item_id: invId,
+                item_name: itemName,
+                waste_type: wasteType,
+                quantity: qty,
+                unit: unit,
+                cost_loss: costLoss,
+                responsible_name: resp,
+                reason: reason,
+                date: date,
+                auto_deduct_stock: autoDeduct
+            };
+
+            try {
+                const res = await fetch('/api/inventory/waste', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const d = await res.json();
+                if (res.ok && d.status === 'success') {
+                    closeModal('recordWasteModal');
+                    alert('✅ ' + (d.message || 'تم تسجيل محضر الهالك بنجاح'));
+                    fetchWasteRecords();
+                    fetchInventory();
+                } else {
+                    alert('حدث خطأ: ' + (d.detail || d.message || 'تعذر الحفظ'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('تعذر الاتصال بالخادم لحفظ محضر الهالك');
+            }
+        }
+
+        async function deleteWasteRecord(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا المحضر؟ سيتم إلغاء قيد الهالك واسترجاع الكمية تلقائياً إلى رصيد المخزن.')) return;
+            try {
+                const res = await fetch(`/api/inventory/waste/${id}?restore_stock=true`, { method: 'DELETE' });
+                const d = await res.json();
+                if (res.ok && d.status === 'success') {
+                    alert('✅ ' + (d.message || 'تم حذف المحضر بنجاح واسترجاع الكمية'));
+                    fetchWasteRecords();
+                    fetchInventory();
+                } else {
+                    alert('تعذر حذف المحضر: ' + (d.detail || d.message || ''));
+                }
+            } catch (e) {
+                alert('حدث خطأ أثناء الحذف');
+            }
+        }
+
+        function printWasteReport() {
+            const records = allWasteRecords || [];
+            const totalCost = document.getElementById('kpiWasteTotalCost')?.textContent || '0.00 ج';
+            const totalQty = document.getElementById('kpiWasteTotalQty')?.textContent || '0 وحدة';
+            const totalCount = document.getElementById('kpiWasteTotalCount')?.textContent || '0 محضر';
+            const monthVal = document.getElementById('wasteMonthFilter')?.value || 'جميع الفترات';
+            const printDate = new Date().toLocaleString('ar-EG');
+
+            const rowsHtml = records.map((r, i) => `
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${i + 1}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${r.date}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r.item_name}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${r.waste_type}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${r.quantity} ${r.unit}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold; color: #b91c1c;">${r.cost_loss} ج</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${r.responsible_name || 'غير محدد'}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${r.reason || '-'}</td>
+                </tr>
+            `).join('');
+
+            const printHtml = `
+                <!DOCTYPE html>
+                <html dir="rtl" lang="ar">
+                <head>
+                    <meta charset="utf-8">
+                    <title>سيزر كافيه - محضر جرد وهالك المواد الخام</title>
+                    <style>
+                        body { font-family: 'Cairo', Tahoma, sans-serif; margin: 20px; color: #222; direction: rtl; }
+                        .header { text-align: center; border-bottom: 2px solid #8B5A2B; padding-bottom: 12px; margin-bottom: 20px; }
+                        .header h1 { margin: 0; color: #3A2312; font-size: 24px; }
+                        .header p { margin: 4px 0; color: #666; font-size: 14px; }
+                        .kpi-box { display: flex; justify-content: space-around; background: #FDF8F3; border: 1px solid #D4A373; border-radius: 8px; padding: 12px; margin-bottom: 20px; text-align: center; }
+                        .kpi-item div:first-child { font-size: 12px; color: #888; font-weight: bold; }
+                        .kpi-item div:last-child { font-size: 18px; font-weight: 900; color: #8B5A2B; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 13px; }
+                        th { background: #3A2312; color: white; padding: 9px; border: 1px solid #3A2312; }
+                        .signatures { display: flex; justify-content: space-between; margin-top: 50px; padding: 0 40px; }
+                        .sig-line { text-align: center; }
+                        .sig-line div:last-child { margin-top: 40px; border-top: 1px dashed #666; width: 160px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>☕ سيزر كافيه (ceZar Coffee)</h1>
+                        <p>محضر رسمي لإثبات الهالك والعجز وتلف المواد الخام بالجرد</p>
+                        <p style="font-size: 12px; color: #888;">الفترة: ${monthVal} | تاريخ الطباعة: ${printDate}</p>
+                    </div>
+
+                    <div class="kpi-box">
+                        <div class="kpi-item">
+                            <div>إجمالي الخسارة المالية</div>
+                            <div style="color: #b91c1c;">${totalCost}</div>
+                        </div>
+                        <div class="kpi-item">
+                            <div>إجمالي الكميات المسجلة</div>
+                            <div>${totalQty}</div>
+                        </div>
+                        <div class="kpi-item">
+                            <div>عدد محاضر الهالك</div>
+                            <div>${totalCount}</div>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>التاريخ</th>
+                                <th>الخامة / الصنف</th>
+                                <th>نوع الهالك</th>
+                                <th>الكمية</th>
+                                <th>قيمة التكلفة</th>
+                                <th>المسئول</th>
+                                <th>السبب والتفاصيل</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml || '<tr><td colspan="8" style="text-align:center;">لا توجد سجلات هالك مسجلة</td></tr>'}
+                        </tbody>
+                    </table>
+
+                    <div class="signatures">
+                        <div class="sig-line">
+                            <div>مسئول البار / الباريستا</div>
+                            <div></div>
+                        </div>
+                        <div class="sig-line">
+                            <div>الكاشير / مستلم الوردية</div>
+                            <div></div>
+                        </div>
+                        <div class="sig-line">
+                            <div>إدارة الفرع والمالك</div>
+                            <div></div>
+                        </div>
+                    </div>
+
+                </body>
+                </html>
+            `;
+
+            const win = window.open('', '_blank');
+            win.document.open();
+            win.document.write(printHtml);
+            win.document.close();
+            setTimeout(() => { win.focus(); win.print(); }, 400);
+        }
+
         // ANALYTICS & CHARTS LOGIC
         // ====================================================
         
@@ -4527,6 +5120,7 @@
                 if (document.getElementById('kpiTotalCogs')) document.getElementById('kpiTotalCogs').textContent = `${(data.total_cogs || 0)} ج`;
                 if (document.getElementById('kpiTotalExpenses')) document.getElementById('kpiTotalExpenses').textContent = `${(data.total_expenses || 0)} ج`;
                 if (document.getElementById('kpiTotalSalaries')) document.getElementById('kpiTotalSalaries').textContent = `${(data.total_salaries || 0)} ج`;
+                if (document.getElementById('kpiTotalWaste')) document.getElementById('kpiTotalWaste').textContent = `${(data.total_waste || 0)} ج`;
                 if (document.getElementById('kpiNetProfit')) document.getElementById('kpiNetProfit').textContent = `${(data.net_profit || 0)} ج`;
                 if (document.getElementById('kpiProfitMargin')) document.getElementById('kpiProfitMargin').textContent = `${(data.profit_margin_pct || 0)}%`;
 

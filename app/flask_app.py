@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste
 from .seed import seed_menu
 
 Base.metadata.create_all(bind=engine)
@@ -1336,6 +1336,7 @@ def get_analytics():
             "cogs": total_cogs,
             "total_expenses": total_expenses,
             "total_salaries": total_salaries,
+        "total_waste": total_waste,
             "net_profit": net_profit,
             "profit_margin_pct": profit_margin_pct,
             "top_sellers": top_items,

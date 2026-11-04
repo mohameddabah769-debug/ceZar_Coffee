@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal, get_db
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste
 from .seed import seed_menu
 
 # إنشاء الجداول تلقائياً
@@ -236,6 +236,19 @@ class InventoryCreateRequest(BaseModel):
     min_alert_stock: float = 5.0
     cost_per_unit: float = 0.0
 
+
+
+class InventoryWasteCreateRequest(BaseModel):
+    inventory_item_id: Optional[int] = None
+    item_name: str
+    waste_type: str = "هالك تشغيل"
+    quantity: float = 1.0
+    unit: str = "كجم"
+    cost_loss: Optional[float] = None
+    responsible_name: str = "غير محدد"
+    reason: Optional[str] = None
+    date: Optional[str] = None
+    auto_deduct_stock: bool = True
 
 class InventoryUpdateRequest(BaseModel):
     current_stock: Optional[float] = None
@@ -1040,6 +1053,7 @@ def close_shift(req: ShiftCloseRequest, db: Session = Depends(get_db)):
             "visa_sales": visa_sales,
             "total_expenses": total_expenses,
         "total_salaries": total_salaries,
+        "total_waste": total_waste,
             "expected_cash": round(expected_cash, 2),
             "actual_cash": req.actual_cash,
             "difference": round(difference, 2)
@@ -1440,6 +1454,135 @@ def delete_inventory_item(item_id: int, db: Session = Depends(get_db)):
 
 
 # ==========================================
+# 7.1 إدارة الهالك والعجز والجرد (Waste & Inventory Variance)
+# ==========================================
+
+@app.get("/api/inventory/waste")
+@app.get("/api/cezar/inventory/waste")
+def get_inventory_waste(month: Optional[str] = None, waste_type: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(InventoryWaste)
+    if month and month.strip():
+        query = query.filter(InventoryWaste.date.like(f"{month.strip()}%"))
+    if waste_type and waste_type.strip() and waste_type.strip() != "الكل":
+        query = query.filter(InventoryWaste.waste_type == waste_type.strip())
+    
+    records = query.order_by(desc(InventoryWaste.date), desc(InventoryWaste.id)).all()
+
+    total_cost_loss = sum(r.cost_loss or 0.0 for r in records)
+    total_qty = sum(r.quantity or 0.0 for r in records)
+    total_records = len(records)
+
+    by_type = {}
+    item_losses = {}
+    for r in records:
+        wt = r.waste_type or "أخرى"
+        by_type[wt] = round(by_type.get(wt, 0.0) + (r.cost_loss or 0.0), 2)
+        item_losses[r.item_name] = round(item_losses.get(r.item_name, 0.0) + (r.cost_loss or 0.0), 2)
+
+    top_item = max(item_losses.items(), key=lambda x: x[1])[0] if item_losses else "لا يوجد"
+
+    return {
+        "status": "success",
+        "wastes": [
+            {
+                "id": r.id,
+                "inventory_item_id": r.inventory_item_id,
+                "item_name": r.item_name,
+                "waste_type": r.waste_type,
+                "quantity": r.quantity,
+                "unit": r.unit,
+                "cost_loss": round(r.cost_loss or 0.0, 2),
+                "responsible_name": r.responsible_name or "غير محدد",
+                "reason": r.reason or "",
+                "date": r.date,
+                "created_at": r.created_at.strftime("%I:%M %p") if r.created_at else ""
+            }
+            for r in records
+        ],
+        "summary": {
+            "total_cost_loss": round(total_cost_loss, 2),
+            "total_quantity": round(total_qty, 2),
+            "total_records": total_records,
+            "top_wasted_item": top_item,
+            "by_type": by_type
+        }
+    }
+
+
+@app.post("/api/inventory/waste")
+@app.post("/api/cezar/inventory/waste")
+def add_inventory_waste(req: InventoryWasteCreateRequest, db: Session = Depends(get_db)):
+    item_name = req.item_name.strip()
+    if not item_name:
+        raise HTTPException(status_code=400, detail="اسم المادة أو الصنف مطلوب")
+    if req.quantity <= 0:
+        raise HTTPException(status_code=400, detail="الكمية يجب أن تكون أكبر من صفر")
+
+    inv_item = None
+    if req.inventory_item_id:
+        inv_item = db.query(InventoryItem).filter(InventoryItem.id == req.inventory_item_id).first()
+    if not inv_item:
+        inv_item = db.query(InventoryItem).filter(InventoryItem.name == item_name).first()
+
+    calculated_loss = req.cost_loss
+    unit_used = req.unit
+    if inv_item:
+        if not unit_used:
+            unit_used = inv_item.unit
+        if calculated_loss is None or calculated_loss <= 0:
+            calculated_loss = req.quantity * (inv_item.cost_per_unit or 0.0)
+
+    if calculated_loss is None:
+        calculated_loss = 0.0
+
+    today_str = req.date.strip() if req.date and req.date.strip() else datetime.now().strftime("%Y-%m-%d")
+
+    waste = InventoryWaste(
+        inventory_item_id=inv_item.id if inv_item else req.inventory_item_id,
+        item_name=item_name,
+        waste_type=req.waste_type.strip() if req.waste_type else "هالك تشغيل",
+        quantity=req.quantity,
+        unit=unit_used or "كجم",
+        cost_loss=round(calculated_loss, 2),
+        responsible_name=req.responsible_name.strip() if req.responsible_name else "غير محدد",
+        reason=req.reason.strip() if req.reason else "",
+        date=today_str
+    )
+    db.add(waste)
+
+    if req.auto_deduct_stock and inv_item:
+        inv_item.current_stock = max(0.0, (inv_item.current_stock or 0.0) - req.quantity)
+
+    db.commit()
+    db.refresh(waste)
+
+    return {
+        "status": "success",
+        "message": f"تم تسجيل محضر هالك/عجز لـ ({waste.item_name}) بنجاح بقيمة {waste.cost_loss} ج",
+        "waste_id": waste.id,
+        "remaining_stock": inv_item.current_stock if inv_item else None
+    }
+
+
+@app.delete("/api/inventory/waste/{waste_id}")
+@app.delete("/api/cezar/inventory/waste/{waste_id}")
+def delete_inventory_waste(waste_id: int, restore_stock: bool = True, db: Session = Depends(get_db)):
+    waste = db.query(InventoryWaste).filter(InventoryWaste.id == waste_id).first()
+    if not waste:
+        raise HTTPException(status_code=404, detail="محضر الهالك غير موجود")
+
+    if restore_stock and waste.inventory_item_id:
+        inv_item = db.query(InventoryItem).filter(InventoryItem.id == waste.inventory_item_id).first()
+        if inv_item:
+            inv_item.current_stock = (inv_item.current_stock or 0.0) + (waste.quantity or 0.0)
+
+    db.delete(waste)
+    db.commit()
+    return {"status": "success", "message": "تم حذف محضر الهالك بنجاح واسترجاع الكمية للرصيد"}
+
+
+
+# ==========================================
 # 8. تقارير ذكية، الأكثر مبيعاً وتصدير Excel (Analytics & Export)
 # ==========================================
 
@@ -1506,7 +1649,8 @@ def get_analytics(db: Session = Depends(get_db)):
     total_cogs = round(calc_cogs if calc_cogs > 0 else (gross_sales * 0.32), 2)
     total_expenses = round(float(db.query(func.sum(Expense.amount)).scalar() or 0.0), 2)
     total_salaries = round(float(db.query(func.sum(SalaryPayment.amount)).scalar() or 0.0), 2)
-    net_profit = round(gross_sales - total_cogs - total_expenses - total_salaries, 2)
+    total_waste = round(float(db.query(func.sum(InventoryWaste.cost_loss)).scalar() or 0.0), 2)
+    net_profit = round(gross_sales - total_cogs - total_expenses - total_salaries - total_waste, 2)
     profit_margin_pct = round((net_profit / gross_sales) * 100, 1) if gross_sales > 0 else 0.0
 
     by_channel = {"صالة": sales_by_type.get("صالة", 0.0), "تيك أواي": sales_by_type.get("تيك أواي", 0.0), "دليفري": sales_by_type.get("دليفري", 0.0)}

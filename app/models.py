@@ -215,3 +215,19 @@ class CafeTableConfig(Base):
     capacity = Column(Integer, default=4)
     zone = Column(String(60), default="صالة رئيسية")  # صالة رئيسية | تراس خارجي | ركن عائلي | VIP
     is_active = Column(Boolean, default=True)
+
+class InventoryWaste(Base):
+    """إدارة الهالك والعجز وتلف المواد الخام في الكافيه."""
+    __tablename__ = "inventory_wastes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    inventory_item_id = Column(Integer, ForeignKey("inventory_items.id"), nullable=True, index=True)
+    item_name = Column(String(120), nullable=False)
+    waste_type = Column(String(50), default="هالك تشغيل")  # هالك تشغيل | عجز جرد | منتهي الصلاحية | تلف بضاعة | معايرة بار | كسر أدوات
+    quantity = Column(Float, nullable=False, default=1.0)
+    unit = Column(String(30), default="كجم")
+    cost_loss = Column(Float, default=0.0)
+    responsible_name = Column(String(120), default="غير محدد")
+    reason = Column(Text, nullable=True)
+    date = Column(String(20), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
