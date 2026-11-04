@@ -574,6 +574,22 @@ def get_table_bill(table_number: int, db: Session = Depends(get_db)):
     }
 
 
+@app.post("/api/tables/{table_number}/settle")
+@app.post("/api/cezar/tables/{table_number}/settle")
+def settle_table_bill(table_number: int, db: Session = Depends(get_db)):
+    """تسوية وقفل حساب ترابيزة كاملة وتغيير حالة جميع طلباتها لتمت التسوية وإفراغها."""
+    orders = db.query(TableOrder).filter(
+        TableOrder.table_number == table_number,
+        TableOrder.status != "ملغي",
+        TableOrder.status != "تمت التسوية"
+    ).all()
+    for o in orders:
+        o.status = "تمت التسوية"
+    db.commit()
+    return {"status": "success", "message": f"تمت تسوية حساب ترابيزة {table_number} وإفراغها بنجاح!", "table_number": table_number}
+
+
+
 @app.get("/api/tables/{table_number}/track")
 @app.get("/api/cezar/tables/{table_number}/track")
 def track_table_orders(table_number: int, db: Session = Depends(get_db)):
@@ -932,6 +948,23 @@ def get_expenses(db: Session = Depends(get_db)):
             for e in expenses
         ]
     }
+
+
+@app.delete("/api/expenses/{expense_id}")
+@app.delete("/api/cezar/expenses/{expense_id}")
+def delete_expense(expense_id: int, db: Session = Depends(get_db)):
+    """حذف مصروف وإعادة المبلغ لكاش الوردية."""
+    exp = db.query(Expense).filter(Expense.id == expense_id).first()
+    if not exp:
+        raise HTTPException(status_code=404, detail="المصروف غير موجود")
+    if exp.shift_id:
+        shift = db.query(Shift).filter(Shift.id == exp.shift_id).first()
+        if shift and shift.total_expenses:
+            shift.total_expenses = max(0.0, shift.total_expenses - exp.amount)
+    db.delete(exp)
+    db.commit()
+    return {"status": "success", "message": "تم حذف المصروف بنجاح"}
+
 
 
 # ==========================================

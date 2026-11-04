@@ -428,6 +428,22 @@ def get_table_bill(table_number):
         })
 
 
+@app.route("/api/tables/<int:table_number>/settle", methods=["POST"])
+@app.route("/api/cezar/tables/<int:table_number>/settle", methods=["POST"])
+def settle_table_bill(table_number):
+    with SessionLocal() as db:
+        orders = db.query(TableOrder).filter(
+            TableOrder.table_number == table_number,
+            TableOrder.status != "ملغي",
+            TableOrder.status != "تمت التسوية"
+        ).all()
+        for o in orders:
+            o.status = "تمت التسوية"
+        db.commit()
+        return jsonify({"status": "success", "message": f"تمت تسوية حساب ترابيزة {table_number} وإفراغها بنجاح!", "table_number": table_number})
+
+
+
 @app.route("/api/tables/<int:table_number>/track", methods=["GET"])
 @app.route("/api/cezar/tables/<int:table_number>/track", methods=["GET"])
 def track_table_orders(table_number):
@@ -789,6 +805,23 @@ def get_expenses():
                 for e in expenses
             ]
         })
+
+
+@app.route("/api/expenses/<int:expense_id>", methods=["DELETE"])
+@app.route("/api/cezar/expenses/<int:expense_id>", methods=["DELETE"])
+def delete_expense(expense_id):
+    with SessionLocal() as db:
+        exp = db.query(Expense).filter(Expense.id == expense_id).first()
+        if not exp:
+            return jsonify({"detail": "المصروف غير موجود"}), 404
+        if exp.shift_id:
+            shift = db.query(Shift).filter(Shift.id == exp.shift_id).first()
+            if shift and shift.total_expenses:
+                shift.total_expenses = max(0.0, shift.total_expenses - exp.amount)
+        db.delete(exp)
+        db.commit()
+        return jsonify({"status": "success", "message": "تم حذف المصروف بنجاح"})
+
 
 
 # ==========================================
