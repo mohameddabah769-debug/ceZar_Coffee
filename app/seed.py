@@ -7,7 +7,13 @@ except Exception:
     pass
 
 from sqlalchemy.orm import Session
-from .models import MenuItem, InventoryItem, PromoCode
+from .models import MenuItem, InventoryItem, PromoCode, ManagerAccount, MenuItemRecipe
+
+DEFAULT_STAFF_USERS = [
+    {"username": "admin", "password": "0000", "manager_name": "المدير العام (ceZar)", "role": "admin"},
+    {"username": "cashier", "password": "1234", "manager_name": "كاشير الصالة السريع", "role": "cashier"},
+    {"username": "barista", "password": "1234", "manager_name": "باريستا البار الرئيسي", "role": "barista"},
+]
 
 CEZAR_MENU_DATA = [
     # 0. الكوفى (Hot Coffee)
@@ -151,4 +157,26 @@ def seed_menu(db: Session):
                 min_order_value=p["min_order_value"],
                 is_active=True
             ))
+        db.commit()
+
+    # Seed Default Staff Roles & Permissions
+    for staff in DEFAULT_STAFF_USERS:
+        existing = db.query(ManagerAccount).filter(ManagerAccount.username == staff["username"]).first()
+        if not existing:
+            db.add(ManagerAccount(
+                username=staff["username"],
+                password=staff["password"],
+                manager_name=staff["manager_name"],
+                role=staff["role"]
+            ))
+        else:
+            if not existing.role:
+                existing.role = staff["role"]
+    db.commit()
+
+    # Update cost_price for existing menu items if 0
+    items_without_cost = db.query(MenuItem).filter((MenuItem.cost_price == None) | (MenuItem.cost_price == 0)).all()
+    for item in items_without_cost:
+        item.cost_price = round(item.price * 0.32, 2)  # 32% food cost standard
+    if items_without_cost:
         db.commit()

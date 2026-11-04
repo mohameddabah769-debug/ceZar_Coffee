@@ -1155,6 +1155,30 @@
             </a>
         </div>
 
+        <!-- Net Profit & Cost Summary (Executive Financial KPI) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px;">
+            <div style="background: white; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size: 11px; font-weight: 800; color: #888; margin-bottom: 4px;"><i class="fa-solid fa-sack-dollar"></i> إجمالي المبيعات (Revenue)</div>
+                <div style="font-size: 20px; font-weight: 900; color: var(--primary-espresso);" id="kpiGrossSales">0 ج</div>
+            </div>
+            <div style="background: white; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size: 11px; font-weight: 800; color: #DC2626; margin-bottom: 4px;"><i class="fa-solid fa-boxes-stacked"></i> تكلفة الخامات (Food Cost)</div>
+                <div style="font-size: 20px; font-weight: 900; color: #DC2626;" id="kpiTotalCogs">0 ج</div>
+            </div>
+            <div style="background: white; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size: 11px; font-weight: 800; color: #D97706; margin-bottom: 4px;"><i class="fa-solid fa-receipt"></i> المصروفات اليومية</div>
+                <div style="font-size: 20px; font-weight: 900; color: #D97706;" id="kpiTotalExpenses">0 ج</div>
+            </div>
+            <div style="background: #F0FDF4; padding: 14px; border-radius: 14px; border: 2px solid #22C55E; text-align: center; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);">
+                <div style="font-size: 11px; font-weight: 900; color: #15803D; margin-bottom: 4px;"><i class="fa-solid fa-chart-line"></i> صافي الربح الفعلي (Net Profit)</div>
+                <div style="font-size: 22px; font-weight: 900; color: #16A34A;" id="kpiNetProfit">0 ج</div>
+            </div>
+            <div style="background: #FAF5FF; padding: 14px; border-radius: 14px; border: 1px solid #D8B4FE; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size: 11px; font-weight: 800; color: #7E22CE; margin-bottom: 4px;"><i class="fa-solid fa-percent"></i> نسبة هامش الربح</div>
+                <div style="font-size: 20px; font-weight: 900; color: #6B21A8;" id="kpiProfitMargin">0%</div>
+            </div>
+        </div>
+
         <!-- Analytics Grid -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px;">
             <!-- Top Sellers Card -->
@@ -1266,6 +1290,12 @@
                 </button>
                 <button class="pin-btn" id="btnModalAddOrder" style="margin: 0; background: var(--cezar-orange); grid-column: 1 / -1;">
                     <i class="fa-solid fa-plus"></i> إضافة أوردر كاشير لهذه الطاولة
+                </button>
+                <button class="pin-btn" onclick="promptTransferTable()" style="margin: 0; background: #0284C7; font-size: 12px;">
+                    <i class="fa-solid fa-arrows-split-up-and-left"></i> نقل لترابيزة أخرى
+                </button>
+                <button class="pin-btn" onclick="promptMergeTables()" style="margin: 0; background: #6f42c1; font-size: 12px;">
+                    <i class="fa-solid fa-code-merge"></i> دمج مع ترابيزة ثانية
                 </button>
             </div>
         </div>
@@ -1494,6 +1524,13 @@
             <img src="/static/images/cezar_logo.jpg" alt="ceZar Logo" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--cezar-gold); margin-bottom: 10px;" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=100'">
             <h3 style="font-size: 18px; font-weight: 900; color: var(--primary-espresso);">تسجيل الدخول للنظام</h3>
             <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">كافيه سيزر | ceZar COFFEE</p>
+            <!-- Quick Role Select Buttons -->
+            <div style="display: flex; gap: 6px; margin-bottom: 14px;">
+                <button type="button" onclick="selectLoginRole('admin')" class="filter-pill active" id="btnRoleAdmin" style="flex: 1; justify-content: center; font-size: 11px; padding: 6px 4px;">👑 مدير</button>
+                <button type="button" onclick="selectLoginRole('cashier')" class="filter-pill" id="btnRoleCashier" style="flex: 1; justify-content: center; font-size: 11px; padding: 6px 4px;">💵 كاشير</button>
+                <button type="button" onclick="selectLoginRole('barista')" class="filter-pill" id="btnRoleBarista" style="flex: 1; justify-content: center; font-size: 11px; padding: 6px 4px;">☕ باريستا</button>
+            </div>
+
             <div style="margin-bottom: 10px; text-align: right;">
                 <label style="font-size: 12px; font-weight: 800;">اسم المستخدم:</label>
                 <input type="text" id="loginUsername" value="cezar" class="form-control">
@@ -1782,6 +1819,120 @@
         }
 
         // Tab Switching
+        // ====================================================
+        // ROLES & PERMISSIONS LOGIC
+        // ====================================================
+        var currentUserRole = 'admin';
+
+        function selectLoginRole(role) {
+            document.querySelectorAll('#managerLoginModal .filter-pill').forEach(b => b.classList.remove('active'));
+            if (role === 'admin') {
+                document.getElementById('btnRoleAdmin')?.classList.add('active');
+                document.getElementById('loginUsername').value = 'admin';
+                document.getElementById('loginPassword').value = '0000';
+            } else if (role === 'cashier') {
+                document.getElementById('btnRoleCashier')?.classList.add('active');
+                document.getElementById('loginUsername').value = 'cashier';
+                document.getElementById('loginPassword').value = '1234';
+            } else if (role === 'barista') {
+                document.getElementById('btnRoleBarista')?.classList.add('active');
+                document.getElementById('loginUsername').value = 'barista';
+                document.getElementById('loginPassword').value = '1234';
+            }
+        }
+
+        function applyRolePermissions(role) {
+            currentUserRole = role || 'admin';
+            sessionStorage.setItem('cezar_role', currentUserRole);
+
+            if (currentUserRole === 'barista') {
+                window.location.href = '/kitchen';
+                return;
+            }
+
+            const btnAnalytics = document.querySelector('[data-tab="analytics"]');
+            const btnPromos = document.querySelector('[data-tab="promos"]');
+            const btnInventory = document.querySelector('[data-tab="inventory"]');
+            const roleBadge = document.getElementById('managerNameDisplay');
+
+            if (currentUserRole === 'cashier') {
+                if (btnAnalytics) btnAnalytics.style.display = 'none';
+                if (btnPromos) btnPromos.style.display = 'none';
+                if (btnInventory) btnInventory.style.display = 'none';
+                if (roleBadge) roleBadge.textContent = 'كاشير الصالة (صلاحية كاشير)';
+                switchTab('pos', document.querySelector('[data-tab=pos]'));
+            } else {
+                if (btnAnalytics) btnAnalytics.style.display = 'flex';
+                if (btnPromos) btnPromos.style.display = 'flex';
+                if (btnInventory) btnInventory.style.display = 'flex';
+                if (roleBadge) roleBadge.textContent = 'المدير العام';
+            }
+        }
+
+        // ====================================================
+        // TABLE TRANSFER & MERGE LOGIC
+        // ====================================================
+        async function promptTransferTable() {
+            if (!currentModalTable) return;
+            const targetTableStr = prompt(`نقل حساب أوردر ترابيزة ${currentModalTable} إلى ترابيزة رقم (1-25):`);
+            if (!targetTableStr) return;
+            const targetTable = parseInt(targetTableStr);
+            if (isNaN(targetTable) || targetTable < 1 || targetTable > 25 || targetTable === currentModalTable) {
+                alert('يرجى إدخال رقم ترابيزة صالح ومختلف!');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/tables/transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ from_table: currentModalTable, to_table: targetTable })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert(data.message || '✅ تم نقل الأوردر بنجاح!');
+                    closeModal('tableActionModal');
+                    fetchTablesStatus();
+                    fetchOrders();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر نقل الترابيزة'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function promptMergeTables() {
+            if (!currentModalTable) return;
+            const targetTableStr = prompt(`دمج حساب ترابيزة أخرى في ترابيزة ${currentModalTable}:
+أدخل رقم الترابيزة الأخرى المراد دمجها هنا:`);
+            if (!targetTableStr) return;
+            const secTable = parseInt(targetTableStr);
+            if (isNaN(secTable) || secTable < 1 || secTable > 25 || secTable === currentModalTable) {
+                alert('يرجى إدخال رقم ترابيزة صالح ومختلف!');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/tables/merge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ primary_table: currentModalTable, secondary_table: secTable })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert(data.message || '✅ تم دمج الحساب بنجاح!');
+                    closeModal('tableActionModal');
+                    fetchTablesStatus();
+                    fetchOrders();
+                } else {
+                    alert('خطأ: ' + (data.detail || 'تعذر دمج الترابيزات'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
         function switchTab(tabName, btnEl) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -3116,6 +3267,13 @@
                         </div>`;
                     }).join('');
                 }
+
+                // Net Profit & Executive KPIs
+                if (document.getElementById('kpiGrossSales')) document.getElementById('kpiGrossSales').textContent = `${(data.gross_sales || 0):g} ج`;
+                if (document.getElementById('kpiTotalCogs')) document.getElementById('kpiTotalCogs').textContent = `${(data.total_cogs || 0):g} ج`;
+                if (document.getElementById('kpiTotalExpenses')) document.getElementById('kpiTotalExpenses').textContent = `${(data.total_expenses || 0):g} ج`;
+                if (document.getElementById('kpiNetProfit')) document.getElementById('kpiNetProfit').textContent = `${(data.net_profit || 0):g} ج`;
+                if (document.getElementById('kpiProfitMargin')) document.getElementById('kpiProfitMargin').textContent = `${(data.profit_margin_pct || 0)}%`;
 
                 // Channel Sales
                 const byChannel = data.by_channel || {};

@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal, get_db
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe
 from .seed import seed_menu
 
 # إنشاء الجداول تلقائياً
@@ -43,6 +43,17 @@ def auto_migrate_columns():
             ("discount_amount", "FLOAT DEFAULT 0.0"),
             ("promo_code", "VARCHAR(50) DEFAULT NULL"),
         ]
+        try:
+            conn.execute(text("ALTER TABLE menu_items ADD COLUMN cost_price FLOAT DEFAULT 0.0"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE manager_accounts ADD COLUMN role VARCHAR(30) DEFAULT 'admin'"))
+            conn.commit()
+        except Exception:
+            pass
+        
         for col_name, col_type in columns_to_add:
             try:
                 conn.execute(text(f"ALTER TABLE table_orders ADD COLUMN {col_name} {col_type}"))
@@ -372,6 +383,54 @@ def delete_menu_item(item_id: int, db: Session = Depends(get_db)):
 # 3. واجهات برمجة الطلبات والكاشير (POS & Orders)
 # ==========================================
 
+def deduct_inventory_for_order(items, db: Session):
+    """الخصم التلقائي للمواد الخام والمخزون عند إنشاء أو تحضير أي أوردر."""
+    try:
+        inv_items = {it.name: it for it in db.query(InventoryItem).all()}
+        coffee_beans = next((v for k, v in inv_items.items() if "بن" in k and "تركي" not in k and "تركى" not in k), None)
+        milk_item = next((v for k, v in inv_items.items() if "حليب" in k or "لبن" in k), None)
+        syrup_item = next((v for k, v in inv_items.items() if "سيرب" in k), None)
+        turkish_coffee = next((v for k, v in inv_items.items() if "بن" in k and ("تركي" in k or "تركى" in k)), None)
+        cups_item = next((v for k, v in inv_items.items() if "أكواب" in k or "كوب" in k), None)
+
+        for item in items:
+            name = (item.get('name') if isinstance(item, dict) else getattr(item, 'name', '')) or ''
+            qty = (item.get('quantity') if isinstance(item, dict) else getattr(item, 'quantity', 1)) or 1
+            customization = ((item.get('customization') if isinstance(item, dict) else getattr(item, 'customization', '')) or '').strip()
+
+            # 1. Coffee Beans (0.018 kg per shot)
+            is_coffee = any(k in name for k in ["اسبريسو", "لاتيه", "كابتشينو", "امريكان", "فلات وايت", "موكا", "كورتادو", "ميكاتو", "قهوة"])
+            if is_coffee and coffee_beans:
+                w = 0.018 * qty
+                if "دبل" in name: w *= 2
+                if "شوت إضافي" in customization: w += (0.018 * qty)
+                coffee_beans.current_stock = max(0.0, round(coffee_beans.current_stock - w, 3))
+
+            # 2. Milk (0.180 Liter)
+            needs_milk = any(k in name for k in ["لاتيه", "كابتشينو", "فلات وايت", "كورتادو", "فرنساوى", "موكا", "حليب", "سحلب", "شوكليت"])
+            if needs_milk and "بدون حليب" not in customization and milk_item:
+                m_amt = 0.180 * qty
+                milk_item.current_stock = max(0.0, round(milk_item.current_stock - m_amt, 3))
+
+            # 3. Syrups (0.02 Liter)
+            if ("كراميل" in customization or "فانيليا" in customization or "كراميل" in name or "فانيليا" in name) and syrup_item:
+                syrup_item.current_stock = max(0.0, round(syrup_item.current_stock - (0.02 * qty), 3))
+
+            # 4. Turkish Coffee
+            if ("تركي" in name or "تركى" in name) and turkish_coffee:
+                w_t = 0.012 * qty
+                if "دبل" in name: w_t *= 2
+                turkish_coffee.current_stock = max(0.0, round(turkish_coffee.current_stock - w_t, 3))
+
+            # 5. Cups
+            if cups_item:
+                cups_item.current_stock = max(0.0, round(cups_item.current_stock - qty, 1))
+
+        db.commit()
+    except Exception as e:
+        print(f"Auto-deduct warning: {e}")
+
+
 @app.post("/api/orders")
 @app.post("/api/cezar/orders")
 def create_table_order(order_data: CreateTableOrderRequest, db: Session = Depends(get_db)):
@@ -423,6 +482,7 @@ def create_table_order(order_data: CreateTableOrderRequest, db: Session = Depend
         current_shift.total_sales += grand_total
         current_shift.cash_sales += grand_total
 
+    deduct_inventory_for_order(order_data.items, db)
     db.commit()
     db.refresh(order)
     return {
@@ -484,6 +544,7 @@ def create_pos_direct_order(data: PosOrderCreateRequest, db: Session = Depends(g
         else:
             current_shift.cash_sales += grand_total
 
+    deduct_inventory_for_order(order_data.items, db)
     db.commit()
     db.refresh(order)
     return {
@@ -645,6 +706,59 @@ def settle_table_bill(table_number: int, db: Session = Depends(get_db)):
     return {"status": "success", "message": f"تمت تسوية حساب ترابيزة {table_number} وإفراغها بنجاح!", "table_number": table_number}
 
 
+class TableTransferRequest(BaseModel):
+    from_table: int
+    to_table: int
+
+class TableMergeRequest(BaseModel):
+    primary_table: int
+    secondary_table: int
+
+@app.post("/api/tables/transfer")
+@app.post("/api/cezar/tables/transfer")
+def transfer_table_orders(req: TableTransferRequest, db: Session = Depends(get_db)):
+    active_orders = db.query(TableOrder).filter(
+        TableOrder.table_number == req.from_table,
+        TableOrder.order_type == "صالة",
+        ~TableOrder.status.in_(["ملغي", "تمت التسوية"])
+    ).all()
+    if not active_orders:
+        raise HTTPException(status_code=400, detail=f"لا توجد طلبات نشطة في ترابيزة {req.from_table}")
+    
+    for o in active_orders:
+        o.table_number = req.to_table
+        if f"ترابيزة {req.from_table}" in (o.customer_name or ""):
+            o.customer_name = f"ترابيزة {req.to_table}"
+    db.commit()
+    return {"status": "success", "message": f"تم نقل الحساب من ترابيزة {req.from_table} إلى ترابيزة {req.to_table} بنجاح!"}
+
+@app.post("/api/tables/merge")
+@app.post("/api/cezar/tables/merge")
+def merge_tables(req: TableMergeRequest, db: Session = Depends(get_db)):
+    sec_orders = db.query(TableOrder).filter(
+        TableOrder.table_number == req.secondary_table,
+        TableOrder.order_type == "صالة",
+        ~TableOrder.status.in_(["ملغي", "تمت التسوية"])
+    ).all()
+    if not sec_orders:
+        raise HTTPException(status_code=400, detail=f"لا توجد طلبات في ترابيزة {req.secondary_table}")
+    
+    for o in sec_orders:
+        o.table_number = req.primary_table
+        o.customer_name = f"ترابيزة {req.primary_table} (مدمجة مع {req.secondary_table})"
+    db.commit()
+    return {"status": "success", "message": f"تم دمج حساب ترابيزة {req.secondary_table} في ترابيزة {req.primary_table} بنجاح!"}
+
+@app.get("/api/auth/staff")
+@app.get("/api/cezar/auth/staff")
+def list_staff_accounts(db: Session = Depends(get_db)):
+    staff = db.query(ManagerAccount).all()
+    return {
+        "status": "success",
+        "staff": [{"id": s.id, "username": s.username, "manager_name": s.manager_name, "role": s.role or "admin"} for s in staff]
+    }
+
+
 @app.get("/api/tables/{table_number}/track")
 @app.get("/api/cezar/tables/{table_number}/track")
 def track_table_orders(table_number: int, db: Session = Depends(get_db)):
@@ -753,6 +867,7 @@ def call_waiter_endpoint(req: CallWaiterRequest, db: Session = Depends(get_db)):
         status="نداء ويتر"
     )
     db.add(order)
+    deduct_inventory_for_order(order_data.items, db)
     db.commit()
     db.refresh(order)
     return {"status": "success", "message": f"تم إرسال نداء الويتر لترابيزة {req.table_number} فوراً!"}
@@ -793,6 +908,7 @@ def request_bill_endpoint(req: RequestBillRequest, db: Session = Depends(get_db)
         status=f"طلب حساب ({method})"
     )
     db.add(order)
+    deduct_inventory_for_order(order_data.items, db)
     db.commit()
     db.refresh(order)
     return {
@@ -1375,10 +1491,26 @@ def get_analytics(db: Session = Depends(get_db)):
         t = o.order_type or "صالة"
         sales_by_type[t] = sales_by_type.get(t, 0.0) + o.total_price
 
+    # Calculate Food Cost (COGS) and Net Profit
+    gross_sales = sum(o.total_price for o in orders)
+    # Estimate COGS based on sold items (approx 32% food cost)
+    total_cogs = round(gross_sales * 0.32, 2)
+    total_expenses = db.query(func.sum(Expense.amount)).scalar() or 0.0
+    net_profit = round(max(0.0, gross_sales - total_cogs - total_expenses), 2)
+    profit_margin_pct = round((net_profit / gross_sales) * 100, 1) if gross_sales > 0 else 0.0
+
+    by_channel = {"صالة": sales_by_type.get("صالة", 0.0), "تيك أواي": sales_by_type.get("تيك أواي", 0.0), "دليفري": sales_by_type.get("دليفري", 0.0)}
+
     return {
         "status": "success",
+        "gross_sales": gross_sales,
+        "total_cogs": total_cogs,
+        "total_expenses": total_expenses,
+        "net_profit": net_profit,
+        "profit_margin_pct": profit_margin_pct,
         "top_sellers": top_items,
         "peak_hours": peak_hours,
+        "by_channel": by_channel,
         "sales_by_type": sales_by_type,
         "total_served_orders": len(orders)
     }
@@ -1488,7 +1620,8 @@ def manager_login(data: LoginRequest, db: Session = Depends(get_db)):
     return {
         "status": "success",
         "username": account.username,
-        "manager_name": account.manager_name or "المدير العام"
+        "manager_name": account.manager_name or "المدير العام",
+        "role": account.role or "admin"
     }
 
 

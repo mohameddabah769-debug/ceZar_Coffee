@@ -1178,6 +1178,10 @@
         <p class="brand-subtitle">سيزر كوفي | متعة المذاق الفاخر</p>
         
         <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+            <button id="btnLangToggle" onclick="toggleLanguage()" class="table-pill" style="margin-top: 0; background: rgba(255, 255, 255, 0.18); border: 1.5px solid var(--cezar-gold); color: #fff; cursor: pointer; font-weight: 800; font-size: 11px; display: inline-flex; align-items: center; gap: 5px;">
+                <i class="fa-solid fa-globe" style="color: var(--cezar-gold);"></i>
+                <span id="langToggleText">English</span>
+            </button>
             <div class="table-pill" style="margin-top: 0; cursor: default; background: rgba(232, 93, 4, 0.25); border-color: var(--cezar-orange);">
                 <i class="fa-solid fa-lock" style="font-size: 11px; color: var(--cezar-gold);"></i>
                 <span id="currentTableDisplay">ترابيزة رقم 1</span>
@@ -1768,7 +1772,7 @@
                 section.innerHTML = `
                     <div class="section-header">
                         <i class="fa-solid ${icon}" style="color: var(--cezar-orange); font-size: 18px;"></i>
-                        <h2>${catName}</h2>
+                        <h2>${(currentLang === "en" && categoryTranslations[catName]) ? categoryTranslations[catName] : catName}</h2>
                         <span class="count-badge">${items.length}</span>
                     </div>
                     <div class="items-grid" id="grid-${catName}"></div>
@@ -2447,6 +2451,139 @@
         }
 
         // Start
+        // ==========================================
+        // MULTI-LANGUAGE (i18n) ARABIC / ENGLISH
+        // ==========================================
+        var currentLang = localStorage.getItem('cezar_lang') || 'ar';
+
+        const categoryTranslations = {
+            "الكوفى": "Hot Coffee",
+            "مشروبات ساخنة": "Hot Drinks",
+            "أيس كوفي": "Iced Coffee",
+            "ميلك شيك": "Milkshakes",
+            "سموزى": "Smoothies",
+            "فرابيه": "Frappé",
+            "ركن الميكسات": "ceZar Mixes",
+            "كوكتيل": "Cocktails",
+            "عصائر طبيعية": "Fresh Juices",
+            "مشروبات غازية": "Soft Drinks",
+            "وافل": "Waffles",
+            "بان كيك": "Pancakes",
+            "كيك ومخبوزات": "Cakes & Bakery",
+            "مشروبات طاقة": "Energy Drinks",
+            "إضافات": "Add-ons",
+            "مياه ومشروبات خفيفة": "Water & Beverages"
+        };
+
+        const i18n = {
+            ar: {
+                brandSubtitle: "سيزر كوفي | متعة المذاق الفاخر",
+                langToggle: "English",
+                callWaiter: "نداء الويتر",
+                requestBill: "طلب الحساب",
+                trackOrder: "متابعة الطلب",
+                cart: "السلة",
+                searchPlaceholder: "ابحث عن مشروبك أو حلوى...",
+                tablePrefix: "ترابيزة رقم ",
+                customize: "تخصيص الإضافات",
+                customizeTitle: "تخصيص المشروب",
+                sugarLabel: "مستوى السكر:",
+                milkLabel: "نوع الحليب:",
+                extrasLabel: "إضافات مميزة:",
+                promoLabel: "كود الخصم (بروموكود):",
+                promoPlaceholder: "أدخل الكود (مثال: CEZAR10)",
+                applyPromo: "تطبيق",
+                notesPlaceholder: "مثال: سكر زيادة، بدون مكسرات...",
+                notesLabel: "ملاحظات خاصة (سكر، إضافات):",
+                totalLabel: "إجمالي الحساب:",
+                submitOrder: "إرسال الطلب للباريستا فوراً",
+                quickBill: "طلب الحساب والفاتورة للترابيزة",
+                emptyCart: "سلتك فارغة حالياً",
+                emptyCartSub: "تصفح المنيو واضغط على (+) لإضافة مشروباتك المفضلة ☕"
+            },
+            en: {
+                brandSubtitle: "ceZar COFFEE | The Luxury Taste",
+                langToggle: "عربي",
+                callWaiter: "Call Waiter",
+                requestBill: "Request Bill",
+                trackOrder: "Track Order",
+                cart: "Cart",
+                searchPlaceholder: "Search drinks, coffee, desserts...",
+                tablePrefix: "Table #",
+                customize: "Customize",
+                customizeTitle: "Customize Drink",
+                sugarLabel: "Sugar Level:",
+                milkLabel: "Milk Type:",
+                extrasLabel: "Special Add-ons:",
+                promoLabel: "Promo Code:",
+                promoPlaceholder: "Enter code (e.g. CEZAR10)",
+                applyPromo: "Apply",
+                notesPlaceholder: "e.g. Extra hot, no sugar...",
+                notesLabel: "Special Notes:",
+                totalLabel: "Grand Total:",
+                submitOrder: "Send Order to Barista",
+                quickBill: "Request Bill & Receipt",
+                emptyCart: "Your cart is empty",
+                emptyCartSub: "Browse the menu and click (+) to add your favorite drinks ☕"
+            }
+        };
+
+        function toggleLanguage() {
+            currentLang = (currentLang === 'ar') ? 'en' : 'ar';
+            applyLanguage(currentLang);
+        }
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('cezar_lang', lang);
+
+            // Document Direction & Lang
+            document.documentElement.lang = lang;
+            document.documentElement.dir = (lang === 'en') ? 'ltr' : 'rtl';
+
+            const t = i18n[lang] || i18n.ar;
+
+            // Header Elements
+            const langBtnText = document.getElementById('langToggleText');
+            if (langBtnText) langBtnText.textContent = t.langToggle;
+
+            const subtitle = document.querySelector('.brand-subtitle');
+            if (subtitle) subtitle.textContent = t.brandSubtitle;
+
+            const waiterSpans = document.querySelectorAll('.btn-waiter-call span, .mbar-btn[onclick*="sendWaiterCall"] span');
+            waiterSpans.forEach(s => s.textContent = t.callWaiter);
+
+            const billSpans = document.querySelectorAll('.btn-bill-call span, .mbar-btn[onclick*="openBillModal"] span');
+            billSpans.forEach(s => s.textContent = t.requestBill);
+
+            const trackSpans = document.querySelectorAll('#headerTrackBtn span, #mbarTrackBtn span');
+            trackSpans.forEach(s => s.textContent = t.trackOrder);
+
+            const cartSpans = document.querySelectorAll('#headerCartBtn span, #mbarCartBtn span');
+            cartSpans.forEach(s => s.textContent = t.cart);
+
+            const searchInp = document.getElementById('searchInput');
+            if (searchInp) searchInp.placeholder = t.searchPlaceholder;
+
+            // Table Display
+            const tblDisplay = document.getElementById('currentTableDisplay');
+            if (tblDisplay) tblDisplay.textContent = `${t.tablePrefix}${currentTable}`;
+
+            const submitBtnText = document.getElementById('btnSubmitText');
+            if (submitBtnText) submitBtnText.textContent = t.submitOrder;
+
+            const quickBillText = document.getElementById('btnQuickBillText');
+            if (quickBillText) quickBillText.textContent = t.quickBill;
+
+            const totalLabel = document.getElementById('modalTotalLabel');
+            if (totalLabel) totalLabel.textContent = t.totalLabel;
+
+            // Re-render menu to translate category titles
+            if (typeof menuData !== 'undefined' && Object.keys(menuData).length > 0) {
+                renderMenu();
+            }
+        }
+
         loadMenu();
         fetchTrackingOrders();
 

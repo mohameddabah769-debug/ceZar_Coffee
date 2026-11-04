@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe
 from .seed import seed_menu
 
 Base.metadata.create_all(bind=engine)
@@ -27,6 +27,17 @@ def auto_migrate_columns():
             ("discount_amount", "FLOAT DEFAULT 0.0"),
             ("promo_code", "VARCHAR(50) DEFAULT NULL"),
         ]
+        try:
+            conn.execute(text("ALTER TABLE menu_items ADD COLUMN cost_price FLOAT DEFAULT 0.0"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE manager_accounts ADD COLUMN role VARCHAR(30) DEFAULT 'admin'"))
+            conn.commit()
+        except Exception:
+            pass
+        
         for col_name, col_type in columns_to_add:
             try:
                 conn.execute(text(f"ALTER TABLE table_orders ADD COLUMN {col_name} {col_type}"))
@@ -197,6 +208,54 @@ def delete_menu_item(item_id):
 
 @app.route("/api/orders", methods=["POST"])
 @app.route("/api/cezar/orders", methods=["POST"])
+def deduct_inventory_for_order(items, db):
+    """الخصم التلقائي للمواد الخام والمخزون عند إنشاء أو تحضير أي أوردر."""
+    try:
+        inv_items = {it.name: it for it in db.query(InventoryItem).all()}
+        for item in items:
+            name = (item.get('name') if isinstance(item, dict) else getattr(item, 'name', '')) or ''
+            qty = (item.get('quantity') if isinstance(item, dict) else getattr(item, 'quantity', 1)) or 1
+            customization = ((item.get('customization') if isinstance(item, dict) else getattr(item, 'customization', '')) or '').strip()
+
+            is_coffee = any(k in name for k in ["اسبريسو", "لاتيه", "كابتشينو", "امريكان", "فلات وايت", "موكا", "كورتادو", "ميكاتو", "قهوة"])
+            if is_coffee:
+                beans = inv_items.get("بن برازيلي فاخر") or inv_items.get("بن كولومبي مميز")
+                if beans:
+                    w = 0.018 * qty
+                    if "دبل" in name: w *= 2
+                    if "شوت إضافي" in customization: w += (0.018 * qty)
+                    beans.current_stock = max(0.0, round(beans.current_stock - w, 3))
+
+            needs_milk = any(k in name for k in ["لاتيه", "كابتشينو", "فلات وايت", "كورتادو", "فرنساوى", "موكا", "حليب", "سحلب", "شوكليت"])
+            if needs_milk and "بدون حليب" not in customization:
+                m_amt = 0.180 * qty
+                if "حليب لوز" in customization and "حليب لوز" in inv_items:
+                    inv_items["حليب لوز"].current_stock = max(0.0, round(inv_items["حليب لوز"].current_stock - m_amt, 3))
+                elif "حليب شوفان" in customization and "حليب شوفان" in inv_items:
+                    inv_items["حليب شوفان"].current_stock = max(0.0, round(inv_items["حليب شوفان"].current_stock - m_amt, 3))
+                elif "حليب كامل الدسم" in inv_items:
+                    inv_items["حليب كامل الدسم"].current_stock = max(0.0, round(inv_items["حليب كامل الدسم"].current_stock - m_amt, 3))
+
+            if "كراميل" in customization or "كراميل" in name:
+                if "سيرب كراميل" in inv_items:
+                    inv_items["سيرب كراميل"].current_stock = max(0.0, round(inv_items["سيرب كراميل"].current_stock - (0.02 * qty), 3))
+            if "فانيليا" in customization or "فانيليا" in name:
+                if "سيرب فانيليا" in inv_items:
+                    inv_items["سيرب فانيليا"].current_stock = max(0.0, round(inv_items["سيرب فانيليا"].current_stock - (0.02 * qty), 3))
+
+            if "شاى" in name and "شاي أسود ناعم" in inv_items:
+                inv_items["شاي أسود ناعم"].current_stock = max(0.0, round(inv_items["شاي أسود ناعم"].current_stock - (0.005 * qty), 3))
+            elif ("تركي" in name or "تركى" in name) and "بن تركي محوج" in inv_items:
+                inv_items["بن تركي محوج"].current_stock = max(0.0, round(inv_items["بن تركي محوج"].current_stock - (0.012 * qty), 3))
+
+            cups = inv_items.get("أكواب تيك أواي 12oz") or inv_items.get("أكواب بلاستيك بارد 16oz")
+            if cups:
+                cups.current_stock = max(0.0, cups.current_stock - qty)
+
+        db.commit()
+    except Exception as e:
+        print(f"Auto-deduct warning: {e}")
+
 def create_table_order():
     data = request.json or {}
     items = data.get("items") or []
@@ -1332,7 +1391,8 @@ def manager_login():
         return jsonify({
             "status": "success",
             "username": account.username,
-            "manager_name": account.manager_name or "المدير العام"
+            "manager_name": account.manager_name or "المدير العام",
+        "role": account.role or "admin"
         })
 
 

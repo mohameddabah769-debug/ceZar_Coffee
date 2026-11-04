@@ -12,6 +12,7 @@ class MenuItem(Base):
     name = Column(String(150), nullable=False, index=True)
     category = Column(String(80), nullable=False, index=True)
     price = Column(Float, nullable=False)
+    cost_price = Column(Float, default=0.0)  # تكلفة الخامات المباشرة للربحية
     description = Column(String(300), nullable=True)
     is_available = Column(Boolean, default=True)
 
@@ -134,11 +135,23 @@ class PromoCode(Base):
 
 
 class ManagerAccount(Base):
-    """حساب مدير الكافيه والمتحكم الرئيسي."""
+    """حسابات موظفي الكافيه (المدير، الكاشير، الباريستا)."""
     __tablename__ = "manager_accounts"
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(80), unique=True, nullable=False, default="admin")
     password = Column(String(120), nullable=False, default="123456")
     manager_name = Column(String(120), default="مدير سيزر كوفي")
+    role = Column(String(30), default="admin")  # admin | cashier | barista
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class MenuItemRecipe(Base):
+    """ربط الصنف بالمواد الخام للخصم التلقائي من المخزن عند كل أوردر."""
+    __tablename__ = "menu_item_recipes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    menu_item_id = Column(Integer, ForeignKey("menu_items.id"), nullable=False, index=True)
+    inventory_item_id = Column(Integer, ForeignKey("inventory_items.id"), nullable=False, index=True)
+    amount_used = Column(Float, nullable=False, default=0.02)  # مثلا 0.018 كجم بن أو 0.2 لتر حليب
+
