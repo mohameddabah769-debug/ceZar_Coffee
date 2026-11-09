@@ -176,8 +176,8 @@ def add_menu_item():
         return jsonify({"status": "success", "item": {"id": new_item.id, "name": new_item.name}})
 
 
-@app.route("/api/menu-items/<int:item_id>", methods=["PUT"])
-@app.route("/api/cezar/menu-items/<int:item_id>", methods=["PUT"])
+@app.route("/api/menu-items/<int:item_id>", methods=["PUT", "POST"])
+@app.route("/api/cezar/menu-items/<int:item_id>", methods=["PUT", "POST"])
 def update_menu_item(item_id):
     data = request.json or {}
     with SessionLocal() as db:
@@ -198,8 +198,8 @@ def update_menu_item(item_id):
         return jsonify({"status": "success", "item": {"id": item.id, "name": item.name, "price": item.price, "is_available": item.is_available}})
 
 
-@app.route("/api/menu-items/<int:item_id>", methods=["DELETE"])
-@app.route("/api/cezar/menu-items/<int:item_id>", methods=["DELETE"])
+@app.route("/api/menu-items/<int:item_id>", methods=["DELETE", "POST"])
+@app.route("/api/cezar/menu-items/<int:item_id>", methods=["DELETE", "POST"])
 def delete_menu_item(item_id):
     with SessionLocal() as db:
         item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
@@ -214,8 +214,6 @@ def delete_menu_item(item_id):
 # 3. الطلبات والكاشير (POS & Orders)
 # ==========================================
 
-@app.route("/api/orders", methods=["POST"])
-@app.route("/api/cezar/orders", methods=["POST"])
 def deduct_inventory_for_order(items, db):
     """الخصم التلقائي للمواد الخام والمخزون عند إنشاء أو تحضير أي أوردر."""
     try:
@@ -264,6 +262,8 @@ def deduct_inventory_for_order(items, db):
     except Exception as e:
         print(f"Auto-deduct warning: {e}")
 
+@app.route("/api/orders", methods=["POST"])
+@app.route("/api/cezar/orders", methods=["POST"])
 def create_table_order():
     data = request.json or {}
     items = data.get("items") or []
@@ -318,6 +318,7 @@ def create_table_order():
         if current_shift:
             current_shift.total_sales += grand_total
             current_shift.cash_sales += grand_total
+        deduct_inventory_for_order(items, db)
         db.commit()
         db.refresh(order)
         return jsonify({
