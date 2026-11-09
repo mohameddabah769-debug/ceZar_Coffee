@@ -23,8 +23,11 @@ else:
     def set_sqlite_pragma(dbapi_connection, connection_record):
         try:
             cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA journal_mode=DELETE")
-            cursor.execute("PRAGMA busy_timeout=10000")
+            # إعدادات الذاكرة لضمان استقرار SQLite على سيرفرات PythonAnywhere و NFS ومنع disk I/O error
+            cursor.execute("PRAGMA journal_mode=MEMORY")
+            cursor.execute("PRAGMA temp_store=MEMORY")
+            cursor.execute("PRAGMA synchronous=NORMAL")
+            cursor.execute("PRAGMA busy_timeout=30000")
             cursor.close()
         except Exception:
             pass
@@ -39,4 +42,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
