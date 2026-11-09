@@ -2,14 +2,18 @@ import os
 import sys
 import io
 import csv
+import time
+import traceback
 try:
     import qrcode
 except ImportError:
     qrcode = None
 from datetime import datetime
+from functools import wraps
 from flask import Flask, request, jsonify, redirect, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
+from sqlalchemy.exc import OperationalError as SAOperationalError
 
 try:
     from .database import engine, Base, SessionLocal
@@ -53,15 +57,21 @@ def auto_migrate_columns():
             except Exception:
                 pass
 
-auto_migrate_columns()
+try:
+    auto_migrate_columns()
+except Exception as e:
+    print(f"[STARTUP] auto_migrate warning: {e}")
 
-with SessionLocal() as db:
-    seed_menu(db)
-    if db.query(ManagerAccount).filter(ManagerAccount.username == "admin").count() == 0:
-        db.add(ManagerAccount(username="admin", password="123", manager_name="مدير سيزر كوفي"))
-    if db.query(ManagerAccount).filter(ManagerAccount.username == "cezar").count() == 0:
-        db.add(ManagerAccount(username="cezar", password="0000", manager_name="كافيه سيزر"))
-    db.commit()
+try:
+    with SessionLocal() as db:
+        seed_menu(db)
+        if db.query(ManagerAccount).filter(ManagerAccount.username == "admin").count() == 0:
+            db.add(ManagerAccount(username="admin", password="123", manager_name="مدير سيزر كوفي"))
+        if db.query(ManagerAccount).filter(ManagerAccount.username == "cezar").count() == 0:
+            db.add(ManagerAccount(username="cezar", password="0000", manager_name="كافيه سيزر"))
+        db.commit()
+except Exception as e:
+    print(f"[STARTUP] seed/init warning: {e}")
 
 app = Flask(
     __name__,
@@ -70,6 +80,54 @@ app = Flask(
 )
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
+
+
+# ==========================================
+# SQLite Retry Helper for PythonAnywhere NFS
+# ==========================================
+def db_retry(max_retries=3, delay=0.3):
+    """Decorator: retries a function on SQLite disk I/O or locked errors."""
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            last_err = None
+            for attempt in range(max_retries):
+                try:
+                    return fn(*args, **kwargs)
+                except SAOperationalError as e:
+                    last_err = e
+                    err_msg = str(e).lower()
+                    if 'disk i/o error' in err_msg or 'database is locked' in err_msg or 'readonly' in err_msg:
+                        time.sleep(delay * (attempt + 1))
+                        continue
+                    raise
+                except Exception:
+                    raise
+            # All retries exhausted
+            raise last_err
+        return wrapper
+    return decorator
+
+
+@app.errorhandler(500)
+def handle_500(e):
+    """Return JSON instead of HTML for server errors."""
+    return jsonify({
+        "status": "error",
+        "detail": "حدث خطأ مؤقت في السيرفر، يرجى إعادة المحاولة بعد لحظات."
+    }), 500
+
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Catch-all: return JSON for any unhandled exception."""
+    if hasattr(e, 'code') and hasattr(e, 'description'):
+        # Standard HTTP exceptions (404, 405, etc.)
+        return jsonify({"status": "error", "detail": str(e.description)}), e.code
+    return jsonify({
+        "status": "error",
+        "detail": "حدث خطأ مؤقت في السيرفر، يرجى إعادة المحاولة بعد لحظات."
+    }), 500
 
 
 # ==========================================
@@ -215,7 +273,8 @@ def delete_menu_item(item_id):
 # ==========================================
 
 def deduct_inventory_for_order(items, db):
-    """الخصم التلقائي للمواد الخام والمخزون عند إنشاء أو تحضير أي أوردر."""
+    """الخصم التلقائي للمواد الخام والمخزون عند إنشاء أو تحضير أي أوردر.
+    ملاحظة: لا يعمل commit هنا - المسؤولية على الكود اللي بيناديه."""
     try:
         inv_items = {it.name: it for it in db.query(InventoryItem).all()}
         for item in items:
@@ -258,18 +317,18 @@ def deduct_inventory_for_order(items, db):
             if cups:
                 cups.current_stock = max(0.0, cups.current_stock - qty)
 
-        db.commit()
     except Exception as e:
         print(f"Auto-deduct warning: {e}")
 
 @app.route("/api/orders", methods=["POST"])
 @app.route("/api/cezar/orders", methods=["POST"])
+@db_retry(max_retries=3, delay=0.4)
 def create_table_order():
     data = request.json or {}
     items = data.get("items") or []
     table_num = int(data.get("table_number") or 1)
     if not items:
-        return jsonify({"detail": "السلة فارغة"}), 400
+        return jsonify({"detail": "السلة فارغة، برجاء اختيار مشروب أولاً"}), 400
 
     lines = []
     items_total = 0.0
@@ -285,54 +344,59 @@ def create_table_order():
     discount = 0.0
 
     with SessionLocal() as db:
-        if promo_code:
-            promo = db.query(PromoCode).filter(PromoCode.code == promo_code.strip().upper(), PromoCode.is_active.is_(True)).first()
-            if promo and items_total >= (promo.min_order_value or 0.0):
-                if promo.discount_type == "percentage":
-                    discount = round((items_total * promo.discount_value) / 100.0, 2)
-                else:
-                    discount = min(items_total, promo.discount_value)
-                promo.usage_count = (promo.usage_count or 0) + 1
+        try:
+            if promo_code:
+                promo = db.query(PromoCode).filter(PromoCode.code == promo_code.strip().upper(), PromoCode.is_active.is_(True)).first()
+                if promo and items_total >= (promo.min_order_value or 0.0):
+                    if promo.discount_type == "percentage":
+                        discount = round((items_total * promo.discount_value) / 100.0, 2)
+                    else:
+                        discount = min(items_total, promo.discount_value)
+                    promo.usage_count = (promo.usage_count or 0) + 1
 
-        grand_total = max(0.0, items_total - discount)
-        items_summary = "\n".join(lines)
+            grand_total = max(0.0, items_total - discount)
+            items_summary = "\n".join(lines)
 
-        current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
-        shift_id = current_shift.id if current_shift else None
+            current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
+            shift_id = current_shift.id if current_shift else None
 
-        order = TableOrder(
-            table_number=table_num,
-            order_type="صالة",
-            items_summary=items_summary,
-            total_price=grand_total,
-            discount_amount=discount,
-            promo_code=promo_code,
-            customer_name=data.get("customer_name") or f"ترابيزة {table_num}",
-            customer_phone=data.get("customer_phone") or "",
-            notes=data.get("notes") or "",
-            status="جديد",
-            payment_method="كاش",
-            shift_id=shift_id
-        )
-        db.add(order)
-        if current_shift:
-            current_shift.total_sales += grand_total
-            current_shift.cash_sales += grand_total
-        deduct_inventory_for_order(items, db)
-        db.commit()
-        db.refresh(order)
-        return jsonify({
-            "status": "success",
-            "message": f"تم استلام طلب ترابيزة {order.table_number} بنجاح!",
-            "order_id": order.id,
-            "table_number": order.table_number,
-            "discount_amount": discount,
-            "total_price": order.total_price
-        })
+            order = TableOrder(
+                table_number=table_num,
+                order_type="صالة",
+                items_summary=items_summary,
+                total_price=grand_total,
+                discount_amount=discount,
+                promo_code=promo_code,
+                customer_name=data.get("customer_name") or f"ترابيزة {table_num}",
+                customer_phone=data.get("customer_phone") or "",
+                notes=data.get("notes") or "",
+                status="جديد",
+                payment_method="كاش",
+                shift_id=shift_id
+            )
+            db.add(order)
+            if current_shift:
+                current_shift.total_sales += grand_total
+                current_shift.cash_sales += grand_total
+            deduct_inventory_for_order(items, db)
+            db.commit()
+            db.refresh(order)
+            return jsonify({
+                "status": "success",
+                "message": f"تم استلام طلب ترابيزة {order.table_number} بنجاح!",
+                "order_id": order.id,
+                "table_number": order.table_number,
+                "discount_amount": discount,
+                "total_price": order.total_price
+            })
+        except Exception as e:
+            db.rollback()
+            raise
 
 
 @app.route("/api/pos/orders", methods=["POST"])
 @app.route("/api/cezar/pos/orders", methods=["POST"])
+@db_retry(max_retries=3, delay=0.4)
 def create_pos_direct_order():
     data = request.json or {}
     items = data.get("items") or []
@@ -399,6 +463,7 @@ def create_pos_direct_order():
 
 @app.route("/api/orders", methods=["GET"])
 @app.route("/api/cezar/orders", methods=["GET"])
+@db_retry(max_retries=3, delay=0.3)
 def get_orders():
     order_type = request.args.get("order_type")
     with SessionLocal() as db:
@@ -454,6 +519,7 @@ def get_orders():
 
 @app.route("/api/tables/status", methods=["GET"])
 @app.route("/api/cezar/tables/status", methods=["GET"])
+@db_retry(max_retries=3, delay=0.3)
 def get_all_tables_status():
     with SessionLocal() as db:
         tables_data = []
@@ -502,6 +568,7 @@ def get_all_tables_status():
 
 @app.route("/api/tables/<int:table_number>/bill", methods=["GET"])
 @app.route("/api/cezar/tables/<int:table_number>/bill", methods=["GET"])
+@db_retry(max_retries=3, delay=0.3)
 def get_table_bill(table_number):
     with SessionLocal() as db:
         active_orders = db.query(TableOrder).filter(
@@ -550,6 +617,7 @@ def settle_table_bill(table_number):
 
 @app.route("/api/tables/<int:table_number>/track", methods=["GET"])
 @app.route("/api/cezar/tables/<int:table_number>/track", methods=["GET"])
+@db_retry(max_retries=3, delay=0.3)
 def track_table_orders(table_number):
     with SessionLocal() as db:
         orders = db.query(TableOrder).filter(
@@ -647,6 +715,7 @@ def update_delivery_status(order_id):
 
 @app.route("/api/orders/call-waiter", methods=["POST"])
 @app.route("/api/cezar/orders/call-waiter", methods=["POST"])
+@db_retry(max_retries=3, delay=0.3)
 def call_waiter_endpoint():
     data = request.json or {}
     table_num = int(data.get("table_number") or 1)
@@ -666,6 +735,7 @@ def call_waiter_endpoint():
 
 @app.route("/api/orders/request-bill", methods=["POST"])
 @app.route("/api/cezar/orders/request-bill", methods=["POST"])
+@db_retry(max_retries=3, delay=0.3)
 def request_bill_endpoint():
     data = request.json or {}
     table_num = int(data.get("table_number") or 1)
