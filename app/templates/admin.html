@@ -711,9 +711,7 @@
             <a href="/menu?table=1" target="_blank" class="nav-btn">
                 <i class="fa-solid fa-mobile-screen-button"></i> المنيو
             </a>
-            <a href="/qr-cards" target="_blank" class="nav-btn">
-                <i class="fa-solid fa-qrcode"></i> كروت الـ QR
-            </a>
+
 
             <!-- User Menu -->
             <button class="nav-btn" onclick="openChangeCredModal()" title="تغيير كلمة المرور">
@@ -803,10 +801,7 @@
             <span>التقارير والأكثر مبيعاً</span>
         </button>
 
-        <button class="tab-btn" data-tab="promos" onclick="switchTab('promos', this)">
-            <i class="fa-solid fa-tags"></i>
-            <span>الخصومات والبروموكود</span>
-        </button>
+
 
         <button class="tab-btn" data-tab="staff" onclick="switchTab('staff', this)">
             <i class="fa-solid fa-users-gear"></i>
@@ -908,15 +903,7 @@
 
                 <!-- Cart Bottom Total & Submit -->
                 <div style="border-top: 2px solid var(--border-color); padding-top: 12px; margin-top: 12px;">
-                    <!-- POS Promo Code Box -->
-                    <div style="display: flex; gap: 6px; margin-bottom: 8px;">
-                        <input type="text" id="posPromoCodeInput" placeholder="كود الخصم (اختياري)" style="text-transform: uppercase; flex: 1; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 12px; font-weight: 800;">
-                        <button onclick="applyPosPromoCode()" type="button" style="background: var(--cezar-orange); color: white; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 800; cursor: pointer;">تطبيق</button>
-                    </div>
-                    <div id="posPromoAppliedRow" style="display: none; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 4px; color: #dc3545;">
-                        <span>خصم بروموكود (<span id="posPromoCodeAppliedName"></span>):</span>
-                        <span id="posPromoDiscountVal">-0 ج</span>
-                    </div>
+
 
                     <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 4px;">
                         <span>إجمالي الأصناف:</span>
@@ -1572,7 +1559,7 @@
     <!-- ==================================================== -->
     <!-- TAB 9: Promo Codes & Discounts                       -->
     <!-- ==================================================== -->
-    <main class="tab-content" id="tabPromos">
+    <main class="tab-content" id="tabPromos" style="display: none !important;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
             <div style="font-size: 15px; font-weight: 900; color: var(--primary-espresso);">
                 <i class="fa-solid fa-tags" style="color: var(--cezar-orange);"></i> أكواد الخصم والبروموكود النشطة
