@@ -1896,6 +1896,370 @@ def delete_system_user(user_id):
         db.commit()
         return jsonify({"status": "success", "message": "تم حذف المستخدم بنجاح"})
 
+
+
+# ==========================================
+# Waste, Purchases, Suppliers, Menu Categories & Backup
+# ==========================================
+
+@app.route("/api/inventory/waste", methods=["GET"])
+@app.route("/api/cezar/inventory/waste", methods=["GET"])
+@db_retry(max_retries=3, delay=0.3)
+def get_inventory_waste():
+    month = request.args.get("month")
+    waste_type = request.args.get("waste_type")
+    with SessionLocal() as db:
+        query = db.query(InventoryWaste)
+        if month and month.strip():
+            query = query.filter(InventoryWaste.date.like(f"{month.strip()}%"))
+        if waste_type and waste_type.strip() and waste_type.strip() != "الكل":
+            query = query.filter(InventoryWaste.waste_type == waste_type.strip())
+        
+        records = query.order_by(desc(InventoryWaste.date), desc(InventoryWaste.id)).all()
+        total_cost_loss = sum(r.cost_loss or 0.0 for r in records)
+        total_qty = sum(r.quantity or 0.0 for r in records)
+
+        by_type = {}
+        for r in records:
+            t = r.waste_type or "أخرى"
+            by_type[t] = round(by_type.get(t, 0.0) + (r.cost_loss or 0.0), 2)
+
+        return jsonify({
+            "status": "success",
+            "stats": {
+                "total_records": len(records),
+                "total_cost_loss": round(total_cost_loss, 2),
+                "total_qty_wasted": round(total_qty, 2),
+                "loss_by_type": by_type
+            },
+            "records": [
+                {
+                    "id": r.id,
+                    "item_id": r.item_id,
+                    "item_name": r.item_name,
+                    "quantity": r.quantity,
+                    "unit": r.unit,
+                    "waste_type": r.waste_type,
+                    "cost_loss": r.cost_loss,
+                    "reason": r.reason,
+                    "date": r.date,
+                    "time": r.time,
+                    "responsible_name": r.responsible_name,
+                    "notes": r.notes
+                }
+                for r in records
+            ]
+        })
+
+
+@app.route("/api/inventory/waste", methods=["POST"])
+@app.route("/api/cezar/inventory/waste", methods=["POST"])
+@db_retry(max_retries=3, delay=0.4)
+def record_inventory_waste():
+    data = request.json or {}
+    item_id = int(data.get("item_id") or 0)
+    qty = float(data.get("quantity") or 0.0)
+    waste_type = data.get("waste_type") or "هالك تشغيل"
+    reason = data.get("reason") or ""
+    responsible = data.get("responsible_name") or "كاشير الصالة"
+    notes = data.get("notes") or ""
+
+    if not item_id or qty <= 0:
+        return jsonify({"detail": "يرجى تحديد الصنف والكمية التالفة بشكل صحيح", "status": "error"}), 400
+
+    with SessionLocal() as db:
+        item = db.query(InventoryItem).filter(InventoryItem.id == item_id).first()
+        if not item:
+            return jsonify({"detail": "المادة الخام غير موجودة في المخزن", "status": "error"}), 404
+
+        unit_cost = (item.cost_price or 0.0)
+        cost_loss = round(qty * unit_cost, 2)
+        item.current_stock = max(0.0, round((item.current_stock or 0.0) - qty, 3))
+
+        now = datetime.now()
+        waste_entry = InventoryWaste(
+            item_id=item.id,
+            item_name=item.name,
+            quantity=qty,
+            unit=item.unit,
+            waste_type=waste_type,
+            cost_loss=cost_loss,
+            reason=reason,
+            date=now.strftime("%Y-%m-%d"),
+            time=now.strftime("%I:%M %p"),
+            responsible_name=responsible,
+            notes=notes
+        )
+        db.add(waste_entry)
+        db.commit()
+        db.refresh(waste_entry)
+
+        return jsonify({
+            "status": "success",
+            "message": f"تم تسجيل هالك ({item.name}) بقيمة {cost_loss:g} ج وخصم الكمية من المخزن بنجاح!",
+            "record_id": waste_entry.id,
+            "cost_loss": cost_loss,
+            "new_stock": item.current_stock
+        })
+
+
+@app.route("/api/inventory/waste/<int:waste_id>", methods=["DELETE", "POST"])
+@app.route("/api/cezar/inventory/waste/<int:waste_id>", methods=["DELETE", "POST"])
+@db_retry(max_retries=3, delay=0.3)
+def delete_inventory_waste(waste_id):
+    restore_stock = request.args.get("restore_stock", "true").lower() == "true"
+    with SessionLocal() as db:
+        waste = db.query(InventoryWaste).filter(InventoryWaste.id == waste_id).first()
+        if not waste:
+            return jsonify({"detail": "سجل الهالك غير موجود", "status": "error"}), 404
+
+        if restore_stock and waste.item_id:
+            item = db.query(InventoryItem).filter(InventoryItem.id == waste.item_id).first()
+            if item:
+                item.current_stock = round((item.current_stock or 0.0) + (waste.quantity or 0.0), 3)
+
+        db.delete(waste)
+        db.commit()
+        return jsonify({
+            "status": "success",
+            "message": "تم حذف سجل الهالك بنجاح" + (" وإرجاع الكمية للمخزن." if restore_stock else ".")
+        })
+
+
+@app.route("/api/purchases", methods=["GET"])
+@app.route("/api/cezar/purchases", methods=["GET"])
+@db_retry(max_retries=3, delay=0.3)
+def get_purchases():
+    month = request.args.get("month")
+    with SessionLocal() as db:
+        query = db.query(PurchaseInvoice)
+        if month and month.strip():
+            query = query.filter(PurchaseInvoice.date.like(f"{month.strip()}%"))
+
+        invoices = query.order_by(desc(PurchaseInvoice.id)).all()
+        total_purchases = sum(i.total_amount or 0.0 for i in invoices)
+        total_paid = sum(i.paid_amount or 0.0 for i in invoices)
+        total_remaining = sum(i.remaining_amount or 0.0 for i in invoices)
+
+        res = []
+        for inv in invoices:
+            supp = db.query(Supplier).filter(Supplier.id == inv.supplier_id).first() if inv.supplier_id else None
+            items = db.query(PurchaseInvoiceItem).filter(PurchaseInvoiceItem.invoice_id == inv.id).all()
+            res.append({
+                "id": inv.id,
+                "invoice_number": inv.invoice_number,
+                "supplier_id": inv.supplier_id,
+                "supplier_name": supp.name if supp else "مورد عام / نقدي",
+                "supplier_phone": supp.phone if supp else "",
+                "date": inv.date,
+                "total_amount": inv.total_amount,
+                "paid_amount": inv.paid_amount,
+                "remaining_amount": inv.remaining_amount,
+                "payment_status": inv.payment_status,
+                "notes": inv.notes,
+                "items": [
+                    {
+                        "id": it.id,
+                        "item_name": it.item_name,
+                        "quantity": it.quantity,
+                        "unit": it.unit,
+                        "unit_price": it.unit_price,
+                        "total_price": it.total_price
+                    }
+                    for it in items
+                ]
+            })
+
+        return jsonify({
+            "status": "success",
+            "stats": {
+                "invoices_count": len(invoices),
+                "total_purchases": round(total_purchases, 2),
+                "total_paid": round(total_paid, 2),
+                "total_remaining": round(total_remaining, 2)
+            },
+            "invoices": res
+        })
+
+
+@app.route("/api/purchases", methods=["POST"])
+@app.route("/api/cezar/purchases", methods=["POST"])
+@db_retry(max_retries=3, delay=0.4)
+def record_purchase_invoice():
+    data = request.json or {}
+    supplier_id = int(data.get("supplier_id") or 0) if data.get("supplier_id") else None
+    invoice_number = data.get("invoice_number") or ""
+    date_val = data.get("date") or datetime.now().strftime("%Y-%m-%d")
+    paid_amount = float(data.get("paid_amount") or 0.0)
+    notes = data.get("notes") or ""
+    items = data.get("items") or []
+
+    if not items:
+        return jsonify({"detail": "يجب إضافة بند واحد على الأقل في الفاتورة", "status": "error"}), 400
+
+    with SessionLocal() as db:
+        total_amount = 0.0
+        parsed_items = []
+        for it in items:
+            name = (it.get("item_name") or "").strip()
+            qty = float(it.get("quantity") or 0.0)
+            uprice = float(it.get("unit_price") or 0.0)
+            unit = it.get("unit") or "كجم"
+            sub = round(qty * uprice, 2)
+            total_amount += sub
+            parsed_items.append({"name": name, "qty": qty, "unit": unit, "uprice": uprice, "sub": sub})
+
+        remaining = max(0.0, round(total_amount - paid_amount, 2))
+        payment_status = "مدفوع بالكامل" if remaining == 0 else ("مدفوع جزئياً" if paid_amount > 0 else "آجل / غير مدفوع")
+
+        inv = PurchaseInvoice(
+            invoice_number=invoice_number or f"INV-{int(datetime.now().timestamp())}",
+            supplier_id=supplier_id,
+            date=date_val,
+            total_amount=total_amount,
+            paid_amount=paid_amount,
+            remaining_amount=remaining,
+            payment_status=payment_status,
+            notes=notes
+        )
+        db.add(inv)
+        db.commit()
+        db.refresh(inv)
+
+        for p in parsed_items:
+            db_item = PurchaseInvoiceItem(
+                invoice_id=inv.id,
+                item_name=p["name"],
+                quantity=p["qty"],
+                unit=p["unit"],
+                unit_price=p["uprice"],
+                total_price=p["sub"]
+            )
+            db.add(db_item)
+            
+            raw_item = db.query(InventoryItem).filter(InventoryItem.name == p["name"]).first()
+            if raw_item:
+                raw_item.current_stock = round((raw_item.current_stock or 0.0) + p["qty"], 3)
+                if p["uprice"] > 0:
+                    raw_item.cost_price = p["uprice"]
+            else:
+                db.add(InventoryItem(
+                    name=p["name"],
+                    category="مواد خام",
+                    unit=p["unit"],
+                    current_stock=p["qty"],
+                    min_limit=5.0,
+                    cost_price=p["uprice"]
+                ))
+
+        if supplier_id and remaining > 0:
+            supp = db.query(Supplier).filter(Supplier.id == supplier_id).first()
+            if supp:
+                supp.total_debt = round((supp.total_debt or 0.0) + remaining, 2)
+
+        db.commit()
+        return jsonify({
+            "status": "success",
+            "message": f"تم حفظ فاتورة التوريد بنجاح! الإجمالي: {total_amount:g} ج وتحديث أرصدة المخزن فوراً.",
+            "invoice_id": inv.id,
+            "total_amount": total_amount,
+            "remaining_amount": remaining
+        })
+
+
+@app.route("/api/suppliers/<int:supplier_id>", methods=["DELETE", "POST"])
+@app.route("/api/cezar/suppliers/<int:supplier_id>", methods=["DELETE", "POST"])
+@db_retry(max_retries=3, delay=0.3)
+def delete_supplier(supplier_id):
+    with SessionLocal() as db:
+        s = db.query(Supplier).filter(Supplier.id == supplier_id).first()
+        if not s:
+            return jsonify({"detail": "المورد غير موجود", "status": "error"}), 404
+        db.delete(s)
+        db.commit()
+        return jsonify({"status": "success", "message": "تم حذف المورد بنجاح"})
+
+
+@app.route("/api/menu/categories/rename", methods=["POST"])
+@app.route("/api/cezar/menu/categories/rename", methods=["POST"])
+@db_retry(max_retries=3, delay=0.3)
+def rename_menu_category():
+    data = request.json or {}
+    old_cat = (data.get("old_name") or "").strip()
+    new_cat = (data.get("new_name") or "").strip()
+    if not old_cat or not new_cat:
+        return jsonify({"detail": "يرجى كتابة الاسم القديم والاسم الجديد", "status": "error"}), 400
+    with SessionLocal() as db:
+        items = db.query(MenuItem).filter(MenuItem.category == old_cat).all()
+        for item in items:
+            item.category = new_cat
+        db.commit()
+        return jsonify({"status": "success", "message": f"تم تعديل اسم القسم من ({old_cat}) إلى ({new_cat}) لعدد {len(items)} صنف بنجاح!"})
+
+
+@app.route("/api/menu/categories/delete", methods=["POST"])
+@app.route("/api/cezar/menu/categories/delete", methods=["POST"])
+@db_retry(max_retries=3, delay=0.3)
+def delete_menu_category():
+    data = request.json or {}
+    cat = (data.get("old_name") or "").strip()
+    with SessionLocal() as db:
+        items = db.query(MenuItem).filter(MenuItem.category == cat).all()
+        for item in items:
+            db.delete(item)
+        db.commit()
+        return jsonify({"status": "success", "message": f"تم حذف قسم ({cat}) وجميع أصنافه ({len(items)} صنف) بنجاح"})
+
+
+@app.route("/api/admin/reset-test-data", methods=["POST"])
+@app.route("/api/cezar/admin/reset-test-data", methods=["POST"])
+@db_retry(max_retries=3, delay=0.4)
+def reset_test_data():
+    with SessionLocal() as db:
+        db.query(TableOrder).delete()
+        db.query(Reservation).delete()
+        db.query(WaitingList).delete()
+        db.query(Expense).delete()
+        open_shifts = db.query(Shift).filter(Shift.status == "مفتوح").all()
+        for s in open_shifts:
+            s.status = "مغلق"
+            s.end_time = datetime.utcnow()
+        db.commit()
+        return jsonify({
+            "status": "success",
+            "message": "تم تصفير كافة الطلبات والحجوزات والمصروفات التجريبية بنجاح مع الحفاظ الكامل على المنيو والمخزون والإعدادات!"
+        })
+
+
+@app.route("/api/backup/restore", methods=["POST"])
+@app.route("/api/cezar/backup/restore", methods=["POST"])
+def restore_database_backup():
+    if "file" not in request.files:
+        return jsonify({"detail": "لم يتم اختيار ملف", "status": "error"}), 400
+    file = request.files["file"]
+    if not file.filename.endswith(".db"):
+        return jsonify({"detail": "يجب رفع ملف قاعدة بيانات بصيغة .db فقط", "status": "error"}), 400
+
+    content = file.read()
+    if len(content) < 100 or not content.startswith(b"SQLite format 3"):
+        return jsonify({"detail": "الملف المرفوع ليس ملف قاعدة بيانات SQLite صالح", "status": "error"}), 400
+
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    target_db = os.path.join(base_dir, "cezar_coffee.db")
+    backup_db = os.path.join(base_dir, f"cezar_coffee_backup_before_restore_{int(datetime.now().timestamp())}.db")
+
+    if os.path.exists(target_db):
+        try:
+            shutil.copyfile(target_db, backup_db)
+        except Exception:
+            pass
+
+    with open(target_db, "wb") as f:
+        f.write(content)
+
+    return jsonify({"status": "success", "message": "تم استرجاع قاعدة البيانات بنجاح!"})
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
 
