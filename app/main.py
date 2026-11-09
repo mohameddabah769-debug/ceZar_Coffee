@@ -102,7 +102,7 @@ def get_lan_ip():
 # ==========================================
 
 class TableOrderItem(BaseModel):
-    id: int
+    id: Optional[int] = 0
     name: str
     price: float
     quantity: int = 1
