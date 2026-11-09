@@ -239,12 +239,15 @@ def seed_menu(db: Session):
         "receipt_show_wifi": "true",
         "tables_count": "25",
         "sound_alerts_enabled": "true",
-        "operating_hours": "08:00 AM - 02:00 AM"
+        "operating_hours": "08:00 AM - 02:00 AM",
+        "manager_void_pin": "1234"
     }
     for k, v in default_settings.items():
         if not db.query(CafeSetting).filter(CafeSetting.key == k).first():
             db.add(CafeSetting(key=k, value=str(v), description="إعداد النظام الافتراضي"))
     db.commit()
+
+    seed_recipes(db)
 
     # Seed 25 Table Configs
     if db.query(CafeTableConfig).count() == 0:
@@ -264,3 +267,50 @@ def seed_menu(db: Session):
             db.add(CafeTableConfig(table_number=t, capacity=cap, zone=zone, is_active=True))
         db.commit()
 
+
+
+def seed_recipes(db: Session):
+    """ربط المشروبات الأساسية بمقادير الخامات والجرامات لحساب التكلفة والخصم الآلي."""
+    try:
+        if db.query(MenuItemRecipe).count() > 0:
+            return
+        
+        inv_items = {i.name: i for i in db.query(InventoryItem).all()}
+        espresso_beans = next((v for k, v in inv_items.items() if "إسبريسو" in k or "اسبريسو" in k), None)
+        turkish_beans = next((v for k, v in inv_items.items() if "تركي" in k or "تركى" in k), None)
+        milk = next((v for k, v in inv_items.items() if "حليب" in k or "لبن" in k), None)
+        syrup = next((v for k, v in inv_items.items() if "سيرب" in k), None)
+
+        recipe_map = [
+            ("اسبريسو سنجل", [(espresso_beans, 0.018)]),
+            ("اسبريسو دبل", [(espresso_beans, 0.036)]),
+            ("اسبريسو ميكاتو", [(espresso_beans, 0.018), (milk, 0.05)]),
+            ("اسبريسو فلات وايت", [(espresso_beans, 0.020), (milk, 0.15)]),
+            ("اسبريسو كورتادو", [(espresso_beans, 0.018), (milk, 0.08)]),
+            ("اسبريسو كراميل ميكاتو", [(espresso_beans, 0.018), (milk, 0.18), (syrup, 0.02)]),
+            ("لاتيه كلاسيك", [(espresso_beans, 0.018), (milk, 0.20)]),
+            ("لاتيه فليفر", [(espresso_beans, 0.018), (milk, 0.20), (syrup, 0.02)]),
+            ("كابتشينو كلاسيك", [(espresso_beans, 0.018), (milk, 0.16)]),
+            ("كابتشينو فليفر", [(espresso_beans, 0.018), (milk, 0.16), (syrup, 0.02)]),
+            ("موكا", [(espresso_beans, 0.018), (milk, 0.18)]),
+            ("امريكان كوفى", [(espresso_beans, 0.018)]),
+            ("قهوة تركى سنجل", [(turkish_beans, 0.012)]),
+            ("قهوة تركى دبل", [(turkish_beans, 0.024)]),
+            ("قهوة فرنساوى", [(turkish_beans, 0.012), (milk, 0.15)]),
+        ]
+
+        for item_name, ingredients in recipe_map:
+            m_item = db.query(MenuItem).filter(MenuItem.name == item_name).first()
+            if not m_item:
+                continue
+            total_cost = 0.0
+            for inv_obj, amount in ingredients:
+                if inv_obj:
+                    db.add(MenuItemRecipe(menu_item_id=m_item.id, inventory_item_id=inv_obj.id, amount_used=amount))
+                    total_cost += amount * (inv_obj.cost_per_unit or 0.0)
+            if total_cost > 0:
+                m_item.cost_price = round(total_cost, 2)
+        
+        db.commit()
+    except Exception as e:
+        print(f"Error seeding recipes: {e}")

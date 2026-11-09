@@ -158,6 +158,9 @@ class MenuItemRecipe(Base):
     inventory_item_id = Column(Integer, ForeignKey("inventory_items.id"), nullable=False, index=True)
     amount_used = Column(Float, nullable=False, default=0.02)  # مثلا 0.018 كجم بن أو 0.2 لتر حليب
 
+    menu_item = relationship("MenuItem", backref="recipes")
+    inventory_item = relationship("InventoryItem", backref="menu_recipes")
+
 
 class Employee(Base):
     """شؤون الموظفين وبيانات العاملين في كافيه سيزر."""
@@ -276,3 +279,22 @@ class PurchaseInvoiceItem(Base):
     unit = Column(String(30), default="كجم")
     unit_cost = Column(Float, nullable=False, default=0.0)
     total_cost = Column(Float, nullable=False, default=0.0)
+
+
+class VoidAuditLog(Base):
+    """سجل الرقابة الأمنية والمحذوفات لمنع التلاعب وسرقة الكاشير في الكافيه."""
+    __tablename__ = "void_audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, nullable=True, index=True)
+    table_number = Column(Integer, nullable=True)
+    items_summary = Column(Text, nullable=True)
+    total_amount = Column(Float, default=0.0)
+    reason = Column(String(150), nullable=False)  # سبب الإلغاء المعتمد
+    notes = Column(Text, nullable=True)
+    manager_name = Column(String(100), default="مدير الصالة")
+    manager_pin_used = Column(String(50), nullable=True)
+    cashier_name = Column(String(100), default="كاشير")
+    action_type = Column(String(50), default="إلغاء أوردر كامل")
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+

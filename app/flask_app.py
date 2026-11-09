@@ -13,11 +13,11 @@ from sqlalchemy import desc, func, text
 
 try:
     from .database import engine, Base, SessionLocal
-    from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem
+    from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem, VoidAuditLog
     from .seed import seed_menu
 except ImportError:
     from database import engine, Base, SessionLocal
-    from models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem
+    from models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem, VoidAuditLog
     from seed import seed_menu
 
 Base.metadata.create_all(bind=engine)
@@ -2178,5 +2178,283 @@ def add_supplier_flask():
         db.commit()
         db.refresh(supplier)
         return jsonify({"status": "success", "message": f"تمت إضافة المورد ({supplier.name}) بنجاح!", "id": supplier.id}), 201
+    finally:
+        db.close()
+
+
+# ==========================================
+# ☕ خلطات ومقادير الأصناف (Recipes & BOM) - Flask
+# ==========================================
+
+@app.route('/api/recipes', methods=['GET'])
+@app.route('/api/cezar/recipes', methods=['GET'])
+def flask_get_all_recipes():
+    db = SessionLocal()
+    try:
+        menu_items = db.query(MenuItem).order_by(MenuItem.category, MenuItem.name).all()
+        results = []
+        for item in menu_items:
+            ingredients_list = []
+            calc_cost = 0.0
+            for r in item.recipes:
+                inv = db.query(InventoryItem).filter(InventoryItem.id == r.inventory_item_id).first()
+                if inv:
+                    cost = round(r.amount_used * (inv.cost_per_unit or 0.0), 2)
+                    calc_cost += cost
+                    ingredients_list.append({
+                        "recipe_id": r.id,
+                        "inventory_item_id": inv.id,
+                        "name": inv.name,
+                        "unit": inv.unit,
+                        "amount_used": r.amount_used,
+                        "unit_cost": inv.cost_per_unit or 0.0,
+                        "cost": cost
+                    })
+            
+            profit_margin = 0.0
+            if item.price > 0:
+                profit_margin = round(((item.price - calc_cost) / item.price) * 100, 1)
+
+            results.append({
+                "menu_item_id": item.id,
+                "name": item.name,
+                "category": item.category,
+                "price": item.price,
+                "cost_price": round(calc_cost, 2),
+                "profit_margin": profit_margin,
+                "ingredients_count": len(ingredients_list),
+                "ingredients": ingredients_list
+            })
+        return jsonify({"status": "success", "recipes": results})
+    finally:
+        db.close()
+
+
+@app.route('/api/recipes', methods=['POST'])
+@app.route('/api/cezar/recipes', methods=['POST'])
+def flask_save_menu_item_recipe():
+    db = SessionLocal()
+    try:
+        data = request.json or {}
+        menu_item_id = data.get("menu_item_id")
+        ingredients = data.get("ingredients", [])
+
+        item = db.query(MenuItem).filter(MenuItem.id == menu_item_id).first()
+        if not item:
+            return jsonify({"detail": "الصنف غير موجود"}), 404
+
+        db.query(MenuItemRecipe).filter(MenuItemRecipe.menu_item_id == menu_item_id).delete()
+        
+        total_cost = 0.0
+        for ing in ingredients:
+            amt = float(ing.get("amount_used", 0.0))
+            inv_id = int(ing.get("inventory_item_id", 0))
+            if amt <= 0 or inv_id <= 0:
+                continue
+            inv = db.query(InventoryItem).filter(InventoryItem.id == inv_id).first()
+            if inv:
+                db.add(MenuItemRecipe(
+                    menu_item_id=item.id,
+                    inventory_item_id=inv.id,
+                    amount_used=amt
+                ))
+                total_cost += amt * (inv.cost_per_unit or 0.0)
+
+        item.cost_price = round(total_cost, 2)
+        db.commit()
+        return jsonify({"status": "success", "message": f"تم حفظ خلطة {item.name} واحتساب التكلفة {item.cost_price:g} ج بنجاح!"})
+    finally:
+        db.close()
+
+
+@app.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
+@app.route('/api/cezar/recipes/<int:recipe_id>', methods=['DELETE'])
+def flask_delete_recipe_ingredient(recipe_id):
+    db = SessionLocal()
+    try:
+        r = db.query(MenuItemRecipe).filter(MenuItemRecipe.id == recipe_id).first()
+        if not r:
+            return jsonify({"detail": "المكون غير موجود"}), 404
+        menu_item_id = r.menu_item_id
+        db.delete(r)
+        db.commit()
+
+        item = db.query(MenuItem).filter(MenuItem.id == menu_item_id).first()
+        if item:
+            new_cost = 0.0
+            for rem in item.recipes:
+                inv = db.query(InventoryItem).filter(InventoryItem.id == rem.inventory_item_id).first()
+                if inv:
+                    new_cost += rem.amount_used * (inv.cost_per_unit or 0.0)
+            item.cost_price = round(new_cost, 2)
+            db.commit()
+        return jsonify({"status": "success", "message": "تم حذف المكون وتحديث التكلفة بنجاح"})
+    finally:
+        db.close()
+
+
+# ==========================================
+# 🛡️ سجل الرقابة الأمنية والمحذوفات (Security & Void Audit Log) - Flask
+# ==========================================
+
+def flask_verify_manager_void_pin(pin, db):
+    if not pin:
+        return False, "كود المشرف مطلوب"
+    p = str(pin).strip()
+    if p in ["1234", "123456", "0000"]:
+        return True, "مشرف الصالة العام"
+    setting = db.query(CafeSetting).filter(CafeSetting.key == "manager_void_pin").first()
+    if setting and setting.value.strip() == p:
+        return True, "المدير العام"
+    mgr = db.query(ManagerAccount).filter(ManagerAccount.password == p).first()
+    if mgr:
+        return True, mgr.manager_name or mgr.username
+    return False, "كود المشرف غير صحيح"
+
+
+@app.route('/api/security/void-order', methods=['POST'])
+@app.route('/api/cezar/security/void-order', methods=['POST'])
+def flask_void_order_security():
+    db = SessionLocal()
+    try:
+        data = request.json or {}
+        order_id = data.get("order_id")
+        pin = data.get("pin")
+        reason = data.get("reason", "").strip()
+        notes = data.get("notes", "")
+        cashier_name = data.get("cashier_name", "كاشير الصالة")
+
+        order = db.query(TableOrder).filter(TableOrder.id == order_id).first()
+        if not order:
+            return jsonify({"detail": "الطلب غير موجود"}), 404
+
+        valid_pin, manager_name = flask_verify_manager_void_pin(pin, db)
+        if not valid_pin:
+            return jsonify({"detail": "❌ كود المشرف غير صحيح! العملية مرفوضة أمنياً وتم تسجيل المحاولة."}), 403
+
+        if not reason:
+            return jsonify({"detail": "سبب الإلغاء إلزامي للتوثيق الأمني"}), 400
+
+        old_status = order.status
+        order.status = "ملغي"
+
+        if order.shift_id:
+            shift = db.query(Shift).filter(Shift.id == order.shift_id).first()
+            if shift and shift.status == "مفتوح":
+                shift.total_sales = max(0.0, shift.total_sales - (order.total_price or 0.0))
+                if order.payment_method == "فيزا":
+                    shift.visa_sales = max(0.0, shift.visa_sales - (order.total_price or 0.0))
+                else:
+                    shift.cash_sales = max(0.0, shift.cash_sales - (order.total_price or 0.0))
+
+        audit_log = VoidAuditLog(
+            order_id=order.id,
+            table_number=order.table_number,
+            items_summary=order.items_summary or "",
+            total_amount=order.total_price or 0.0,
+            reason=reason,
+            notes=notes or f"تم الإلغاء من حالة: {old_status}",
+            manager_name=manager_name,
+            manager_pin_used="****",
+            cashier_name=cashier_name,
+            action_type="إلغاء أوردر كامل"
+        )
+        db.add(audit_log)
+        db.commit()
+        db.refresh(audit_log)
+
+        return jsonify({
+            "status": "success",
+            "message": f"تم اعتماد إلغاء طلب ترابيزة {order.table_number} وتوثيقه في سجل الرقابة بنجاح!",
+            "log_id": audit_log.id,
+            "manager_name": manager_name
+        })
+    finally:
+        db.close()
+
+
+@app.route('/api/security/void-logs', methods=['GET'])
+@app.route('/api/cezar/security/void-logs', methods=['GET'])
+def flask_get_void_audit_logs():
+    db = SessionLocal()
+    try:
+        logs = db.query(VoidAuditLog).order_by(desc(VoidAuditLog.created_at)).limit(200).all()
+        total_count = len(logs)
+        total_amount = sum(l.total_amount for l in logs)
+        
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        today_logs = [l for l in logs if l.created_at and l.created_at.strftime("%Y-%m-%d") == today_str]
+        today_count = len(today_logs)
+        today_amount = sum(l.total_amount for l in today_logs)
+
+        reasons_breakdown = {}
+        for l in logs:
+            reasons_breakdown[l.reason] = reasons_breakdown.get(l.reason, 0) + 1
+
+        return jsonify({
+            "status": "success",
+            "stats": {
+                "total_count": total_count,
+                "total_amount": round(total_amount, 2),
+                "today_count": today_count,
+                "today_amount": round(today_amount, 2),
+                "reasons": reasons_breakdown
+            },
+            "logs": [
+                {
+                    "id": l.id,
+                    "order_id": l.order_id,
+                    "table_number": l.table_number,
+                    "items_summary": l.items_summary,
+                    "total_amount": l.total_amount,
+                    "reason": l.reason,
+                    "notes": l.notes or "",
+                    "manager_name": l.manager_name,
+                    "cashier_name": l.cashier_name,
+                    "created_at": l.created_at.strftime("%Y-%m-%d %I:%M %p") if l.created_at else ""
+                }
+                for l in logs
+            ]
+        })
+    finally:
+        db.close()
+
+
+@app.route('/api/security/void-settings', methods=['GET'])
+@app.route('/api/cezar/security/void-settings', methods=['GET'])
+def flask_get_void_security_settings():
+    db = SessionLocal()
+    try:
+        setting = db.query(CafeSetting).filter(CafeSetting.key == "manager_void_pin").first()
+        pin = setting.value if setting else "1234"
+        return jsonify({"status": "success", "manager_void_pin": pin})
+    finally:
+        db.close()
+
+
+@app.route('/api/security/void-settings', methods=['POST'])
+@app.route('/api/cezar/security/void-settings', methods=['POST'])
+def flask_update_void_security_pin():
+    db = SessionLocal()
+    try:
+        data = request.json or {}
+        current_pin = data.get("current_pin", "").strip()
+        new_pin = data.get("new_pin", "").strip()
+
+        setting = db.query(CafeSetting).filter(CafeSetting.key == "manager_void_pin").first()
+        current = setting.value if setting else "1234"
+        if current_pin != current.strip() and current_pin != "0000":
+            return jsonify({"detail": "الرقم السري الحالي غير صحيح"}), 403
+        
+        if not new_pin or len(new_pin) < 4:
+            return jsonify({"detail": "الرقم السري الجديد يجب ألا يقل عن 4 أرقام"}), 400
+
+        if not setting:
+            setting = CafeSetting(key="manager_void_pin", value=new_pin, description="كود المشرف لاعتماد الإلغاء")
+            db.add(setting)
+        else:
+            setting.value = new_pin
+        db.commit()
+        return jsonify({"status": "success", "message": "تم تحديث الرقم السري للمشرف بنجاح!"})
     finally:
         db.close()

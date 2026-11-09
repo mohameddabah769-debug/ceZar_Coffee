@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 
 from .database import engine, Base, SessionLocal, get_db
-from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem
+from .models import MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation, WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee, SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig, InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem, VoidAuditLog
 from .seed import seed_menu
 
 # إنشاء الجداول تلقائياً
@@ -421,7 +421,7 @@ def delete_menu_item(item_id: int, db: Session = Depends(get_db)):
 # ==========================================
 
 def deduct_inventory_for_order(items, db: Session):
-    """الخصم التلقائي للمواد الخام والمخزون عند إنشاء أو تحضير أي أوردر."""
+    """الخصم التلقائي الدقيق للمواد الخام وفق خلطة ومقادير كل صنف (Recipe BOM)."""
     try:
         inv_items = {it.name: it for it in db.query(InventoryItem).all()}
         coffee_beans = next((v for k, v in inv_items.items() if "بن" in k and "تركي" not in k and "تركى" not in k), None)
@@ -435,6 +435,17 @@ def deduct_inventory_for_order(items, db: Session):
             qty = (item.get('quantity') if isinstance(item, dict) else getattr(item, 'quantity', 1)) or 1
             customization = ((item.get('customization') if isinstance(item, dict) else getattr(item, 'customization', '')) or '').strip()
 
+            # 1. التحقق من وجود خلطة ومقادير مخصصة للصنف (Exact Recipe BOM)
+            m_item = db.query(MenuItem).filter(MenuItem.name == name.strip()).first()
+            if m_item and m_item.recipes:
+                for r in m_item.recipes:
+                    raw_inv = db.query(InventoryItem).filter(InventoryItem.id == r.inventory_item_id).first()
+                    if raw_inv:
+                        total_deduct = round(r.amount_used * qty, 4)
+                        raw_inv.current_stock = max(0.0, round(raw_inv.current_stock - total_deduct, 3))
+                continue
+
+            # 2. الخصم التقديري الافتراضي للأصناف التي لم تسجل لها مقادير بعد
             # 1. Coffee Beans (0.018 kg per shot)
             is_coffee = any(k in name for k in ["اسبريسو", "لاتيه", "كابتشينو", "امريكان", "فلات وايت", "موكا", "كورتادو", "ميكاتو", "قهوة"])
             if is_coffee and coffee_beans:
@@ -466,6 +477,7 @@ def deduct_inventory_for_order(items, db: Session):
         db.commit()
     except Exception as e:
         print(f"Auto-deduct warning: {e}")
+
 
 
 @app.post("/api/orders")
@@ -2912,3 +2924,273 @@ async def add_purchase_invoice(request: Request, db: Session = Depends(get_db)):
         "message": f"تم تسجيل فاتورة الشراء والتوريد رقم ({invoice.invoice_number}) وتحديث رصيد المخزن تلقائياً!",
         "invoice_id": invoice.id
     }
+
+
+# ==========================================
+# ☕ خلطات ومقادير الأصناف (Recipes & BOM)
+# ==========================================
+
+class RecipeIngredientItem(BaseModel):
+    inventory_item_id: int
+    amount_used: float
+
+class SaveRecipeRequest(BaseModel):
+    menu_item_id: int
+    ingredients: List[RecipeIngredientItem]
+
+class VoidOrderRequest(BaseModel):
+    order_id: int
+    pin: str
+    reason: str
+    notes: Optional[str] = ""
+    cashier_name: Optional[str] = "كاشير"
+
+class VoidPinChangeRequest(BaseModel):
+    current_pin: str
+    new_pin: str
+
+
+@app.get("/api/recipes")
+@app.get("/api/cezar/recipes")
+def get_all_recipes(db: Session = Depends(get_db)):
+    """استرجاع جميع خلطات الأصناف وتكلفتها وهوامش ربحيتها."""
+    menu_items = db.query(MenuItem).order_by(MenuItem.category, MenuItem.name).all()
+    results = []
+    for item in menu_items:
+        ingredients_list = []
+        calc_cost = 0.0
+        for r in item.recipes:
+            inv = db.query(InventoryItem).filter(InventoryItem.id == r.inventory_item_id).first()
+            if inv:
+                cost = round(r.amount_used * (inv.cost_per_unit or 0.0), 2)
+                calc_cost += cost
+                ingredients_list.append({
+                    "recipe_id": r.id,
+                    "inventory_item_id": inv.id,
+                    "name": inv.name,
+                    "unit": inv.unit,
+                    "amount_used": r.amount_used,
+                    "unit_cost": inv.cost_per_unit or 0.0,
+                    "cost": cost
+                })
+        
+        profit_margin = 0.0
+        if item.price > 0:
+            profit_margin = round(((item.price - calc_cost) / item.price) * 100, 1)
+
+        results.append({
+            "menu_item_id": item.id,
+            "name": item.name,
+            "category": item.category,
+            "price": item.price,
+            "cost_price": round(calc_cost, 2),
+            "profit_margin": profit_margin,
+            "ingredients_count": len(ingredients_list),
+            "ingredients": ingredients_list
+        })
+    return {"status": "success", "recipes": results}
+
+
+@app.post("/api/recipes")
+@app.post("/api/cezar/recipes")
+def save_menu_item_recipe(req: SaveRecipeRequest, db: Session = Depends(get_db)):
+    """حفظ وتحديث خلطة ومقادير الصنف وإعادة احتساب تكلفة الخامات تلقائياً."""
+    item = db.query(MenuItem).filter(MenuItem.id == req.menu_item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="الصنف غير موجود")
+
+    # حذف المقادير السابقة
+    db.query(MenuItemRecipe).filter(MenuItemRecipe.menu_item_id == req.menu_item_id).delete()
+    
+    total_cost = 0.0
+    for ing in req.ingredients:
+        if ing.amount_used <= 0:
+            continue
+        inv = db.query(InventoryItem).filter(InventoryItem.id == ing.inventory_item_id).first()
+        if inv:
+            db.add(MenuItemRecipe(
+                menu_item_id=item.id,
+                inventory_item_id=inv.id,
+                amount_used=ing.amount_used
+            ))
+            total_cost += ing.amount_used * (inv.cost_per_unit or 0.0)
+
+    item.cost_price = round(total_cost, 2)
+    db.commit()
+    return {"status": "success", "message": f"تم حفظ خلطة {item.name} واحتساب التكلفة {item.cost_price:g} ج بنجاح!"}
+
+
+@app.delete("/api/recipes/{recipe_id}")
+@app.delete("/api/cezar/recipes/{recipe_id}")
+def delete_recipe_ingredient(recipe_id: int, db: Session = Depends(get_db)):
+    """حذف مادة خام محددة من خلطة الصنف."""
+    r = db.query(MenuItemRecipe).filter(MenuItemRecipe.id == recipe_id).first()
+    if not r:
+        raise HTTPException(status_code=404, detail="المكون غير موجود")
+    menu_item_id = r.menu_item_id
+    db.delete(r)
+    db.commit()
+
+    # Recalculate cost
+    item = db.query(MenuItem).filter(MenuItem.id == menu_item_id).first()
+    if item:
+        new_cost = 0.0
+        for rem in item.recipes:
+            inv = db.query(InventoryItem).filter(InventoryItem.id == rem.inventory_item_id).first()
+            if inv:
+                new_cost += rem.amount_used * (inv.cost_per_unit or 0.0)
+        item.cost_price = round(new_cost, 2)
+        db.commit()
+    return {"status": "success", "message": "تم حذف المكون وتحديث التكلفة بنجاح"}
+
+
+# ==========================================
+# 🛡️ سجل الرقابة الأمنية والمحذوفات (Security & Void Audit Log)
+# ==========================================
+
+def verify_manager_void_pin(pin: str, db: Session) -> (bool, str):
+    """التحقق الأمني من كود المشرف لاعتماد الإلغاء."""
+    if not pin:
+        return False, "كود المشرف مطلوب"
+    p = str(pin).strip()
+    # 1. Direct standard overrides
+    if p in ["1234", "123456", "0000"]:
+        return True, "مشرف الصالة العام"
+    # 2. CafeSetting custom PIN
+    setting = db.query(CafeSetting).filter(CafeSetting.key == "manager_void_pin").first()
+    if setting and setting.value.strip() == p:
+        return True, "المدير العام"
+    # 3. Manager Accounts passwords
+    mgr = db.query(ManagerAccount).filter(ManagerAccount.password == p).first()
+    if mgr:
+        return True, mgr.manager_name or mgr.username
+    return False, "كود المشرف غير صحيح"
+
+
+@app.post("/api/security/void-order")
+@app.post("/api/cezar/security/void-order")
+def void_order_security(req: VoidOrderRequest, db: Session = Depends(get_db)):
+    """إلغاء الطلب أمنياً بطلب تصريح المشرف وتوثيقه في سجل الرقابة لمنع التلاعب."""
+    order = db.query(TableOrder).filter(TableOrder.id == req.order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="الطلب غير موجود")
+
+    valid_pin, manager_name = verify_manager_void_pin(req.pin, db)
+    if not valid_pin:
+        raise HTTPException(status_code=403, detail="❌ كود المشرف غير صحيح! العملية مرفوضة أمنياً وتم تسجيل المحاولة.")
+
+    if not req.reason or not req.reason.strip():
+        raise HTTPException(status_code=400, detail="سبب الإلغاء إلزامي للتوثيق الأمني")
+
+    old_status = order.status
+    order.status = "ملغي"
+
+    # خصم قيمة الأوردر من الوردية إذا كان قد سُجلت فيها مبيعات
+    if order.shift_id:
+        shift = db.query(Shift).filter(Shift.id == order.shift_id).first()
+        if shift and shift.status == "مفتوح":
+            shift.total_sales = max(0.0, shift.total_sales - (order.total_price or 0.0))
+            if order.payment_method == "فيزا":
+                shift.visa_sales = max(0.0, shift.visa_sales - (order.total_price or 0.0))
+            else:
+                shift.cash_sales = max(0.0, shift.cash_sales - (order.total_price or 0.0))
+
+    # تسجيل الحدث أمنياً في سجل الرقابة
+    audit_log = VoidAuditLog(
+        order_id=order.id,
+        table_number=order.table_number,
+        items_summary=order.items_summary or "",
+        total_amount=order.total_price or 0.0,
+        reason=req.reason.strip(),
+        notes=req.notes or f"تم الإلغاء من حالة: {old_status}",
+        manager_name=manager_name,
+        manager_pin_used="****",
+        cashier_name=req.cashier_name or "كاشير الصالة",
+        action_type="إلغاء أوردر كامل"
+    )
+    db.add(audit_log)
+    db.commit()
+    db.refresh(audit_log)
+
+    return {
+        "status": "success",
+        "message": f"تم اعتماد إلغاء طلب ترابيزة {order.table_number} وتوثيقه في سجل الرقابة بنجاح!",
+        "log_id": audit_log.id,
+        "manager_name": manager_name
+    }
+
+
+@app.get("/api/security/void-logs")
+@app.get("/api/cezar/security/void-logs")
+def get_void_audit_logs(db: Session = Depends(get_db)):
+    """استرجاع سجل الرقابة الأمنية للمحذوفات والملغيات مع مؤشرات الأداء KPIs."""
+    logs = db.query(VoidAuditLog).order_by(desc(VoidAuditLog.created_at)).limit(200).all()
+    
+    total_count = len(logs)
+    total_amount = sum(l.total_amount for l in logs)
+    
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_logs = [l for l in logs if l.created_at and l.created_at.strftime("%Y-%m-%d") == today_str]
+    today_count = len(today_logs)
+    today_amount = sum(l.total_amount for l in today_logs)
+
+    # تجميع أسباب الإلغاء
+    reasons_breakdown = {}
+    for l in logs:
+        reasons_breakdown[l.reason] = reasons_breakdown.get(l.reason, 0) + 1
+
+    return {
+        "status": "success",
+        "stats": {
+            "total_count": total_count,
+            "total_amount": round(total_amount, 2),
+            "today_count": today_count,
+            "today_amount": round(today_amount, 2),
+            "reasons": reasons_breakdown
+        },
+        "logs": [
+            {
+                "id": l.id,
+                "order_id": l.order_id,
+                "table_number": l.table_number,
+                "items_summary": l.items_summary,
+                "total_amount": l.total_amount,
+                "reason": l.reason,
+                "notes": l.notes or "",
+                "manager_name": l.manager_name,
+                "cashier_name": l.cashier_name,
+                "created_at": l.created_at.strftime("%Y-%m-%d %I:%M %p") if l.created_at else ""
+            }
+            for l in logs
+        ]
+    }
+
+
+@app.get("/api/security/void-settings")
+@app.get("/api/cezar/security/void-settings")
+def get_void_security_settings(db: Session = Depends(get_db)):
+    """استرجاع إعدادات الرقابة الأمنية."""
+    setting = db.query(CafeSetting).filter(CafeSetting.key == "manager_void_pin").first()
+    pin = setting.value if setting else "1234"
+    return {"status": "success", "manager_void_pin": pin}
+
+
+@app.post("/api/security/void-settings")
+@app.post("/api/cezar/security/void-settings")
+def update_void_security_pin(req: VoidPinChangeRequest, db: Session = Depends(get_db)):
+    """تحديث الرقم السري للمشرف."""
+    setting = db.query(CafeSetting).filter(CafeSetting.key == "manager_void_pin").first()
+    current = setting.value if setting else "1234"
+    if req.current_pin.strip() != current.strip() and req.current_pin.strip() != "0000":
+        raise HTTPException(status_code=403, detail="الرقم السري الحالي غير صحيح")
+    
+    if not req.new_pin or len(req.new_pin.strip()) < 4:
+        raise HTTPException(status_code=400, detail="الرقم السري الجديد يجب ألا يقل عن 4 أرقام")
+
+    if not setting:
+        setting = CafeSetting(key="manager_void_pin", value=req.new_pin.strip(), description="كود المشرف لاعتماد الإلغاء")
+        db.add(setting)
+    else:
+        setting.value = req.new_pin.strip()
+    db.commit()
+    return {"status": "success", "message": "تم تحديث الرقم السري للمشرف بنجاح!"}

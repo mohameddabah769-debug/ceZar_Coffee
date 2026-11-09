@@ -1137,6 +1137,10 @@
                 <i class="fa-solid fa-truck-moving"></i> الموردين وفواتير الشراء
                 <span id="purchasesCountBadge" style="background: #2563EB; color: white; border-radius: 8px; padding: 1px 7px; font-size: 11px; font-weight: 900; display: none;">0</span>
             </button>
+            <button id="btnSubTabRecipes" class="subtab-pill" onclick="switchInventorySubTab('recipes')" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 13px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; background: #F3F4F6; color: #4B5563; transition: all 0.2s;">
+                <i class="fa-solid fa-mortar-pestle"></i> ☕ خلطات ومقادير الأصناف (Recipes & BOM)
+                <span id="recipesCountBadge" style="background: #D97706; color: white; border-radius: 8px; padding: 1px 7px; font-size: 11px; font-weight: 900;">0</span>
+            </button>
         </div>
 
         <!-- Section 1: Stock & Low Alert -->
@@ -1264,6 +1268,123 @@
                     </thead>
                     <tbody id="wasteTableBody">
                         <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 3: Suppliers & Purchases Invoices -->
+        <div id="sectionInventoryPurchases" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                <div style="background: white; border: 1.5px solid #DBEAFE; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(37,99,235,0.06);">
+                    <div style="font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px;">إجمالي فواتير التوريد</div>
+                    <div id="kpiPurchasesTotalAmount" style="font-size: 22px; font-weight: 900; color: #2563EB;">0 ج</div>
+                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">المشتريات الإجمالية للمخزن</div>
+                </div>
+                <div style="background: white; border: 1.5px solid #DCFCE7; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(22,163,74,0.06);">
+                    <div style="font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px;">المسدد كاش من الدرج</div>
+                    <div id="kpiPurchasesPaid" style="font-size: 22px; font-weight: 900; color: #16A34A;">0 ج</div>
+                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">تم تسجيله كمصروفات وردية</div>
+                </div>
+                <div style="background: white; border: 1.5px solid #FEE2E2; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(220,38,38,0.06);">
+                    <div style="font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px;">إجمالي الآجل والمستحق</div>
+                    <div id="kpiPurchasesRemaining" style="font-size: 22px; font-weight: 900; color: #DC2626;">0 ج</div>
+                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">مديونيات للموردين</div>
+                </div>
+                <div style="background: white; border: 1.5px solid #F3E8FF; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(147,51,234,0.06);">
+                    <div style="font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px;">عدد الموردين المسجلين</div>
+                    <div id="kpiSuppliersCount" style="font-size: 22px; font-weight: 900; color: #9333EA;">0</div>
+                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">شركات ومطاحن وتجار</div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="pin-btn" onclick="openAddPurchaseModal()" style="margin: 0; background: #2563EB; font-size: 13px;">
+                        <i class="fa-solid fa-plus-circle"></i> تسجيل فاتورة توريد / شراء
+                    </button>
+                    <button class="pin-btn" onclick="openAddSupplierModal()" style="margin: 0; background: #4B5563; font-size: 13px;">
+                        <i class="fa-solid fa-user-plus"></i> إضافة مورد جديد
+                    </button>
+                </div>
+                <div style="font-size: 12px; color: #6B7280; font-weight: 800;">
+                    💡 فواتير التوريد تزيد رصيد الخامات في المخزن تلقائياً وتحدث متوسط سعر التكلفة
+                </div>
+            </div>
+
+            <!-- Invoices Table -->
+            <div style="background: white; border-radius: 14px; border: 1.5px solid #E5E7EB; overflow-x: auto; margin-bottom: 24px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: right;">
+                    <thead>
+                        <tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; color: #475569; font-weight: 900;">
+                            <th style="padding: 12px 14px;">التاريخ</th>
+                            <th style="padding: 12px 14px;">رقم الفاتورة</th>
+                            <th style="padding: 12px 14px;">المورد / الشركة</th>
+                            <th style="padding: 12px 14px;">الأصناف والخامات</th>
+                            <th style="padding: 12px 14px;">الإجمالي</th>
+                            <th style="padding: 12px 14px;">طريقة الدفع</th>
+                            <th style="padding: 12px 14px;">المتبقي آجل</th>
+                            <th style="padding: 12px 14px;">ملاحظات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchasesTableBody">
+                        <tr><td colspan="8" style="text-align: center; padding: 20px; color: #9CA3AF;">جاري تحميل فواتير التوريد...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 4: Recipes & BOM (خلطات ومقادير الأصناف) -->
+        <div id="sectionInventoryRecipes" style="display: none;">
+            <!-- KPI Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                <div style="background: white; border: 1.5px solid #FEF3C7; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(217,119,6,0.06);">
+                    <div style="font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px;">الأصناف المربوطة بمقادير دقيقة</div>
+                    <div id="kpiRecipesCount" style="font-size: 22px; font-weight: 900; color: #D97706;">0 صنف</div>
+                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">يتم خصم خاماتها بالجرام آلياً عند البيع</div>
+                </div>
+                <div style="background: white; border: 1.5px solid #DBEAFE; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(37,99,235,0.06);">
+                    <div style="font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px;">متوسط تكلفة المشروب المباشرة</div>
+                    <div id="kpiRecipesAvgCost" style="font-size: 22px; font-weight: 900; color: #2563EB;">0 ج</div>
+                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">تكلفة البن والحليب والسيرب والأكواب</div>
+                </div>
+                <div style="background: white; border: 1.5px solid #DCFCE7; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(22,163,74,0.06);">
+                    <div style="font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px;">متوسط هامش الربح الإجمالي</div>
+                    <div id="kpiRecipesAvgMargin" style="font-size: 22px; font-weight: 900; color: #16A34A;">0%</div>
+                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">(سعر البيع - تكلفة الخامات) / سعر البيع</div>
+                </div>
+            </div>
+
+            <!-- Filter & Search Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; gap: 8px; align-items: center; flex: 1; max-width: 400px;">
+                    <div style="position: relative; width: 100%;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; right: 12px; top: 11px; color: #9CA3AF;"></i>
+                        <input type="text" id="recipeSearchInput" oninput="renderRecipesTable()" placeholder="ابحث باسم المشروب أو الصنف..." style="width: 100%; padding: 9px 36px 9px 12px; border-radius: 10px; border: 1.5px solid #D1D5DB; font-size: 12px; font-weight: 800; box-sizing: border-box;">
+                    </div>
+                </div>
+                <div id="recipeCategoryPills" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;">
+                    <!-- Filter Pills rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Recipes Table -->
+            <div style="background: white; border-radius: 14px; border: 1.5px solid #E5E7EB; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: right;">
+                    <thead>
+                        <tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; color: #475569; font-weight: 900;">
+                            <th style="padding: 12px 14px;">الصنف والمشروب</th>
+                            <th style="padding: 12px 14px;">القسم</th>
+                            <th style="padding: 12px 14px;">خلطة المكونات والجرامات (BOM)</th>
+                            <th style="padding: 12px 14px;">تكلفة الخامات</th>
+                            <th style="padding: 12px 14px;">سعر البيع</th>
+                            <th style="padding: 12px 14px;">هامش الربح</th>
+                            <th style="padding: 12px 14px; text-align: center;">إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recipesTableBody">
+                        <tr><td colspan="7" style="text-align: center; padding: 20px; color: #9CA3AF;">جاري تحميل خلطات ومقادير الأصناف...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1847,6 +1968,10 @@
             <button class="filter-pill" id="pillOwnerMaintenance" onclick="switchOwnerSubTab('maintenance')">
                 <i class="fa-solid fa-database" style="color: #DC2626;"></i> النسخ الاحتياطي والصيانة
             </button>
+            <button class="filter-pill" id="pillOwnerSecurity" onclick="switchOwnerSubTab('security')" style="border: 1.5px solid #DC2626; color: #B91C1C; font-weight: 900;">
+                <i class="fa-solid fa-shield-halved" style="color: #DC2626;"></i> سجل الرقابة ومنع التلاعب 🛡️
+                <span id="badgeVoidCount" style="background: #DC2626; color: white; border-radius: 8px; padding: 1px 7px; font-size: 11px; font-weight: 900; margin-right: 4px; display: none;">0</span>
+            </button>
         </div>
 
         <!-- 1. Store Profile & Branding -->
@@ -2273,11 +2398,238 @@
                 </div>
             </div>
         </div>
+
+        <!-- 7. Security & Void Audit Log (سجل الرقابة الأمنية والمحذوفات) -->
+        <div id="ownerSubSecurity" class="owner-panel" style="display: none;">
+            <!-- Top KPI Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                <div style="background: white; border: 1.5px solid #FEE2E2; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(220,38,38,0.06);">
+                    <div style="font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px;">إجمالي العمليات الملغاة</div>
+                    <div id="kpiVoidTotalCount" style="font-size: 24px; font-weight: 900; color: #DC2626;">0</div>
+                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">عملية تم توثيقها برمز المشرف</div>
+                </div>
+                <div style="background: white; border: 1.5px solid #FEE2E2; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(220,38,38,0.06);">
+                    <div style="font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px;">إجمالي المبالغ الملغاة</div>
+                    <div id="kpiVoidTotalAmount" style="font-size: 24px; font-weight: 900; color: #B91C1C;">0 ج</div>
+                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">مبيعات تم إلغاؤها بعد تسجيلها</div>
+                </div>
+                <div style="background: white; border: 1.5px solid #FEF3C7; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(217,119,6,0.06);">
+                    <div style="font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px;">ملغيات اليوم الحالي</div>
+                    <div id="kpiVoidTodayAmount" style="font-size: 24px; font-weight: 900; color: #D97706;">0 ج</div>
+                    <div id="kpiVoidTodayCount" style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">0 عملية اليوم</div>
+                </div>
+                <div style="background: white; border: 1.5px solid #EFF6FF; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(37,99,235,0.06);">
+                    <div style="font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px;">أكثر أسباب الإلغاء تكراراً</div>
+                    <div id="kpiVoidTopReason" style="font-size: 15px; font-weight: 900; color: #1E40AF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
+                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">تحليل أخطاء الكاشير والتشغيل</div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <div style="font-size: 14px; font-weight: 900; color: #1F2937; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-shield-halved" style="color: #DC2626;"></i> سجل المحذوفات وتصاريح المشرفين (Void Audit Logs)
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="pin-btn" onclick="openChangeVoidPinModal()" style="margin: 0; background: #374151; font-size: 12px;">
+                        <i class="fa-solid fa-key"></i> تغيير كود المشرف (PIN)
+                    </button>
+                    <button class="pin-btn" onclick="printVoidAuditReport()" style="margin: 0; background: #DC2626; font-size: 12px;">
+                        <i class="fa-solid fa-print"></i> طباعة تقرير الرقابة المعتمد
+                    </button>
+                </div>
+            </div>
+
+            <!-- Void Logs Table -->
+            <div style="background: white; border-radius: 14px; border: 1.5px solid #E5E7EB; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: right;">
+                    <thead>
+                        <tr style="background: #FEF2F2; border-bottom: 2px solid #FCA5A5; color: #991B1B; font-weight: 900;">
+                            <th style="padding: 12px 14px;">الوقت والتاريخ</th>
+                            <th style="padding: 12px 14px;">الترابيزة / الطلب</th>
+                            <th style="padding: 12px 14px;">تفاصيل الأصناف الملغاة</th>
+                            <th style="padding: 12px 14px;">المبلغ الملغي</th>
+                            <th style="padding: 12px 14px;">سبب الإلغاء</th>
+                            <th style="padding: 12px 14px;">المشرف المعتمد</th>
+                            <th style="padding: 12px 14px;">الكاشير المنفذ</th>
+                            <th style="padding: 12px 14px;">ملاحظات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="voidLogsTableBody">
+                        <tr><td colspan="8" style="text-align: center; padding: 20px; color: #9CA3AF;">جاري تحميل سجل الرقابة الأمنية...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </main>
 
 
     <!-- MODALS & DIALOGS                                     -->
     <!-- ==================================================== -->
+
+    <!-- ==================================================== -->
+    <!-- MODAL: Void Authorization by Manager PIN             -->
+    <!-- ==================================================== -->
+    <div id="voidAuthorizationModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 20px; width: 95%; max-width: 480px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);">
+            <div style="background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%); color: white; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 16px; font-weight: 900;">تصريح المشرف لإلغاء الطلب 🛡️</h3>
+                        <div style="font-size: 11px; opacity: 0.9; margin-top: 2px;">توثيق أمني لمنع التلاعب وسرقة الكاشير</div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeVoidAuthModal()" style="background: transparent; border: none; color: white; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <div style="padding: 20px 24px;">
+                <div id="voidOrderDetailsBox" style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;">
+                    <!-- dynamic details -->
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 12px; font-weight: 800; color: #374151; margin-bottom: 6px;">
+                        سبب الإلغاء (إلزامي للرقابة) <span style="color: #dc2626;">*</span>
+                    </label>
+                    <select id="voidReasonSelect" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #D1D5DB; font-size: 13px; font-weight: 800; background: #F9FAFB;">
+                        <option value="">-- اختر سبب الإلغاء المعتمد --</option>
+                        <option value="خطأ في تسجيل الصنف من الكاشير">⚠️ خطأ في تسجيل الصنف من الكاشير</option>
+                        <option value="الزبون تراجع / غير رأيه قبل التحضير">🙋‍♂️ الزبون تراجع / غير رأيه قبل التحضير</option>
+                        <option value="مشكلة في جودة المشروب أو حرارته">☕ مشكلة في جودة المشروب أو حرارته</option>
+                        <option value="تأخر تحضير الطلب من البار/المطبخ">⏳ تأخر تحضير الطلب من البار أو المطبخ</option>
+                        <option value="تكرار الطلب عن طريق الخطأ">🔄 تكرار الطلب عن طريق الخطأ (Duplicate)</option>
+                        <option value="أخرى (مع ذكر التفاصيل)">📝 سبب آخر (توضيح في الملاحظات)</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 800; color: #374151; margin-bottom: 6px;">
+                        ملاحظات أو توضيح إضافي
+                    </label>
+                    <input type="text" id="voidNotesInput" placeholder="مثال: تم إبلاغ الباريستا بعدم تحضير المشروب" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #D1D5DB; font-size: 12px; box-sizing: border-box;">
+                </div>
+
+                <div style="background: #F3F4F6; border-radius: 14px; padding: 14px; text-align: center;">
+                    <label style="display: block; font-size: 12px; font-weight: 900; color: #1F2937; margin-bottom: 8px;">
+                        أدخل كود المشرف (Manager PIN) <i class="fa-solid fa-key" style="color: #991b1b;"></i>
+                    </label>
+                    <input type="password" id="voidPinInput" maxlength="8" placeholder="••••" style="width: 160px; text-align: center; font-size: 24px; font-weight: 900; letter-spacing: 8px; padding: 8px 12px; border-radius: 10px; border: 2px solid #991b1b; background: white; margin: 0 auto 12px auto; display: block;">
+                    
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-width: 220px; margin: 0 auto;">
+                        <button type="button" class="keypad-btn" onclick="addVoidPinDigit('1')">1</button>
+                        <button type="button" class="keypad-btn" onclick="addVoidPinDigit('2')">2</button>
+                        <button type="button" class="keypad-btn" onclick="addVoidPinDigit('3')">3</button>
+                        <button type="button" class="keypad-btn" onclick="addVoidPinDigit('4')">4</button>
+                        <button type="button" class="keypad-btn" onclick="addVoidPinDigit('5')">5</button>
+                        <button type="button" class="keypad-btn" onclick="addVoidPinDigit('6')">6</button>
+                        <button type="button" class="keypad-btn" onclick="addVoidPinDigit('7')">7</button>
+                        <button type="button" class="keypad-btn" onclick="addVoidPinDigit('8')">8</button>
+                        <button type="button" class="keypad-btn" onclick="addVoidPinDigit('9')">9</button>
+                        <button type="button" class="keypad-btn" onclick="clearVoidPin()" style="background: #FEE2E2; color: #991b1b;">C</button>
+                        <button type="button" class="keypad-btn" onclick="addVoidPinDigit('0')">0</button>
+                        <button type="button" class="keypad-btn" onclick="backspaceVoidPin()"><i class="fa-solid fa-delete-left"></i></button>
+                    </div>
+                    <div id="voidErrorAlert" style="display: none; color: #dc2626; font-size: 11px; font-weight: 800; margin-top: 8px;"></div>
+                </div>
+            </div>
+
+            <div style="padding: 14px 24px; background: #F9FAFB; border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" onclick="closeVoidAuthModal()" style="padding: 9px 18px; border-radius: 10px; border: 1.5px solid #D1D5DB; background: white; font-weight: 800; font-size: 12px; cursor: pointer;">
+                    تراجع وإلغاء
+                </button>
+                <button type="button" id="btnSubmitVoid" onclick="submitVoidAuthorization()" style="padding: 9px 24px; border-radius: 10px; border: none; background: #991b1b; color: white; font-weight: 900; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-check"></i>
+                    اعتماد الإلغاء وتوثيقه
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==================================================== -->
+    <!-- MODAL: Recipe Editor (خلطة ومقادير الصنف)            -->
+    <!-- ==================================================== -->
+    <div id="recipeEditorModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 20px; width: 95%; max-width: 640px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);">
+            <div style="background: linear-gradient(135deg, #2b1810 0%, #150a05 100%); color: #D4AF37; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #D4AF37;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(212,175,55,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #D4AF37;">
+                        <i class="fa-solid fa-mortar-pestle"></i>
+                    </div>
+                    <div>
+                        <h3 id="recipeModalItemName" style="margin: 0; font-size: 16px; font-weight: 900; color: white;">خلطة ومقادير الصنف</h3>
+                        <div id="recipeModalItemMeta" style="font-size: 11px; color: #D4AF37; margin-top: 2px;">سعر البيع: 0 ج | التصنيف: -</div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeRecipeModal()" style="background: transparent; border: none; color: #D4AF37; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <div style="padding: 20px 24px;">
+                <!-- Instructions / Summary Box -->
+                <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div style="font-size: 11px; color: #92400E; font-weight: 800;">إجمالي تكلفة الخامات للمشروب:</div>
+                        <div id="recipeModalTotalCost" style="font-size: 20px; font-weight: 900; color: #B45309;">0 ج</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #92400E; font-weight: 800;">هامش الربح الصافي:</div>
+                        <div id="recipeModalProfitMargin" style="font-size: 20px; font-weight: 900; color: #15803D;">0%</div>
+                    </div>
+                    <button type="button" onclick="addRecipeIngredientRow()" class="pin-btn" style="margin: 0; background: #D97706; font-size: 12px; padding: 7px 14px;">
+                        <i class="fa-solid fa-plus"></i> إضافة خامة للخلطة
+                    </button>
+                </div>
+
+                <!-- Ingredients Dynamic Container -->
+                <div id="recipeIngredientsContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                    <!-- Rows dynamically generated -->
+                </div>
+            </div>
+
+            <div style="padding: 14px 24px; background: #F9FAFB; border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" onclick="closeRecipeModal()" style="padding: 9px 18px; border-radius: 10px; border: 1.5px solid #D1D5DB; background: white; font-weight: 800; font-size: 12px; cursor: pointer;">
+                    إغلاق
+                </button>
+                <button type="button" onclick="saveRecipeModal()" style="padding: 9px 24px; border-radius: 10px; border: none; background: #2563EB; color: white; font-weight: 900; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-save"></i>
+                    حفظ الخلطة واحتساب التكلفة تلقائياً
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==================================================== -->
+    <!-- MODAL: Change Void Supervisor PIN                    -->
+    <!-- ==================================================== -->
+    <div id="changeVoidPinModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 20px; width: 95%; max-width: 400px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);">
+            <div style="background: #1F2937; color: white; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="margin: 0; font-size: 15px; font-weight: 900; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-key" style="color: #F59E0B;"></i> تغيير كود المشرف لاعتماد الإلغاء
+                </h3>
+                <button type="button" onclick="closeChangeVoidPinModal()" style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div style="padding: 20px 24px;">
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 12px; font-weight: 800; color: #374151; margin-bottom: 6px;">الكود الحالي (الافتراضي 1234 أو 0000)</label>
+                    <input type="password" id="currentVoidPinInput" placeholder="••••" style="width: 100%; padding: 10px; border-radius: 10px; border: 1.5px solid #D1D5DB; font-size: 16px; text-align: center; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 800; color: #374151; margin-bottom: 6px;">الكود الجديد (4 أرقام أو أكثر)</label>
+                    <input type="password" id="newVoidPinInput" placeholder="••••" style="width: 100%; padding: 10px; border-radius: 10px; border: 1.5px solid #D1D5DB; font-size: 16px; text-align: center; box-sizing: border-box;">
+                </div>
+            </div>
+            <div style="padding: 14px 24px; background: #F9FAFB; border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between;">
+                <button type="button" onclick="closeChangeVoidPinModal()" style="padding: 8px 16px; border-radius: 10px; border: 1.5px solid #D1D5DB; background: white; font-weight: 800; font-size: 12px; cursor: pointer;">إلغاء</button>
+                <button type="button" onclick="submitChangeVoidPin()" style="padding: 8px 20px; border-radius: 10px; border: none; background: #1F2937; color: white; font-weight: 900; font-size: 12px; cursor: pointer;">حفظ الكود الجديد</button>
+            </div>
+        </div>
+    </div>
+
 
     
     <!-- Add / Edit Employee Modal -->
@@ -3535,6 +3887,10 @@
         }
 
         async function updateOrderStatus(orderId, newStatus) {
+            if (newStatus === 'ملغي') {
+                openVoidAuthModal(orderId);
+                return;
+            }
             try {
                 await fetch(`/api/orders/${orderId}/status`, {
                     method: 'POST',
@@ -4909,15 +5265,17 @@
             const btnStock = document.getElementById('btnSubTabStock');
             const btnWaste = document.getElementById('btnSubTabWaste');
             const btnPurchases = document.getElementById('btnSubTabPurchases');
+            const btnRecipes = document.getElementById('btnSubTabRecipes');
             const secStock = document.getElementById('sectionInventoryStock');
             const secWaste = document.getElementById('sectionInventoryWaste');
             const secPurchases = document.getElementById('sectionInventoryPurchases');
+            const secRecipes = document.getElementById('sectionInventoryRecipes');
 
             // Reset all buttons and sections
-            [btnStock, btnWaste, btnPurchases].forEach(b => {
+            [btnStock, btnWaste, btnPurchases, btnRecipes].forEach(b => {
                 if (b) { b.style.background = '#F3F4F6'; b.style.color = '#4B5563'; }
             });
-            [secStock, secWaste, secPurchases].forEach(s => {
+            [secStock, secWaste, secPurchases, secRecipes].forEach(s => {
                 if (s) s.style.display = 'none';
             });
 
@@ -4934,6 +5292,10 @@
                 if (secPurchases) secPurchases.style.display = 'block';
                 fetchPurchases();
                 fetchSuppliers();
+            } else if (sub === 'recipes') {
+                if (btnRecipes) { btnRecipes.style.background = '#D97706'; btnRecipes.style.color = 'white'; }
+                if (secRecipes) secRecipes.style.display = 'block';
+                fetchRecipes();
             }
         }
 
@@ -7080,6 +7442,12 @@
             } else if (sub === 'maintenance') {
                 document.getElementById('pillOwnerMaintenance').classList.add('active');
                 document.getElementById('ownerSubMaintenance').style.display = 'block';
+            } else if (sub === 'security') {
+                const pSec = document.getElementById('pillOwnerSecurity');
+                if (pSec) pSec.classList.add('active');
+                const oSec = document.getElementById('ownerSubSecurity');
+                if (oSec) oSec.style.display = 'block';
+                fetchVoidLogs();
             }
         }
 
@@ -7565,6 +7933,542 @@
             }
         }
 
+
+
+        // ====================================================
+        // ☕ RECIPE BOM ENGINE (خلطات ومقادير الأصناف وتكلفة الخامات)
+        // ====================================================
+        var allRecipesList = [];
+        var allInventoryRawItems = [];
+        var currentEditingRecipeItem = null;
+        var selectedRecipeCategory = 'الكل';
+
+        async function fetchRecipes() {
+            try {
+                // Fetch inventory raw items for dropdown
+                const invRes = await fetch('/api/inventory');
+                const invData = await invRes.json();
+                allInventoryRawItems = (invData.status === 'success' && invData.inventory) ? invData.inventory : [];
+
+                const res = await fetch('/api/recipes');
+                const data = await res.json();
+                if (data.status === 'success' && data.recipes) {
+                    allRecipesList = data.recipes;
+                    
+                    // Render KPI Cards
+                    const withRecipes = allRecipesList.filter(r => r.ingredients_count > 0);
+                    const kpiCount = document.getElementById('kpiRecipesCount');
+                    if (kpiCount) kpiCount.innerText = `${withRecipes.length} صنف`;
+                    const badgeCount = document.getElementById('recipesCountBadge');
+                    if (badgeCount) badgeCount.innerText = withRecipes.length;
+
+                    if (withRecipes.length > 0) {
+                        const totalCost = withRecipes.reduce((sum, r) => sum + r.cost_price, 0);
+                        const avgCost = totalCost / withRecipes.length;
+                        const kpiAvgCost = document.getElementById('kpiRecipesAvgCost');
+                        if (kpiAvgCost) kpiAvgCost.innerText = `${avgCost.toFixed(1)} ج`;
+
+                        const totalMargin = withRecipes.reduce((sum, r) => sum + r.profit_margin, 0);
+                        const avgMargin = totalMargin / withRecipes.length;
+                        const kpiAvgMargin = document.getElementById('kpiRecipesAvgMargin');
+                        if (kpiAvgMargin) kpiAvgMargin.innerText = `${avgMargin.toFixed(0)}%`;
+                    }
+
+                    // Populate category filter pills
+                    const cats = ['الكل', ...new Set(allRecipesList.map(r => r.category))];
+                    const pillsBox = document.getElementById('recipeCategoryPills');
+                    if (pillsBox) {
+                        pillsBox.innerHTML = cats.map(c => `
+                            <button type="button" class="filter-pill ${c === selectedRecipeCategory ? 'active' : ''}" onclick="filterRecipesByCategory('${c}', this)">
+                                ${c}
+                            </button>
+                        `).join('');
+                    }
+
+                    renderRecipesTable();
+                }
+            } catch(e) {
+                console.error("Error fetching recipes:", e);
+            }
+        }
+
+        function filterRecipesByCategory(cat, btn) {
+            selectedRecipeCategory = cat;
+            document.querySelectorAll('#recipeCategoryPills .filter-pill').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderRecipesTable();
+        }
+
+        function renderRecipesTable() {
+            const tbody = document.getElementById('recipesTableBody');
+            if (!tbody) return;
+
+            const search = (document.getElementById('recipeSearchInput') ? document.getElementById('recipeSearchInput').value : '').trim().toLowerCase();
+            let filtered = allRecipesList.filter(r => {
+                const matchCat = (selectedRecipeCategory === 'الكل' || r.category === selectedRecipeCategory);
+                const matchSearch = (!search || r.name.toLowerCase().includes(search) || r.category.toLowerCase().includes(search));
+                return matchCat && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: #9CA3AF; font-size: 13px;">لا توجد أصناف مطابقة للبحث</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(r => {
+                // Badges of ingredients
+                let ingBadges = '';
+                if (r.ingredients && r.ingredients.length > 0) {
+                    ingBadges = r.ingredients.map(ing => `
+                        <span style="display: inline-flex; align-items: center; gap: 4px; background: #FEF3C7; color: #92400E; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid #FDE68A; margin: 2px;">
+                            ${ing.name}: <b>${ing.amount_used} ${ing.unit}</b> (ج)
+                        </span>
+                    `).join('');
+                } else {
+                    ingBadges = `<span style="color: #9CA3AF; font-size: 11px;">⚠️ لم تحدد المقادير بعد (خصم تقديري)</span>`;
+                }
+
+                const marginColor = r.profit_margin >= 60 ? '#16A34A' : (r.profit_margin >= 40 ? '#D97706' : '#DC2626');
+                const marginBg = r.profit_margin >= 60 ? '#DCFCE7' : (r.profit_margin >= 40 ? '#FEF3C7' : '#FEE2E2');
+
+                return `
+                    <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.15s;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 12px 14px; font-weight: 900; color: #1F2937;">
+                            <i class="fa-solid fa-mug-hot" style="color: #D97706; margin-left: 6px;"></i> ${r.name}
+                        </td>
+                        <td style="padding: 12px 14px; color: #6B7280; font-weight: 800;">${r.category}</td>
+                        <td style="padding: 12px 14px; max-width: 320px;">${ingBadges}</td>
+                        <td style="padding: 12px 14px; font-weight: 900; color: #B45309;"> ج</td>
+                        <td style="padding: 12px 14px; font-weight: 900; color: #1F2937;"> ج</td>
+                        <td style="padding: 12px 14px;">
+                            <span style="background: ${marginBg}; color: ${marginColor}; padding: 3px 10px; border-radius: 8px; font-weight: 900; font-size: 12px;">
+                                ${r.profit_margin}%
+                            </span>
+                        </td>
+                        <td style="padding: 12px 14px; text-align: center;">
+                            <button type="button" onclick="openRecipeEditor(${r.menu_item_id})" class="pin-btn" style="margin: 0; padding: 6px 14px; font-size: 11px; background: #2563EB; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-sliders"></i> ضبط الخلطة
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openRecipeEditor(itemId) {
+            currentEditingRecipeItem = allRecipesList.find(r => r.menu_item_id === itemId);
+            if (!currentEditingRecipeItem) return;
+
+            document.getElementById('recipeModalItemName').innerText = `خلطة ومقادير: ${currentEditingRecipeItem.name}`;
+            document.getElementById('recipeModalItemMeta').innerText = `سعر البيع: ${currentEditingRecipeItem.price} ج | القسم: ${currentEditingRecipeItem.category}`;
+
+            const container = document.getElementById('recipeIngredientsContainer');
+            container.innerHTML = '';
+
+            if (currentEditingRecipeItem.ingredients && currentEditingRecipeItem.ingredients.length > 0) {
+                currentEditingRecipeItem.ingredients.forEach(ing => {
+                    addRecipeIngredientRow(ing.inventory_item_id, ing.amount_used);
+                });
+            } else {
+                // Add default empty row
+                addRecipeIngredientRow();
+            }
+
+            calcRecipeModalTotals();
+            document.getElementById('recipeEditorModal').style.display = 'flex';
+        }
+
+        function closeRecipeModal() {
+            document.getElementById('recipeEditorModal').style.display = 'none';
+            currentEditingRecipeItem = null;
+        }
+
+        function addRecipeIngredientRow(selectedInvId = null, amount = 0.018) {
+            const container = document.getElementById('recipeIngredientsContainer');
+            if (!container) return;
+
+            const row = document.createElement('div');
+            row.className = 'recipe-ingredient-row';
+            row.style = 'display: flex; gap: 10px; align-items: center; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px 14px; flex-wrap: wrap;';
+
+            // Options
+            const opts = allInventoryRawItems.map(inv => `
+                <option value="${inv.id}" data-unit="${inv.unit}" data-cost="${inv.cost_per_unit || 0}" ${selectedInvId == inv.id ? 'selected' : ''}>
+                    ${inv.name} (الوحدة: ${inv.unit} - التكلفة: ${inv.cost_per_unit || 0}ج)
+                </option>
+            `).join('');
+
+            row.innerHTML = `
+                <div style="flex: 2; min-width: 200px;">
+                    <label style="display: block; font-size: 11px; font-weight: 800; color: #64748B; margin-bottom: 4px;">المادة الخام / المكون</label>
+                    <select class="recipe-inv-select" onchange="calcRecipeModalTotals()" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-size: 12px; font-weight: 800; background: white;">
+                        <option value="">-- اختر مادة خام من المخزن --</option>
+                        ${opts}
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 110px;">
+                    <label style="display: block; font-size: 11px; font-weight: 800; color: #64748B; margin-bottom: 4px;">الكمية المستخدمة</label>
+                    <input type="number" step="0.001" min="0" value="${amount}" class="recipe-amount-input" oninput="calcRecipeModalTotals()" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-size: 12px; font-weight: 800; box-sizing: border-box;">
+                </div>
+                <div style="min-width: 80px; text-align: center;">
+                    <label style="display: block; font-size: 11px; font-weight: 800; color: #64748B; margin-bottom: 4px;">التكلفة</label>
+                    <span class="recipe-line-cost" style="font-size: 13px; font-weight: 900; color: #B45309;">0 ج</span>
+                </div>
+                <button type="button" onclick="this.closest('.recipe-ingredient-row').remove(); calcRecipeModalTotals();" style="background: #FEE2E2; color: #DC2626; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; margin-top: 18px;" title="حذف المكون">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            `;
+            container.appendChild(row);
+            calcRecipeModalTotals();
+        }
+
+        function calcRecipeModalTotals() {
+            if (!currentEditingRecipeItem) return;
+            let totalCost = 0.0;
+            const rows = document.querySelectorAll('#recipeIngredientsContainer .recipe-ingredient-row');
+            rows.forEach(r => {
+                const sel = r.querySelector('.recipe-inv-select');
+                const amtInput = r.querySelector('.recipe-amount-input');
+                const costSpan = r.querySelector('.recipe-line-cost');
+                
+                const amt = parseFloat(amtInput ? amtInput.value : 0) || 0;
+                let unitCost = 0.0;
+                if (sel && sel.selectedIndex >= 0) {
+                    const opt = sel.options[sel.selectedIndex];
+                    unitCost = parseFloat(opt.getAttribute('data-cost')) || 0;
+                }
+                const lineCost = amt * unitCost;
+                totalCost += lineCost;
+                if (costSpan) costSpan.innerText = `${lineCost.toFixed(2)} ج`;
+            });
+
+            const costBox = document.getElementById('recipeModalTotalCost');
+            if (costBox) costBox.innerText = `${totalCost.toFixed(2)} ج`;
+
+            const price = currentEditingRecipeItem.price || 0;
+            let margin = 0.0;
+            if (price > 0) {
+                margin = Math.max(0, ((price - totalCost) / price) * 100);
+            }
+            const marginBox = document.getElementById('recipeModalProfitMargin');
+            if (marginBox) marginBox.innerText = `${margin.toFixed(0)}%`;
+        }
+
+        async function saveRecipeModal() {
+            if (!currentEditingRecipeItem) return;
+            const rows = document.querySelectorAll('#recipeIngredientsContainer .recipe-ingredient-row');
+            const ingredients = [];
+            rows.forEach(r => {
+                const sel = r.querySelector('.recipe-inv-select');
+                const amtInput = r.querySelector('.recipe-amount-input');
+                const invId = parseInt(sel ? sel.value : 0);
+                const amt = parseFloat(amtInput ? amtInput.value : 0) || 0;
+                if (invId > 0 && amt > 0) {
+                    ingredients.push({ inventory_item_id: invId, amount_used: amt });
+                }
+            });
+
+            try {
+                const res = await fetch('/api/recipes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        menu_item_id: currentEditingRecipeItem.menu_item_id,
+                        ingredients: ingredients
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert(`✅ ${data.message}`);
+                    closeRecipeModal();
+                    fetchRecipes();
+                } else {
+                    alert(`❌ حدث خطأ: ${data.detail || 'تعذر الحفظ'}`);
+                }
+            } catch(e) {
+                alert(`❌ فشل الاتصال بالسيرفر: ${e}`);
+            }
+        }
+
+
+        // ====================================================
+        // 🛡️ SECURITY & VOID AUDIT ENGINE (الرقابة ومنع التلاعب)
+        // ====================================================
+        var pendingVoidOrder = null;
+        var voidPinValue = "";
+
+        function openVoidAuthModal(orderId) {
+            // Find order details
+            pendingVoidOrder = (typeof allOrdersList !== 'undefined' ? allOrdersList.find(o => o.id === orderId) : null) || { id: orderId, table_number: '?', total_price: 0, items_summary: '' };
+            voidPinValue = "";
+            
+            const pinInput = document.getElementById('voidPinInput');
+            if (pinInput) pinInput.value = "";
+            const reasonSelect = document.getElementById('voidReasonSelect');
+            if (reasonSelect) reasonSelect.value = "";
+            const notesInput = document.getElementById('voidNotesInput');
+            if (notesInput) notesInput.value = "";
+            const alertBox = document.getElementById('voidErrorAlert');
+            if (alertBox) alertBox.style.display = 'none';
+
+            // Fill details box
+            const box = document.getElementById('voidOrderDetailsBox');
+            if (box) {
+                box.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-size: 13px; font-weight: 900; color: #991B1B;">
+                            <i class="fa-solid fa-receipt"></i> طلب رقم #${pendingVoidOrder.id} - ترابيزة ${pendingVoidOrder.table_number || 'تيك أواي'}
+                        </span>
+                        <span style="font-size: 15px; font-weight: 900; color: #B91C1C;">${pendingVoidOrder.total_price || 0} ج</span>
+                    </div>
+                    <div style="font-size: 11px; color: #7F1D1D; line-height: 1.5; white-space: pre-line;">${pendingVoidOrder.items_summary || 'أصناف الطلب'}</div>
+                `;
+            }
+
+            document.getElementById('voidAuthorizationModal').style.display = 'flex';
+        }
+
+        function closeVoidAuthModal() {
+            document.getElementById('voidAuthorizationModal').style.display = 'none';
+            pendingVoidOrder = null;
+            voidPinValue = "";
+            if (typeof fetchOrders === 'function') fetchOrders();
+        }
+
+        function addVoidPinDigit(digit) {
+            if (voidPinValue.length < 8) {
+                voidPinValue += digit;
+                const pinInput = document.getElementById('voidPinInput');
+                if (pinInput) pinInput.value = voidPinValue;
+            }
+        }
+
+        function clearVoidPin() {
+            voidPinValue = "";
+            const pinInput = document.getElementById('voidPinInput');
+            if (pinInput) pinInput.value = "";
+        }
+
+        function backspaceVoidPin() {
+            voidPinValue = voidPinValue.slice(0, -1);
+            const pinInput = document.getElementById('voidPinInput');
+            if (pinInput) pinInput.value = voidPinValue;
+        }
+
+        async function submitVoidAuthorization() {
+            if (!pendingVoidOrder) return;
+            const reason = (document.getElementById('voidReasonSelect') ? document.getElementById('voidReasonSelect').value : '').trim();
+            const notes = (document.getElementById('voidNotesInput') ? document.getElementById('voidNotesInput').value : '').trim();
+            const pin = (document.getElementById('voidPinInput') ? document.getElementById('voidPinInput').value : '').trim() || voidPinValue;
+            const alertBox = document.getElementById('voidErrorAlert');
+
+            if (!reason) {
+                if (alertBox) {
+                    alertBox.innerText = '⚠️ يجب اختيار سبب الإلغاء للتوثيق الأمني';
+                    alertBox.style.display = 'block';
+                }
+                return;
+            }
+
+            if (!pin) {
+                if (alertBox) {
+                    alertBox.innerText = '⚠️ كود المشرف مطلوب (الافتراضي 1234 أو 0000)';
+                    alertBox.style.display = 'block';
+                }
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/security/void-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        order_id: pendingVoidOrder.id,
+                        pin: pin,
+                        reason: reason,
+                        notes: notes,
+                        cashier_name: currentCashierName || 'كاشير الصالة'
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    playChimeSound('bill');
+                    alert(`✅ ${data.message}`);
+                    closeVoidAuthModal();
+                    if (typeof fetchOrders === 'function') fetchOrders();
+                    fetchVoidLogs();
+                } else {
+                    playChimeSound('waiter');
+                    if (alertBox) {
+                        alertBox.innerText = data.detail || 'كود المشرف غير صحيح!';
+                        alertBox.style.display = 'block';
+                    }
+                }
+            } catch(e) {
+                if (alertBox) {
+                    alertBox.innerText = `خطأ في الاتصال: ${e}`;
+                    alertBox.style.display = 'block';
+                }
+            }
+        }
+
+        async function fetchVoidLogs() {
+            try {
+                const res = await fetch('/api/security/void-logs');
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const stats = data.stats || {};
+                    const kpiTotalCount = document.getElementById('kpiVoidTotalCount');
+                    if (kpiTotalCount) kpiTotalCount.innerText = stats.total_count || 0;
+                    const badgeCount = document.getElementById('badgeVoidCount');
+                    if (badgeCount) {
+                        badgeCount.innerText = stats.total_count || 0;
+                        badgeCount.style.display = stats.total_count > 0 ? 'inline-block' : 'none';
+                    }
+
+                    const kpiTotalAmount = document.getElementById('kpiVoidTotalAmount');
+                    if (kpiTotalAmount) kpiTotalAmount.innerText = `${stats.total_amount || 0} ج`;
+
+                    const kpiTodayAmount = document.getElementById('kpiVoidTodayAmount');
+                    if (kpiTodayAmount) kpiTodayAmount.innerText = `${stats.today_amount || 0} ج`;
+                    const kpiTodayCount = document.getElementById('kpiVoidTodayCount');
+                    if (kpiTodayCount) kpiTodayCount.innerText = `${stats.today_count || 0} عملية اليوم`;
+
+                    // Top reason
+                    let topReason = '-';
+                    if (stats.reasons) {
+                        const sorted = Object.entries(stats.reasons).sort((a,b) => b[1] - a[1]);
+                        if (sorted.length > 0) topReason = `${sorted[0][0]} (${sorted[0][1]})`;
+                    }
+                    const kpiTopReason = document.getElementById('kpiVoidTopReason');
+                    if (kpiTopReason) kpiTopReason.innerText = topReason;
+
+                    // Table
+                    const tbody = document.getElementById('voidLogsTableBody');
+                    if (tbody) {
+                        if (!data.logs || data.logs.length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: #9CA3AF;">لا توجد أي عمليات إلغاء مسجلة، سجل الرقابة نظيف تماماً 🛡️</td></tr>`;
+                        } else {
+                            tbody.innerHTML = data.logs.map(l => `
+                                <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.15s;" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'">
+                                    <td style="padding: 12px 14px; color: #475569; font-weight: 800; font-size: 11px;">${l.created_at}</td>
+                                    <td style="padding: 12px 14px; font-weight: 900; color: #991B1B;">
+                                        ترابيزة ${l.table_number || '-'} (#${l.order_id || '-'})
+                                    </td>
+                                    <td style="padding: 12px 14px; max-width: 260px; font-size: 11px; color: #374151; white-space: pre-line;">${l.items_summary || '-'}</td>
+                                    <td style="padding: 12px 14px; font-weight: 900; color: #DC2626;"> ج</td>
+                                    <td style="padding: 12px 14px;">
+                                        <span style="background: #FEE2E2; color: #991B1B; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid #FCA5A5;">
+                                            ${l.reason}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px 14px; font-weight: 800; color: #1E40AF;"><i class="fa-solid fa-user-shield"></i> ${l.manager_name}</td>
+                                    <td style="padding: 12px 14px; font-weight: 800; color: #4B5563;">${l.cashier_name}</td>
+                                    <td style="padding: 12px 14px; font-size: 11px; color: #6B7280;">${l.notes || '-'}</td>
+                                </tr>
+                            `).join('');
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error("Error fetching void logs:", e);
+            }
+        }
+
+        function printVoidAuditReport() {
+            const tbody = document.getElementById('voidLogsTableBody');
+            const totalLoss = document.getElementById('kpiVoidTotalAmount') ? document.getElementById('kpiVoidTotalAmount').innerText : '0 ج';
+            const totalCount = document.getElementById('kpiVoidTotalCount') ? document.getElementById('kpiVoidTotalCount').innerText : '0';
+            
+            const win = window.open('', '_blank', 'width=800,height=900');
+            win.document.write(`
+                <!DOCTYPE html>
+                <html dir="rtl" lang="ar">
+                <head>
+                    <meta charset="utf-8">
+                    <title>تقرير الرقابة الأمنية وسجل المحذوفات - كافيه سيزر</title>
+                    <style>
+                        body { font-family: 'Cairo', sans-serif; padding: 24px; color: #111; direction: rtl; }
+                        h2 { margin: 0 0 6px 0; color: #991B1B; }
+                        .kpi { display: inline-block; background: #FEE2E2; border: 1px solid #FCA5A5; padding: 8px 16px; border-radius: 8px; margin-left: 10px; font-weight: 900; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                        th, td { border: 1px solid #CBD5E1; padding: 8px 10px; text-align: right; }
+                        th { background: #F1F5F9; font-weight: 900; }
+                    </style>
+                </head>
+                <body>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #991B1B; padding-bottom: 12px; margin-bottom: 16px;">
+                        <div>
+                            <h2>🛡️ تقرير الرقابة الأمنية والمحذوفات المعتمد (Void Audit Report)</h2>
+                            <div style="font-size: 12px; color: #666;">كافيه سيزر (ceZar COFFEE) - حماية الإيرادات ومنع التلاعب</div>
+                        </div>
+                        <div style="font-size: 12px; font-weight: 800;">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</div>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <span class="kpi">إجمالي العمليات الملغاة: ${totalCount}</span>
+                        <span class="kpi">إجمالي المبالغ الملغاة: ${totalLoss}</span>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الوقت والتاريخ</th>
+                                <th>الترابيزة / الطلب</th>
+                                <th>الأصناف الملغاة</th>
+                                <th>المبلغ</th>
+                                <th>سبب الإلغاء</th>
+                                <th>المشرف المعتمد</th>
+                                <th>الكاشير المنفذ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tbody ? tbody.innerHTML : ''}
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 40px; display: flex; justify-content: space-between; font-weight: 800; font-size: 13px;">
+                        <div>توقيع المشرف العام: .............................</div>
+                        <div>اعتماد المدير المالي / المالك: .............................</div>
+                    </div>
+                </body>
+                </html>
+            `);
+            win.document.close();
+            setTimeout(() => { win.focus(); win.print(); }, 400);
+        }
+
+        function openChangeVoidPinModal() {
+            document.getElementById('currentVoidPinInput').value = '';
+            document.getElementById('newVoidPinInput').value = '';
+            document.getElementById('changeVoidPinModal').style.display = 'flex';
+        }
+
+        function closeChangeVoidPinModal() {
+            document.getElementById('changeVoidPinModal').style.display = 'none';
+        }
+
+        async function submitChangeVoidPin() {
+            const current = (document.getElementById('currentVoidPinInput').value || '').trim();
+            const newPin = (document.getElementById('newVoidPinInput').value || '').trim();
+            if (!newPin || newPin.length < 4) {
+                alert('⚠️ يجب ألا يقل الكود الجديد عن 4 أرقام');
+                return;
+            }
+            try {
+                const res = await fetch('/api/security/void-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ current_pin: current, new_pin: newPin })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('✅ تم تحديث كود المشرف بنجاح!');
+                    closeChangeVoidPinModal();
+                } else {
+                    alert(`❌ ${data.detail || 'فشل التحديث'}`);
+                }
+            } catch(e) {
+                alert(`خطأ: ${e}`);
+            }
+        }
 
     </script>
 </body>
