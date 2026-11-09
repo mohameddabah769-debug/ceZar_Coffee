@@ -1919,9 +1919,14 @@
         async function fetchTableBillForCart() {
             try {
                 const res = await fetch(`/api/tables/${currentTable}/bill`);
-                currentTableBillData = await res.json();
+                if (res.ok) {
+                    currentTableBillData = await res.json();
+                } else {
+                    currentTableBillData = { orders: [], total_bill: 0 };
+                }
             } catch (e) {
                 console.error('Error fetching table bill:', e);
+                currentTableBillData = { orders: [], total_bill: 0 };
             }
         }
 
@@ -2098,11 +2103,14 @@
                 customization: c.customization || null
             }));
 
-            if (itemsPayload.length === 0) return;
+            if (itemsPayload.length === 0) {
+                alert('⚠️ سلتك فارغة حالياً! تصفح المنيو واضغط على (+) لإضافة مشروباتك المفضلة ☕');
+                return;
+            }
 
             const btnConfirm = document.querySelector('.btn-confirm-order');
             btnConfirm.disabled = true;
-            btnConfirm.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...`;
+            btnConfirm.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال للباريستا...`;
 
             try {
                 const res = await fetch('/api/cezar/orders', {
@@ -2116,8 +2124,14 @@
                     })
                 });
 
-                const result = await res.json();
-                if (result.status === 'success') {
+                let result = {};
+                try {
+                    result = await res.json();
+                } catch(pe) {
+                    result = {};
+                }
+
+                if (res.ok && result.status === 'success') {
                     // Show success
                     document.getElementById('modalCartContent').style.display = 'none';
                     document.getElementById('modalSuccessState').style.display = 'block';
@@ -2133,10 +2147,16 @@
                         menuData[cat].forEach(it => updateItemCardUI(it.id));
                     });
                 } else {
-                    alert('حدث خطأ أثناء إرسال الطلب، برجاء المحاولة مجدداً.');
+                    const msg = result.detail || result.message || 'حدث خطأ في استلام الأوردر بالسيرفر، يرجى المحاولة ثانية أو إبلاغ الويتر.';
+                    alert(msg);
                 }
             } catch (err) {
-                alert('تعذر الاتصال بالسيرفر. تأكد من اتصالك بالإنترنت.');
+                console.error('Order submission network error:', err);
+                if (navigator && navigator.onLine === false) {
+                    alert('تعذر الاتصال بالسيرفر. تأكد من اتصال هاتفك بالإنترنت.');
+                } else {
+                    alert('تعذر استلام الطلب من السيرفر حالياً. يرجى إعادة المحاولة.');
+                }
             } finally {
                 btnConfirm.disabled = false;
                 btnConfirm.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>إرسال الطلب للباريستا فوراً</span>`;

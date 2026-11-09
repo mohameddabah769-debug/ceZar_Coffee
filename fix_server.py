@@ -79,4 +79,17 @@ try:
 except Exception:
     pass
 
+# 5. Automatically Reload PythonAnywhere Web App
+wsgi_candidates = [
+    "/var/www/deboo_pythonanywhere_com_wsgi.py",
+    "/var/www/Deboo_pythonanywhere_com_wsgi.py",
+]
+for wsgi_file in wsgi_candidates:
+    if os.path.exists(wsgi_file):
+        try:
+            os.utime(wsgi_file, None)
+            print(f"Reloaded PythonAnywhere Web App: {wsgi_file}")
+        except Exception as e:
+            print(f"Could not touch wsgi file: {e}")
+
 print("=== All Fixed and Ready! ===")

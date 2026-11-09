@@ -10,11 +10,13 @@ if DATABASE_URL:
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
     engine = create_engine(DATABASE_URL)
 else:
-    DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cezar_coffee.db")
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    DB_PATH = os.path.join(BASE_DIR, "cezar_coffee.db")
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL,
-        connect_args={"check_same_thread": False, "timeout": 30}
+        connect_args={"check_same_thread": False, "timeout": 45},
+        pool_pre_ping=True
     )
 
     from sqlalchemy import event
@@ -27,7 +29,7 @@ else:
             cursor.execute("PRAGMA journal_mode=MEMORY")
             cursor.execute("PRAGMA temp_store=MEMORY")
             cursor.execute("PRAGMA synchronous=NORMAL")
-            cursor.execute("PRAGMA busy_timeout=30000")
+            cursor.execute("PRAGMA busy_timeout=45000")
             cursor.close()
         except Exception:
             pass

@@ -647,9 +647,9 @@
 <body>
 
     <!-- Audio Element Assets -->
-    <audio id="audioNewOrder" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
-    <audio id="audioWaiter" src="https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3" preload="auto"></audio>
-    <audio id="audioBill" src="https://assets.mixkit.co/active_storage/sfx/2871/2871-preview.mp3" preload="auto"></audio>
+    <audio id="audioNewOrder" src="/static/sounds/dingdong.wav" preload="auto"></audio>
+    <audio id="audioWaiter" src="/static/sounds/alert.wav" preload="auto"></audio>
+    <audio id="audioBill" src="/static/sounds/bell.wav" preload="auto"></audio>
 
     <!-- Top Audio Unlock Banner -->
     <div class="audio-unlock-banner" id="audioUnlockBanner" onclick="unlockAudioManual()">
@@ -5952,13 +5952,34 @@
         function playChimeSound(type) {
             if (!soundAlertsEnabled) return;
             try {
+                let audioId = 'audioNewOrder';
+                if (type === 'waiter') audioId = 'audioWaiter';
+                else if (type === 'bill') audioId = 'audioBill';
+
+                const audioEl = document.getElementById(audioId);
+                if (audioEl) {
+                    audioEl.currentTime = 0;
+                    audioEl.volume = 1.0;
+                    const p = audioEl.play();
+                    if (p !== undefined) {
+                        p.catch(() => {
+                            playSynthesizerFallback(type);
+                        });
+                    }
+                    return;
+                }
+            } catch(e) {}
+            playSynthesizerFallback(type);
+        }
+
+        function playSynthesizerFallback(type) {
+            try {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (!AudioCtx) return;
                 const ctx = new AudioCtx();
                 const now = ctx.currentTime;
 
                 if (type === 'order') {
-                    // Pleasant ascending chime (D5 -> A5 -> D6)
                     const osc1 = ctx.createOscillator();
                     const osc2 = ctx.createOscillator();
                     const gain = ctx.createGain();
@@ -5977,7 +5998,6 @@
                     osc1.stop(now + 0.6);
                     osc2.stop(now + 0.6);
                 } else if (type === 'waiter') {
-                    // Double Alert Bell
                     [0, 0.18].forEach(delay => {
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
@@ -5991,7 +6011,6 @@
                         osc.stop(now + delay + 0.15);
                     });
                 } else if (type === 'bill') {
-                    // Cash Register Success Chord
                     [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
