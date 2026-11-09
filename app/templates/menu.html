@@ -1833,6 +1833,104 @@
             return null;
         }
 
+        
+        // ==========================================
+        // Customization Modal Logic
+        // ==========================================
+        let currentCustomItem = null;
+
+        function openCustomizeModal(itemId) {
+            const item = findItemById(itemId);
+            if (!item) return;
+            currentCustomItem = item;
+            document.getElementById('customItemName').textContent = 'تخصيص: ' + item.name;
+            
+            // Reset fields
+            const defaultSugar = document.querySelector('input[name="custSugar"][value="سادة (بدون سكر)"]');
+            if (defaultSugar) defaultSugar.checked = true;
+            const defaultMilk = document.querySelector('input[name="custMilk"][value="طبيعي"]');
+            if (defaultMilk) defaultMilk.checked = true;
+            
+            const extraShot = document.getElementById('extraShot');
+            if (extraShot) extraShot.checked = false;
+            const extraCaramel = document.getElementById('extraCaramel');
+            if (extraCaramel) extraCaramel.checked = false;
+            const extraVanilla = document.getElementById('extraVanilla');
+            if (extraVanilla) extraVanilla.checked = false;
+            const extraIce = document.getElementById('extraIce');
+            if (extraIce) extraIce.checked = false;
+            
+            updateCustomPrice();
+            document.getElementById('customizationModal').style.display = 'flex';
+        }
+
+        function closeCustomizationModal() {
+            document.getElementById('customizationModal').style.display = 'none';
+            currentCustomItem = null;
+        }
+
+        function updateCustomPrice() {
+            if (!currentCustomItem) return;
+            let extra = 0;
+            const milkRadio = document.querySelector('input[name="custMilk"]:checked');
+            if (milkRadio) extra += parseFloat(milkRadio.dataset.extra || 0);
+            
+            ['extraShot', 'extraCaramel', 'extraVanilla', 'extraIce'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.checked) extra += parseFloat(el.dataset.extra || 0);
+            });
+            
+            const total = (currentCustomItem.price || 0) + extra;
+            const btnText = document.getElementById('btnCustomSubmitText');
+            if (btnText) btnText.textContent = 'إضافة للسلة (' + total + ' ج)';
+        }
+
+        function confirmCustomizationAndAdd() {
+            if (!currentCustomItem) return;
+            
+            const parts = [];
+            const sugar = document.querySelector('input[name="custSugar"]:checked');
+            if (sugar) parts.push('سكر: ' + sugar.value);
+            
+            const milk = document.querySelector('input[name="custMilk"]:checked');
+            if (milk && milk.value !== 'طبيعي') parts.push(milk.value);
+            
+            let extraPrice = 0;
+            if (milk) extraPrice += parseFloat(milk.dataset.extra || 0);
+            
+            const extraShot = document.getElementById('extraShot');
+            if (extraShot && extraShot.checked) { parts.push('+شوت'); extraPrice += 15; }
+            const extraCaramel = document.getElementById('extraCaramel');
+            if (extraCaramel && extraCaramel.checked) { parts.push('+كراميل'); extraPrice += 10; }
+            const extraVanilla = document.getElementById('extraVanilla');
+            if (extraVanilla && extraVanilla.checked) { parts.push('+فانيليا'); extraPrice += 10; }
+            const extraIce = document.getElementById('extraIce');
+            if (extraIce && extraIce.checked) { parts.push('+ثلج'); }
+            
+            const customizationText = parts.join(' | ');
+            const finalPrice = (currentCustomItem.price || 0) + extraPrice;
+            
+            // Add custom item to cart with unique key or directly
+            const cartKey = currentCustomItem.id + '_' + customizationText.replace(/\s+/g, '_');
+            if (cart[cartKey]) {
+                cart[cartKey].qty++;
+            } else {
+                cart[cartKey] = {
+                    item: {
+                        id: currentCustomItem.id,
+                        name: currentCustomItem.name,
+                        price: finalPrice
+                    },
+                    qty: 1,
+                    customization: customizationText
+                };
+            }
+            
+            updateItemCardUI(currentCustomItem.id);
+            updateCartFloatingBar();
+            closeCustomizationModal();
+        }
+
         function addToCart(id) {
             const item = findItemById(id);
             if (!item) return;

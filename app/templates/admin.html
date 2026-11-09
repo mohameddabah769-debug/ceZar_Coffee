@@ -6296,6 +6296,7 @@
             } catch(e) {}
         }
 
+function openAddPurchaseModal() { openRecordPurchaseModal(); }
         async function openRecordPurchaseModal() {
             if (!allSuppliers || allSuppliers.length === 0) {
                 await fetchSuppliers();
