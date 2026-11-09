@@ -615,6 +615,73 @@ def settle_table_bill(table_number):
         return jsonify({"status": "success", "message": f"تمت تسوية حساب ترابيزة {table_number} وإفراغها بنجاح!", "table_number": table_number})
 
 
+
+
+@app.route("/api/tables/transfer", methods=["POST"])
+@app.route("/api/cezar/tables/transfer", methods=["POST"])
+@db_retry(max_retries=3, delay=0.3)
+def transfer_table_orders():
+    data = request.json or {}
+    from_table = int(data.get("from_table") or 0)
+    to_table = int(data.get("to_table") or 0)
+    
+    if not from_table or not to_table or from_table == to_table:
+        return jsonify({"detail": "أرقام الترابيزات غير صحيحة", "status": "error"}), 400
+        
+    with SessionLocal() as db:
+        active_orders = db.query(TableOrder).filter(
+            TableOrder.table_number == from_table,
+            TableOrder.order_type == "صالة",
+            ~TableOrder.status.in_(["ملغي", "تمت التسوية"])
+        ).all()
+        
+        if not active_orders:
+            return jsonify({"detail": f"لا توجد طلبات نشطة في ترابيزة {from_table}", "status": "error"}), 400
+            
+        for o in active_orders:
+            o.table_number = to_table
+            if f"ترابيزة {from_table}" in (o.customer_name or ""):
+                o.customer_name = f"ترابيزة {to_table}"
+                
+        db.commit()
+        return jsonify({
+            "status": "success",
+            "message": f"تم نقل الحساب من ترابيزة {from_table} إلى ترابيزة {to_table} بنجاح!"
+        })
+
+
+@app.route("/api/tables/merge", methods=["POST"])
+@app.route("/api/cezar/tables/merge", methods=["POST"])
+@db_retry(max_retries=3, delay=0.3)
+def merge_tables():
+    data = request.json or {}
+    primary_table = int(data.get("primary_table") or 0)
+    secondary_table = int(data.get("secondary_table") or 0)
+    
+    if not primary_table or not secondary_table or primary_table == secondary_table:
+        return jsonify({"detail": "أرقام الترابيزات غير صحيحة", "status": "error"}), 400
+        
+    with SessionLocal() as db:
+        sec_orders = db.query(TableOrder).filter(
+            TableOrder.table_number == secondary_table,
+            TableOrder.order_type == "صالة",
+            ~TableOrder.status.in_(["ملغي", "تمت التسوية"])
+        ).all()
+        
+        if not sec_orders:
+            return jsonify({"detail": f"لا توجد طلبات في ترابيزة {secondary_table}", "status": "error"}), 400
+            
+        for o in sec_orders:
+            o.table_number = primary_table
+            o.customer_name = f"ترابيزة {primary_table} (مدمجة مع {secondary_table})"
+            
+        db.commit()
+        return jsonify({
+            "status": "success",
+            "message": f"تم دمج حساب ترابيزة {secondary_table} في ترابيزة {primary_table} بنجاح!"
+        })
+
+
 @app.route("/api/tables/<int:table_number>/track", methods=["GET"])
 @app.route("/api/cezar/tables/<int:table_number>/track", methods=["GET"])
 @db_retry(max_retries=3, delay=0.3)
