@@ -1471,7 +1471,8 @@ def get_analytics():
         total_cogs = round(calc_cogs if calc_cogs > 0 else (gross_sales * 0.32), 2)
         total_expenses = round(float(db.query(func.sum(Expense.amount)).scalar() or 0.0), 2)
         total_salaries = round(float(db.query(func.sum(SalaryPayment.amount)).scalar() or 0.0), 2)
-        net_profit = round(gross_sales - total_cogs - total_expenses - total_salaries, 2)
+        total_waste = round(float(db.query(func.sum(InventoryWaste.cost_loss)).scalar() or 0.0), 2)
+        net_profit = round(gross_sales - total_cogs - total_expenses - total_salaries - total_waste, 2)
         profit_margin_pct = round((net_profit / gross_sales) * 100, 1) if gross_sales > 0 else 0.0
 
         return jsonify({
