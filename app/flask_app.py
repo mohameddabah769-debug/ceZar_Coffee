@@ -25,6 +25,7 @@ except ImportError:
     from seed import seed_menu
 
 Base.metadata.create_all(bind=engine)
+get_db = SessionLocal
 
 def auto_migrate_columns():
     with engine.connect() as conn:
@@ -1638,7 +1639,7 @@ def change_credentials():
 @app.route("/api/employees", methods=["GET"])
 @app.route("/api/cezar/employees", methods=["GET"])
 def get_employees():
-    with get_db() as db:
+    with SessionLocal() as db:
         employees = db.query(Employee).order_by(Employee.id.asc()).all()
         if not employees:
             try:
@@ -1677,7 +1678,7 @@ def get_employees():
 def save_employee():
     data = request.get_json() or {}
     emp_id = data.get("id")
-    with get_db() as db:
+    with SessionLocal() as db:
         if emp_id:
             emp = db.query(Employee).filter(Employee.id == emp_id).first()
             if not emp: return jsonify({"detail": "الموظف غير موجود"}), 404
@@ -1705,7 +1706,7 @@ def save_employee():
 @app.route("/api/employees/<int:emp_id>", methods=["DELETE"])
 @app.route("/api/cezar/employees/<int:emp_id>", methods=["DELETE"])
 def delete_employee(emp_id):
-    with get_db() as db:
+    with SessionLocal() as db:
         emp = db.query(Employee).filter(Employee.id == emp_id).first()
         if not emp: return jsonify({"detail": "الموظف غير موجود"}), 404
         db.delete(emp)
@@ -1715,7 +1716,7 @@ def delete_employee(emp_id):
 @app.route("/api/salaries", methods=["GET"])
 @app.route("/api/cezar/salaries", methods=["GET"])
 def get_salary_payments():
-    with get_db() as db:
+    with SessionLocal() as db:
         payments = db.query(SalaryPayment).order_by(SalaryPayment.id.desc()).all()
         emps = {e.id: e.name for e in db.query(Employee).all()}
         return jsonify({
@@ -1738,7 +1739,7 @@ def get_salary_payments():
 def record_salary_payment():
     data = request.get_json() or {}
     emp_id = data.get("employee_id")
-    with get_db() as db:
+    with SessionLocal() as db:
         emp = db.query(Employee).filter(Employee.id == emp_id).first()
         if not emp: return jsonify({"detail": "الموظف غير موجود"}), 404
         
@@ -1782,7 +1783,7 @@ def get_employee_monthly_ledger(emp_id):
         year, month_num = now.year, now.month
         month = f"{year}-{month_num:02d}"
 
-    with get_db() as db:
+    with SessionLocal() as db:
         emp = db.query(Employee).filter(Employee.id == emp_id).first()
         if not emp: return jsonify({"detail": "الموظف غير موجود"}), 404
 
@@ -1870,7 +1871,7 @@ def record_employee_attendance():
     status_val = data.get("status", "حاضر")
     notes_val = data.get("notes", "")
 
-    with get_db() as db:
+    with SessionLocal() as db:
         emp = db.query(Employee).filter(Employee.id == emp_id).first()
         if not emp: return jsonify({"detail": "الموظف غير موجود"}), 404
         rec = db.query(EmployeeAttendance).filter(
@@ -1892,7 +1893,7 @@ def batch_employee_attendance():
     data = request.get_json() or {}
     date_val = data.get("date")
     status_val = data.get("status", "حاضر")
-    with get_db() as db:
+    with SessionLocal() as db:
         emps = db.query(Employee).filter(Employee.status == "نشط").all()
         for emp in emps:
             rec = db.query(EmployeeAttendance).filter(EmployeeAttendance.employee_id == emp.id, EmployeeAttendance.date == date_val).first()
@@ -1904,7 +1905,7 @@ def batch_employee_attendance():
 
 @app.route("/api/cezar/salaries/<int:pay_id>", methods=["DELETE"])
 def delete_salary_payment(pay_id):
-    with get_db() as db:
+    with SessionLocal() as db:
         pay = db.query(SalaryPayment).filter(SalaryPayment.id == pay_id).first()
         if pay:
             db.delete(pay)
@@ -1914,7 +1915,7 @@ def delete_salary_payment(pay_id):
 @app.route("/api/auth/users", methods=["GET"])
 @app.route("/api/cezar/auth/users", methods=["GET"])
 def list_system_users():
-    with get_db() as db:
+    with SessionLocal() as db:
         users = db.query(ManagerAccount).all()
         return jsonify({
             "status": "success",
@@ -1926,7 +1927,7 @@ def list_system_users():
 def save_system_user():
     data = request.get_json() or {}
     u_id = data.get("id")
-    with get_db() as db:
+    with SessionLocal() as db:
         if u_id:
             u = db.query(ManagerAccount).filter(ManagerAccount.id == u_id).first()
             if not u: return jsonify({"detail": "المستخدم غير موجود"}), 404
@@ -1952,7 +1953,7 @@ def save_system_user():
 @app.route("/api/auth/users/<int:user_id>", methods=["DELETE"])
 @app.route("/api/cezar/auth/users/<int:user_id>", methods=["DELETE"])
 def delete_system_user(user_id):
-    with get_db() as db:
+    with SessionLocal() as db:
         u = db.query(ManagerAccount).filter(ManagerAccount.id == user_id).first()
         if not u: return jsonify({"detail": "المستخدم غير موجود"}), 404
         if u.username == "admin":
@@ -2461,8 +2462,16 @@ def get_tables_sales_report():
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
         period_label = f"تقرير مبيعات الترابيزات لليوم ({now.strftime('%Y-%m-%d')})"
 
-    with get_db() as db:
-        orders = db.query(TableOrder).filter(TableOrder.created_at >= start_date, TableOrder.status != "ملغي").all()
+    with SessionLocal() as db:
+        orders = db.query(TableOrder).filter(
+            TableOrder.created_at >= start_date,
+            TableOrder.status != "ملغي",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر",
+            ~TableOrder.items_summary.like("%طلب الحساب%"),
+            ~TableOrder.items_summary.like("%نداء الويتر%"),
+            TableOrder.total_price > 0
+        ).all()
         configs = db.query(CafeTableConfig).all()
         config_map = {c.table_number: c for c in configs}
 
@@ -2472,7 +2481,7 @@ def get_tables_sales_report():
             valid_table_nums = [o.table_number for o in orders if o.table_number and o.table_number > 0]
             if valid_table_nums: max_t = max(max_t, max(valid_table_nums))
 
-        total_revenue_all = sum(o.total_price for o in orders)
+        total_revenue_all = round(sum(o.total_price for o in orders), 2)
         total_orders_all = len(orders)
         tables_data = []
         top_table_obj = None
@@ -2480,7 +2489,7 @@ def get_tables_sales_report():
 
         for t_num in range(1, max_t + 1):
             t_orders = [o for o in orders if o.table_number == t_num]
-            rev = sum(o.total_price for o in t_orders)
+            rev = round(sum(o.total_price for o in t_orders), 2)
             cnt = len(t_orders)
             avg = round(rev / cnt, 1) if cnt > 0 else 0.0
 

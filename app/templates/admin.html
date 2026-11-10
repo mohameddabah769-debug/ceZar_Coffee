@@ -3830,7 +3830,10 @@
             if (tabName === 'reservations') { fetchReservations(); fetchWaitingList(); }
             if (tabName === 'menu') fetchAdminMenu();
             if (tabName === 'inventory') { fetchInventory(); fetchWasteRecords(); }
-            if (tabName === 'analytics') fetchAnalytics();
+            if (tabName === 'analytics') {
+                fetchAnalytics();
+                if (typeof filterTablesReport === 'function') filterTablesReport(currentTablesPeriod || 'today');
+            }
             if (tabName === 'promos') fetchPromoCodes();
             if (tabName === 'staff') { fetchEmployees(); fetchSalaries(); fetchSystemUsers(); }
             if (tabName === 'owner') { fetchOwnerSettings(); fetchOwnerTables(); populateBulkPriceCategories(); }
@@ -5258,6 +5261,7 @@
             fetchCurrentShift();
             fetchTablesStatus();
             fetchAnalytics();
+            if (typeof filterTablesReport === 'function') filterTablesReport('today');
             fetchEmployees();
             if (!isPolling) {
                 isPolling = true;
@@ -5883,7 +5887,12 @@
             try {
                 const res = await fetch(`/api/reports/tables?period=${period}`);
                 const data = await res.json();
-                if (!res.ok || data.status !== 'success') return;
+                if (!res.ok || data.status !== 'success') {
+                    if (document.getElementById('tableReportPeriodLabel')) {
+                        document.getElementById('tableReportPeriodLabel').textContent = 'لا توجد بيانات متاحة لهذه الفترة';
+                    }
+                    return;
+                }
 
                 currentTablesReportData = data;
                 const s = data.summary;
@@ -5954,6 +5963,9 @@
 
             } catch(e) {
                 console.error("Error fetching tables report", e);
+                if (document.getElementById('tableReportPeriodLabel')) {
+                    document.getElementById('tableReportPeriodLabel').textContent = 'تعذر تحميل التقرير، يرجى المحاولة مرة أخرى';
+                }
             }
         }
 
@@ -6379,7 +6391,12 @@
             try {
                 const res = await fetch('/api/suppliers');
                 const data = await res.json();
-                if (!res.ok || data.status !== 'success') return;
+                if (!res.ok || data.status !== 'success') {
+                    if (document.getElementById('tableReportPeriodLabel')) {
+                        document.getElementById('tableReportPeriodLabel').textContent = 'لا توجد بيانات متاحة لهذه الفترة';
+                    }
+                    return;
+                }
                 allSuppliers = data.suppliers || [];
 
                 if (document.getElementById('kpiSuppliersCount')) {
@@ -6414,7 +6431,12 @@
             try {
                 const res = await fetch('/api/purchases');
                 const data = await res.json();
-                if (!res.ok || data.status !== 'success') return;
+                if (!res.ok || data.status !== 'success') {
+                    if (document.getElementById('tableReportPeriodLabel')) {
+                        document.getElementById('tableReportPeriodLabel').textContent = 'لا توجد بيانات متاحة لهذه الفترة';
+                    }
+                    return;
+                }
                 allPurchases = data.purchases || [];
                 const s = data.summary || {};
 
