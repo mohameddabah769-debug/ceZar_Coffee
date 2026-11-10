@@ -55,22 +55,22 @@ if needs_rebuild:
         except Exception:
             pass
 
-    from app.database import engine, Base, SessionLocal
-    from app.models import (
-        MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation,
-        WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee,
-        SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig,
-        InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem, VoidAuditLog
-    )
-    from app.seed import seed_menu, seed_recipes
+from app.database import engine, Base, SessionLocal
+from app.models import (
+    MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation,
+    WaitingList, InventoryItem, PromoCode, MenuItemRecipe, Employee,
+    SalaryPayment, EmployeeAttendance, CafeSetting, CafeTableConfig,
+    InventoryWaste, Supplier, PurchaseInvoice, PurchaseInvoiceItem, VoidAuditLog
+)
+from app.seed import seed_menu, seed_recipes
 
-    Base.metadata.create_all(bind=engine)
-    print("Database tables created cleanly.")
+Base.metadata.create_all(bind=engine)
+print("Database tables created / verified cleanly.")
 
-    with SessionLocal() as db:
-        seed_menu(db)
-        seed_recipes(db)
-        print("Menu, inventory, tables, and recipes seeded successfully!")
+with SessionLocal() as db:
+    seed_menu(db)
+    seed_recipes(db)
+    print("Menu, inventory, staff, tables, and recipes verified successfully!")
 
 # 4. Set write permissions
 try:

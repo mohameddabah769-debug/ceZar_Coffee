@@ -1619,7 +1619,27 @@ def change_credentials():
 @app.route("/api/cezar/employees", methods=["GET"])
 def get_employees():
     with get_db() as db:
-        employees = db.query(Employee).order_by(Employee.id.desc()).all()
+        employees = db.query(Employee).order_by(Employee.id.asc()).all()
+        if not employees:
+            try:
+                try:
+                    from .seed import DEFAULT_EMPLOYEES
+                except ImportError:
+                    from seed import DEFAULT_EMPLOYEES
+                for emp in DEFAULT_EMPLOYEES:
+                    db.add(Employee(
+                        name=emp["name"],
+                        role=emp["role"],
+                        phone=emp["phone"],
+                        salary=emp["salary"],
+                        hire_date=emp["hire_date"],
+                        status=emp["status"]
+                    ))
+                db.commit()
+                employees = db.query(Employee).order_by(Employee.id.asc()).all()
+            except Exception as e:
+                print(f"Auto-seed employees warning: {e}")
+
         total_salary = sum(e.salary for e in employees if e.status == "نشط")
         return jsonify({
             "status": "success",
@@ -1628,7 +1648,8 @@ def get_employees():
                 "salary": e.salary, "hire_date": e.hire_date or "", "status": e.status, "notes": e.notes or ""
             } for e in employees],
             "total_payroll": total_salary,
-            "active_count": sum(1 for e in employees if e.status == "نشط")
+            "active_count": sum(1 for e in employees if e.status == "نشط"),
+            "total_count": len(employees)
         })
 
 @app.route("/api/employees", methods=["POST"])

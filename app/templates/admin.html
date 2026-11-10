@@ -1623,13 +1623,16 @@
         <!-- SubTab 1: Employees Directory -->
         <div id="subTabEmployees">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px;">
-                <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px;">
+                <div style="background: white; border: 1.5px solid #C7D2FE; border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.08);" onclick="handleStaffTeamCardClick()" id="cardStaffTeamSummary" title="اضغط لعرض دليل وتفاصيل فريق العمل">
                     <div style="width: 44px; height: 44px; border-radius: 10px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                         <i class="fa-solid fa-user-tie"></i>
                     </div>
-                    <div>
-                        <div style="font-size: 11px; color: #666; font-weight: 800;">إجمالي فريق العمل</div>
-                        <div style="font-size: 18px; font-weight: 900; color: var(--primary-espresso);" id="staffTotalEmployeesCard">4 موظفين</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 11px; color: #666; font-weight: 800; display: flex; align-items: center; justify-content: space-between;">
+                            <span>إجمالي فريق العمل</span>
+                            <span style="font-size: 10px; background: #EEF2FF; color: #4F46E5; padding: 2px 6px; border-radius: 6px; font-weight: 900;"><i class="fa-solid fa-arrow-up-right-from-square"></i> عرض الكل</span>
+                        </div>
+                        <div style="font-size: 18px; font-weight: 900; color: var(--primary-espresso);" id="staffTotalEmployeesCard">0 موظف</div>
                     </div>
                 </div>
 
@@ -2630,6 +2633,46 @@
 
 
     
+    <!-- Staff Team Overview Modal (تفتح عند الضغط على كارت إجمالي فريق العمل) -->
+    <div class="pin-modal-overlay" id="staffTeamOverviewModal" style="display: none;">
+        <div class="pin-card" style="max-width: 620px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1.5px solid #F3F4F6; padding-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 17px; font-weight: 900; color: var(--primary-espresso);" id="modalTeamTitle">فريق عمل كافيه سيزر</h3>
+                        <p style="font-size: 11px; color: #666; font-weight: 700;">دليل الموظفين ومتابعة الرواتب والكشكول</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('staffTeamOverviewModal')" style="border: none; background: #eee; width: 30px; height: 30px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; flex-wrap: wrap;">
+                <span id="modalTeamSummaryPill" style="background: #FAF7F2; border: 1px solid #E2D9CF; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; color: var(--primary-espresso);">
+                    4 موظفين • إجمالي الرواتب: 18300 ج
+                </span>
+                <button onclick="closeModal('staffTeamOverviewModal'); openAddEmployeeModal();" style="background: linear-gradient(135deg, #E85D04, #D4A373); color: white; border: none; padding: 7px 14px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-user-plus"></i> إضافة موظف جديد
+                </button>
+            </div>
+
+            <div id="modalTeamCardsContainer" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; max-height: 50vh;">
+                <!-- Filled dynamically by JS -->
+            </div>
+
+            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #EAE3DA; display: flex; justify-content: space-between; gap: 8px;">
+                <button onclick="closeModal('staffTeamOverviewModal'); switchStaffSubTab('employees');" style="flex: 1; background: #F8F5F0; border: 1.5px solid #E2D9CF; color: var(--primary-espresso); padding: 9px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer;">
+                    <i class="fa-solid fa-table-list"></i> الانتقال لجدول الدليل الكامل
+                </button>
+                <button onclick="closeModal('staffTeamOverviewModal'); switchStaffSubTab('payroll');" style="flex: 1; background: #ECFDF5; border: 1.5px solid #A7F3D0; color: #065F46; padding: 9px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer;">
+                    <i class="fa-solid fa-hand-holding-dollar"></i> مسيرات الرواتب والسلف
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Add / Edit Employee Modal -->
     <div class="pin-modal-overlay" id="addEmployeeModal" style="display: none;">
         <div class="pin-card" style="max-width: 440px;">
@@ -7167,8 +7210,21 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                 const data = await res.json();
                 allEmployees = data.employees || [];
 
-                document.getElementById('staffCountBadge').textContent = data.active_count || allEmployees.length;
-                document.getElementById('staffTotalPayroll').textContent = `${(data.total_payroll || 0)} ج`;
+                const totalCount = data.total_count !== undefined ? data.total_count : allEmployees.length;
+                const badge = document.getElementById('staffCountBadge');
+                if (badge) badge.textContent = totalCount;
+
+                const cardEl = document.getElementById('staffTotalEmployeesCard');
+                if (cardEl) {
+                    if (totalCount === 0) cardEl.textContent = '0 موظف';
+                    else if (totalCount === 1) cardEl.textContent = 'موظف واحد';
+                    else if (totalCount === 2) cardEl.textContent = '2 موظفين';
+                    else if (totalCount >= 3 && totalCount <= 10) cardEl.textContent = `${totalCount} موظفين`;
+                    else cardEl.textContent = `${totalCount} موظف`;
+                }
+
+                const payrollEl = document.getElementById('staffTotalPayroll');
+                if (payrollEl) payrollEl.textContent = `${(data.total_payroll || 0)} ج`;
 
                 const tbody = document.getElementById('employeesTableBody');
                 if (allEmployees.length === 0) {
@@ -7211,6 +7267,78 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
             } catch(e) {
                 console.error("Error fetching employees", e);
             }
+        }
+
+        function handleStaffTeamCardClick() {
+            switchStaffSubTab('employees');
+            if (!allEmployees || allEmployees.length === 0) {
+                openAddEmployeeModal();
+                return;
+            }
+            openModal('staffTeamOverviewModal');
+            renderStaffTeamOverviewModal();
+        }
+
+        function renderStaffTeamOverviewModal() {
+            const container = document.getElementById('modalTeamCardsContainer');
+            if (!container) return;
+            const count = allEmployees.length;
+            const totalSalary = allEmployees.reduce((sum, e) => sum + (e.status === 'نشط' ? (e.salary || 0) : 0), 0);
+            
+            const pill = document.getElementById('modalTeamSummaryPill');
+            if (pill) pill.textContent = `${count} موظفين • إجمالي الرواتب: ${totalSalary} ج`;
+
+            if (count === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #888;">
+                        <i class="fa-solid fa-user-tie" style="font-size: 32px; color: #C7D2FE; margin-bottom: 8px; display: block;"></i>
+                        لا يوجد موظفين مسجلين حالياً.<br>
+                        <button onclick="closeModal('staffTeamOverviewModal'); openAddEmployeeModal();" style="margin-top: 10px; background: var(--cezar-orange); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 800; cursor: pointer;">
+                            + إضافة أول موظف الآن
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = allEmployees.map(emp => {
+                const statusBadge = emp.status === 'نشط'
+                    ? '<span style="background: #DCFCE7; color: #16A34A; padding: 3px 8px; border-radius: 10px; font-weight: 800; font-size: 11px;">نشط</span>'
+                    : '<span style="background: #FEE2E2; color: #DC2626; padding: 3px 8px; border-radius: 10px; font-weight: 800; font-size: 11px;">إجازة</span>';
+
+                return `
+                    <div style="background: #FAF8F5; border: 1.5px solid #EAE3DA; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--primary-espresso); color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px;">
+                                ${emp.name ? emp.name.charAt(0) : 'م'}
+                            </div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 14px; font-weight: 900; color: var(--primary-espresso);">${emp.name}</span>
+                                    ${statusBadge}
+                                </div>
+                                <div style="font-size: 12px; color: #666; font-weight: 700; margin-top: 2px;">
+                                    <span style="background: white; border: 1px solid #DDD; padding: 1px 6px; border-radius: 6px; font-size: 11px;">${emp.role}</span>
+                                    ${emp.phone ? `<span style="margin-right: 6px; direction: ltr; display: inline-block;"><i class="fa-solid fa-phone" style="font-size: 10px; color: #0284C7;"></i> ${emp.phone}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="text-align: left; margin-left: 6px;">
+                                <div style="font-size: 11px; color: #888; font-weight: 800;">الراتب الأساسي</div>
+                                <div style="font-size: 15px; font-weight: 900; color: #2E7D32;">${emp.salary} ج</div>
+                            </div>
+                            <button onclick="closeModal('staffTeamOverviewModal'); openEmployeeNotebook(${emp.id})" title="عرض كشكول الشهر وكشف الحساب" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; border-radius: 8px; padding: 6px 10px; font-weight: 800; font-size: 11px; cursor: pointer;">
+                                <i class="fa-solid fa-book-open"></i> الكشكول
+                            </button>
+                            <button onclick="closeModal('staffTeamOverviewModal'); openQuickAdvanceModal(${emp.id})" title="تسجيل سلفة" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; border-radius: 8px; padding: 6px 10px; font-weight: 800; font-size: 11px; cursor: pointer;">
+                                <i class="fa-solid fa-hand-holding-dollar"></i> سلفة
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function openAddEmployeeModal() {
