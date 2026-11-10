@@ -4654,6 +4654,7 @@
 
                 if (data && data.status === 'active' && data.shift) {
                     currentShiftData = data.shift;
+                    currentCashierName = currentShiftData.cashier_name || 'كاشير الصالة';
                     if (badgeText) badgeText.textContent = `الوردية نشطة: ${currentShiftData.cashier_name}`;
                     if (badge) {
                         badge.style.borderColor = '#28a745';
@@ -8587,6 +8588,7 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
         // ====================================================
         // 🛡️ SECURITY & VOID AUDIT ENGINE (الرقابة ومنع التلاعب)
         // ====================================================
+        var currentCashierName = 'كاشير الصالة';
         var pendingVoidOrder = null;
         var voidPinValue = "";
 
@@ -8671,6 +8673,12 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                 return;
             }
 
+            const cashierName = (typeof currentCashierName !== 'undefined' && currentCashierName)
+                ? currentCashierName
+                : ((typeof currentShiftData !== 'undefined' && currentShiftData && currentShiftData.cashier_name)
+                    ? currentShiftData.cashier_name
+                    : 'كاشير الصالة');
+
             try {
                 const res = await fetch('/api/security/void-order', {
                     method: 'POST',
@@ -8680,7 +8688,7 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                         pin: pin,
                         reason: reason,
                         notes: notes,
-                        cashier_name: currentCashierName || 'كاشير الصالة'
+                        cashier_name: cashierName
                     })
                 });
                 const data = await res.json();
