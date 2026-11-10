@@ -2289,6 +2289,17 @@
                 const res = await fetch(`/api/tables/${currentTable}/track`);
                 const data = await res.json();
 
+                // If table was settled and cleared by cashier, clean any lingering previous bill state
+                if (!data.orders_count || data.orders_count === 0) {
+                    if (currentTableBillData && currentTableBillData.orders && currentTableBillData.orders.length > 0) {
+                        currentTableBillData = { orders: [], total_bill: 0 };
+                        const orderModal = document.getElementById('orderModal');
+                        if (orderModal && orderModal.style.display === 'flex') {
+                            renderCartModal();
+                        }
+                    }
+                }
+
                 // 1. Update Header Badge
                 const headerBadge = document.getElementById('headerTrackBadge');
                 if (headerBadge) {

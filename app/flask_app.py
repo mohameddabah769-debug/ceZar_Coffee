@@ -528,7 +528,6 @@ def get_all_tables_status():
                 TableOrder.table_number == t,
                 TableOrder.order_type == "صالة",
                 TableOrder.status != "ملغي",
-                TableOrder.status != "تم التقديم",
                 TableOrder.status != "تمت التسوية"
             ).all()
 
@@ -689,6 +688,8 @@ def track_table_orders(table_number):
     with SessionLocal() as db:
         orders = db.query(TableOrder).filter(
             TableOrder.table_number == table_number,
+            TableOrder.status != "ملغي",
+            TableOrder.status != "تمت التسوية",
             ~TableOrder.items_summary.like("%طلب الحساب%"),
             ~TableOrder.items_summary.like("%نداء الويتر%"),
             TableOrder.total_price > 0
@@ -754,11 +755,15 @@ def update_order_status(order_id):
         if not order:
             return jsonify({"detail": "Order not found"}), 404
         order.status = new_status
-        if order.status in ["تم التقديم", "تمت التسوية", "تم التوصيل"] and (order.items_summary and "طلب الحساب" in order.items_summary):
-            db.query(TableOrder).filter(
-                TableOrder.table_number == order.table_number,
-                TableOrder.status.in_(["جديد", "جاري التحضير", "قيد التحضير"])
-            ).update({"status": "تم التقديم"}, synchronize_session=False)
+        is_bill_request = bool(order.items_summary and "طلب الحساب" in order.items_summary) or bool(order.status and "طلب حساب" in str(order.status))
+        if new_status == "تمت التسوية" or (is_bill_request and new_status in ["تمت التسوية", "تم التقديم"]):
+            if order.table_number and order.table_number > 0:
+                table_orders = db.query(TableOrder).filter(
+                    TableOrder.table_number == order.table_number,
+                    TableOrder.status != "ملغي"
+                ).all()
+                for to in table_orders:
+                    to.status = "تمت التسوية"
         db.commit()
         return jsonify({"status": "success", "order_id": order.id, "new_status": order.status})
 
