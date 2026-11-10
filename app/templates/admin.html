@@ -3576,7 +3576,14 @@
             } catch(e) {}
         }
 
+        // ====================================================
+        // CONTINUOUS ORDER ALARM ENGINE (نظام الرنين المتواصل حتى الاستجابة)
+        // ====================================================
+        var activeAlarmInterval = null;
+        var currentAlarmOrderType = 'جديد';
+
         function playAlarmBurst(orderType = 'جديد') {
+            currentAlarmOrderType = orderType;
             let audioId = 'audioNewOrder';
             if (orderType === 'نداء ويتر') audioId = 'audioWaiter';
             else if (orderType && orderType.startsWith('طلب حساب')) audioId = 'audioBill';
@@ -3585,12 +3592,49 @@
             if (audioEl) {
                 audioEl.volume = 1.0;
                 audioEl.currentTime = 0;
-                audioEl.play().catch(() => {});
+                audioEl.play().catch(() => {
+                    playSynthesizerFallback(orderType === 'نداء ويتر' ? 'waiter' : (orderType && orderType.startsWith('طلب حساب') ? 'bill' : 'order'));
+                });
+            }
+
+            // Start repeating alarm if not already ringing
+            if (!activeAlarmInterval) {
+                activeAlarmInterval = setInterval(() => {
+                    // Check if alarm banner is still visible
+                    const banner = document.getElementById('urgentAlarmBanner');
+                    if (banner && banner.style.display !== 'none') {
+                        let loopId = 'audioNewOrder';
+                        if (currentAlarmOrderType === 'نداء ويتر') loopId = 'audioWaiter';
+                        else if (currentAlarmOrderType && currentAlarmOrderType.startsWith('طلب حساب')) loopId = 'audioBill';
+
+                        const a = document.getElementById(loopId);
+                        if (a) {
+                            a.currentTime = 0;
+                            a.volume = 1.0;
+                            a.play().catch(() => {});
+                        }
+                    } else {
+                        silenceActiveAlarm();
+                    }
+                }, 2800); // Rings every 2.8 seconds continuously until attended
             }
         }
 
         function silenceActiveAlarm() {
-            document.getElementById('urgentAlarmBanner').style.display = 'none';
+            if (activeAlarmInterval) {
+                clearInterval(activeAlarmInterval);
+                activeAlarmInterval = null;
+            }
+            const banner = document.getElementById('urgentAlarmBanner');
+            if (banner) banner.style.display = 'none';
+
+            // Pause all audios
+            ['audioNewOrder', 'audioWaiter', 'audioBill'].forEach(id => {
+                const a = document.getElementById(id);
+                if (a) {
+                    try { a.pause(); a.currentTime = 0; } catch(e) {}
+                }
+            });
         }
 
         // Tab Switching
@@ -3885,6 +3929,7 @@
         }
 
         async function updateOrderStatus(orderId, newStatus) {
+            silenceActiveAlarm();
             if (newStatus === 'ملغي') {
                 openVoidAuthModal(orderId);
                 return;
@@ -3901,6 +3946,7 @@
 
         async function clearAllOrders() {
             if (confirm('هل تريد تصفير جميع الطلبات وبدء وردية جديدة؟')) {
+                silenceActiveAlarm();
                 await fetch('/api/orders/clear-all', { method: 'POST' });
                 lastKnownOrderIds.clear();
                 fetchOrders();
