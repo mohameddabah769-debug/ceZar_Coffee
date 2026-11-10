@@ -272,50 +272,67 @@ def delete_menu_item(item_id):
 # 3. الطلبات والكاشير (POS & Orders)
 # ==========================================
 
-def deduct_inventory_for_order(items, db):
+def deduct_inventory_for_order(items, db, order_type="صالة"):
     """الخصم التلقائي للمواد الخام والمخزون عند إنشاء أو تحضير أي أوردر.
     ملاحظة: لا يعمل commit هنا - المسؤولية على الكود اللي بيناديه."""
     try:
-        inv_items = {it.name: it for it in db.query(InventoryItem).all()}
+        inv_items_by_name = {it.name: it for it in db.query(InventoryItem).all()}
+        inv_items_by_id = {it.id: it for it in inv_items_by_name.values()}
+
         for item in items:
             name = (item.get('name') if isinstance(item, dict) else getattr(item, 'name', '')) or ''
             qty = (item.get('quantity') if isinstance(item, dict) else getattr(item, 'quantity', 1)) or 1
             customization = ((item.get('customization') if isinstance(item, dict) else getattr(item, 'customization', '')) or '').strip()
 
-            is_coffee = any(k in name for k in ["اسبريسو", "لاتيه", "كابتشينو", "امريكان", "فلات وايت", "موكا", "كورتادو", "ميكاتو", "قهوة"])
-            if is_coffee:
-                beans = inv_items.get("بن برازيلي فاخر") or inv_items.get("بن كولومبي مميز")
-                if beans:
-                    w = 0.018 * qty
-                    if "دبل" in name: w *= 2
-                    if "شوت إضافي" in customization: w += (0.018 * qty)
-                    beans.current_stock = max(0.0, round(beans.current_stock - w, 3))
+            # 1. First check if a registered dynamic recipe exists in MenuItemRecipe
+            menu_item = db.query(MenuItem).filter(MenuItem.name == name).first()
+            has_recipe = False
+            if menu_item and menu_item.recipes:
+                for r in menu_item.recipes:
+                    inv_item = inv_items_by_id.get(r.inventory_item_id)
+                    if inv_item:
+                        has_recipe = True
+                        deduct_amt = r.amount_used * qty
+                        inv_item.current_stock = max(0.0, round(inv_item.current_stock - deduct_amt, 3))
 
-            needs_milk = any(k in name for k in ["لاتيه", "كابتشينو", "فلات وايت", "كورتادو", "فرنساوى", "موكا", "حليب", "سحلب", "شوكليت"])
-            if needs_milk and "بدون حليب" not in customization:
-                m_amt = 0.180 * qty
-                if "حليب لوز" in customization and "حليب لوز" in inv_items:
-                    inv_items["حليب لوز"].current_stock = max(0.0, round(inv_items["حليب لوز"].current_stock - m_amt, 3))
-                elif "حليب شوفان" in customization and "حليب شوفان" in inv_items:
-                    inv_items["حليب شوفان"].current_stock = max(0.0, round(inv_items["حليب شوفان"].current_stock - m_amt, 3))
-                elif "حليب كامل الدسم" in inv_items:
-                    inv_items["حليب كامل الدسم"].current_stock = max(0.0, round(inv_items["حليب كامل الدسم"].current_stock - m_amt, 3))
+            # 2. Heuristic smart fallback if no specific recipe was assigned
+            if not has_recipe:
+                is_coffee = any(k in name for k in ["اسبريسو", "لاتيه", "كابتشينو", "امريكان", "فلات وايت", "موكا", "كورتادو", "ميكاتو", "قهوة"])
+                if is_coffee:
+                    beans = inv_items_by_name.get("بن برازيلي فاخر") or inv_items_by_name.get("بن كولومبي مميز")
+                    if beans:
+                        w = 0.018 * qty
+                        if "دبل" in name: w *= 2
+                        if "شوت إضافي" in customization: w += (0.018 * qty)
+                        beans.current_stock = max(0.0, round(beans.current_stock - w, 3))
 
-            if "كراميل" in customization or "كراميل" in name:
-                if "سيرب كراميل" in inv_items:
-                    inv_items["سيرب كراميل"].current_stock = max(0.0, round(inv_items["سيرب كراميل"].current_stock - (0.02 * qty), 3))
-            if "فانيليا" in customization or "فانيليا" in name:
-                if "سيرب فانيليا" in inv_items:
-                    inv_items["سيرب فانيليا"].current_stock = max(0.0, round(inv_items["سيرب فانيليا"].current_stock - (0.02 * qty), 3))
+                needs_milk = any(k in name for k in ["لاتيه", "كابتشينو", "فلات وايت", "كورتادو", "فرنساوى", "موكا", "حليب", "سحلب", "شوكليت"])
+                if needs_milk and "بدون حليب" not in customization:
+                    m_amt = 0.180 * qty
+                    if "حليب لوز" in customization and "حليب لوز" in inv_items_by_name:
+                        inv_items_by_name["حليب لوز"].current_stock = max(0.0, round(inv_items_by_name["حليب لوز"].current_stock - m_amt, 3))
+                    elif "حليب شوفان" in customization and "حليب شوفان" in inv_items_by_name:
+                        inv_items_by_name["حليب شوفان"].current_stock = max(0.0, round(inv_items_by_name["حليب شوفان"].current_stock - m_amt, 3))
+                    elif "حليب كامل الدسم" in inv_items_by_name:
+                        inv_items_by_name["حليب كامل الدسم"].current_stock = max(0.0, round(inv_items_by_name["حليب كامل الدسم"].current_stock - m_amt, 3))
 
-            if "شاى" in name and "شاي أسود ناعم" in inv_items:
-                inv_items["شاي أسود ناعم"].current_stock = max(0.0, round(inv_items["شاي أسود ناعم"].current_stock - (0.005 * qty), 3))
-            elif ("تركي" in name or "تركى" in name) and "بن تركي محوج" in inv_items:
-                inv_items["بن تركي محوج"].current_stock = max(0.0, round(inv_items["بن تركي محوج"].current_stock - (0.012 * qty), 3))
+                if "كراميل" in customization or "كراميل" in name:
+                    if "سيرب كراميل" in inv_items_by_name:
+                        inv_items_by_name["سيرب كراميل"].current_stock = max(0.0, round(inv_items_by_name["سيرب كراميل"].current_stock - (0.02 * qty), 3))
+                if "فانيليا" in customization or "فانيليا" in name:
+                    if "سيرب فانيليا" in inv_items_by_name:
+                        inv_items_by_name["سيرب فانيليا"].current_stock = max(0.0, round(inv_items_by_name["سيرب فانيليا"].current_stock - (0.02 * qty), 3))
 
-            cups = inv_items.get("أكواب تيك أواي 12oz") or inv_items.get("أكواب بلاستيك بارد 16oz")
-            if cups:
-                cups.current_stock = max(0.0, cups.current_stock - qty)
+                if "شاى" in name and "شاي أسود ناعم" in inv_items_by_name:
+                    inv_items_by_name["شاي أسود ناعم"].current_stock = max(0.0, round(inv_items_by_name["شاي أسود ناعم"].current_stock - (0.005 * qty), 3))
+                elif ("تركي" in name or "تركى" in name) and "بن تركي محوج" in inv_items_by_name:
+                    inv_items_by_name["بن تركي محوج"].current_stock = max(0.0, round(inv_items_by_name["بن تركي محوج"].current_stock - (0.012 * qty), 3))
+
+            # Deduct takeaway cups ONLY for Takeaway and Delivery
+            if order_type in ["تيك أواي", "دليفري"]:
+                cups = inv_items_by_name.get("أكواب تيك أواي 12oz") or inv_items_by_name.get("أكواب بلاستيك بارد 16oz")
+                if cups:
+                    cups.current_stock = max(0.0, cups.current_stock - qty)
 
     except Exception as e:
         print(f"Auto-deduct warning: {e}")
@@ -378,7 +395,7 @@ def create_table_order():
             if current_shift:
                 current_shift.total_sales += grand_total
                 current_shift.cash_sales += grand_total
-            deduct_inventory_for_order(items, db)
+            deduct_inventory_for_order(items, db, order_type="صالة")
             db.commit()
             db.refresh(order)
             return jsonify({
@@ -451,6 +468,7 @@ def create_pos_direct_order():
                 current_shift.visa_sales += grand_total
             else:
                 current_shift.cash_sales += grand_total
+        deduct_inventory_for_order(items, db, order_type=order_type)
         db.commit()
         db.refresh(order)
         return jsonify({
