@@ -1604,6 +1604,96 @@ def export_sales_csv():
         )
 
 
+@app.route("/api/export/full-data-csv", methods=["GET"])
+@app.route("/api/cezar/export/full-data-csv", methods=["GET"])
+def export_full_data_csv():
+    with SessionLocal() as db:
+        output = io.StringIO()
+        output.write("\ufeff")
+        writer = csv.writer(output)
+
+        writer.writerow(["=== نسخة احتياطية شاملة لكافة بيانات كافيه سيزر (ceZar Coffee) ==="])
+        writer.writerow(["تاريخ النسخ:", datetime.utcnow().strftime("%Y-%m-%d %I:%M %p")])
+        writer.writerow([])
+
+        # 1. Menu
+        writer.writerow(["--- [ 1. قائمة المنيو والأسعار ] ---"])
+        writer.writerow(["كود الصنف", "اسم الصنف", "القسم", "سعر البيع (ج)", "سعر التكلفة (ج)", "الحالة"])
+        items = db.query(MenuItem).order_by(MenuItem.category, MenuItem.name).all()
+        for it in items:
+            writer.writerow([
+                it.id,
+                it.name,
+                it.category,
+                it.price,
+                it.cost_price or 0.0,
+                "متاح" if it.is_available else "غير متاح"
+            ])
+        writer.writerow([])
+
+        # 2. Inventory
+        writer.writerow(["--- [ 2. أرصدة خامات المخزون ] ---"])
+        writer.writerow(["كود الخامة", "اسم الخامة", "الرصيد الحالي", "وحدة القياس", "الحد الأدنى للإنذار", "سعر الوحدة (ج)"])
+        inv = db.query(InventoryItem).order_by(InventoryItem.name).all()
+        for i in inv:
+            writer.writerow([
+                i.id,
+                i.name,
+                i.stock,
+                i.unit,
+                i.min_stock,
+                i.cost_per_unit or 0.0
+            ])
+        writer.writerow([])
+
+        # 3. Employees
+        writer.writerow(["--- [ 3. دليل الموظفين وفريق العمل ] ---"])
+        writer.writerow(["كود الموظف", "اسم الموظف", "الوظيفة", "الهاتف", "الراتب الأساسي (ج)", "تاريخ التعيين", "الحالة"])
+        emps = db.query(Employee).order_by(Employee.id).all()
+        for e in emps:
+            writer.writerow([
+                e.id,
+                e.name,
+                e.role,
+                e.phone or "-",
+                e.salary,
+                e.hire_date or "-",
+                e.status
+            ])
+        writer.writerow([])
+
+        # 4. Sales
+        writer.writerow(["--- [ 4. سجل كافة المبيعات والطلبات ] ---"])
+        writer.writerow(["رقم الطلب", "نوع الطلب", "رقم الترابيزة", "اسم العميل", "الأصناف المطلوبة", "طريقة الدفع", "الخصم (ج)", "الإجمالي المدفوع (ج)", "الحالة", "التاريخ والوقت"])
+        orders = db.query(TableOrder).filter(
+            TableOrder.status != "ملغي",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر",
+            TableOrder.total_price > 0
+        ).order_by(desc(TableOrder.id)).all()
+        for o in orders:
+            writer.writerow([
+                o.id,
+                o.order_type or "صالة",
+                o.table_number or "-",
+                o.customer_name or "-",
+                (o.items_summary or "").replace("\n", " | "),
+                o.payment_method or "كاش",
+                o.discount_amount or 0.0,
+                o.total_price,
+                o.status,
+                o.created_at.strftime("%Y-%m-%d %I:%M %p") if o.created_at else "-"
+            ])
+
+        csv_data = output.getvalue().encode("utf-8-sig")
+        filename = f"ceZar_Full_Backup_Excel_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.csv"
+        return Response(
+            csv_data,
+            mimetype="text/csv; charset=utf-8-sig",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+
+
 # ==========================================
 # 9. تسجيل الدخول
 # ==========================================
@@ -2317,6 +2407,7 @@ def reset_test_data():
 @app.route("/api/backup/restore", methods=["POST"])
 @app.route("/api/cezar/backup/restore", methods=["POST"])
 def restore_database_backup():
+    import shutil
     if "file" not in request.files:
         return jsonify({"detail": "لم يتم اختيار ملف", "status": "error"}), 400
     file = request.files["file"]
@@ -2337,10 +2428,31 @@ def restore_database_backup():
         except Exception:
             pass
 
+    try:
+        engine.dispose()
+    except Exception:
+        pass
+
     with open(target_db, "wb") as f:
         f.write(content)
 
-    return jsonify({"status": "success", "message": "تم استرجاع قاعدة البيانات بنجاح!"})
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception:
+        pass
+
+    wsgi_candidates = [
+        "/var/www/deboo_pythonanywhere_com_wsgi.py",
+        "/var/www/Deboo_pythonanywhere_com_wsgi.py",
+    ]
+    for wsgi_file in wsgi_candidates:
+        if os.path.exists(wsgi_file):
+            try:
+                os.utime(wsgi_file, None)
+            except Exception:
+                pass
+
+    return jsonify({"status": "success", "message": "تم استرجاع قاعدة البيانات وإعادة تحميل النظام بنجاح!"})
 
 
 if __name__ == "__main__":
@@ -2457,7 +2569,10 @@ def bulk_adjust_prices_flask():
 def download_db_backup_flask():
     import os
     from flask import send_file
-    db_file = os.path.abspath("cezar_coffee.db")
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    db_file = os.path.join(base_dir, "cezar_coffee.db")
+    if not os.path.exists(db_file):
+        db_file = os.path.abspath("cezar_coffee.db")
     timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     return send_file(db_file, as_attachment=True, download_name=f"cezar_coffee_backup_{timestamp}.db")
 

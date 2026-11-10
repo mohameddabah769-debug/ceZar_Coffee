@@ -2362,18 +2362,28 @@
 
         <!-- 6. Backup, Export & Maintenance -->
         <div id="ownerSubMaintenance" class="owner-panel" style="display: none;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
-                <!-- DB Backup -->
-                <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px;">
-                    <div style="width: 44px; height: 44px; border-radius: 12px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 12px;">
-                        <i class="fa-solid fa-database"></i>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px;">
+                <!-- DB Backup & Restore -->
+                <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <div style="width: 44px; height: 44px; border-radius: 12px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                                <i class="fa-solid fa-database"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 15px; font-weight: 900; color: var(--primary-espresso); margin: 0;">نسخة قاعدة البيانات التقنية (.db)</h3>
+                                <span style="font-size: 11px; color: #666;">حفظ ورفع نسخة النظام بالكامل</span>
+                            </div>
+                        </div>
+                        <p style="font-size: 12px; color: #666; line-height: 1.5; margin-bottom: 12px;">
+                            تحميل ملف قاعدة البيانات الخام (SQLite .db).
+                            <br><span style="color: #4F46E5; font-weight: 800; font-size: 11px;">💡 ملاحظة: هذا الملف تقني مخصص لحفظ نسخة النظام ورفعها عبر زر "استرجاع نسخة"، ولا يُفتح بالنقر المزدوج في ويندوز.</span>
+                        </p>
                     </div>
-                    <h3 style="font-size: 15px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 6px;">نسخة احتياطية كاملة (Backup)</h3>
-                    <p style="font-size: 12px; color: #666; margin-bottom: 16px;">تحميل ملف قاعدة البيانات بالكامل (SQLite DB) محتوياً على كافة الطلبات، المنيو، المخزون، الحسابات، والورديات.</p>
-                    <button class="pin-btn" onclick="downloadDbBackup()" style="background: #4F46E5; font-size: 13px;">
-                        <i class="fa-solid fa-cloud-arrow-down"></i> تحميل ملف قاعدة البيانات (.db)
-                    </button>
-                    <div style="margin-top: 10px;">
+                    <div>
+                        <button class="pin-btn" onclick="downloadDbBackup()" style="background: #4F46E5; font-size: 13px; margin-bottom: 8px;">
+                            <i class="fa-solid fa-cloud-arrow-down"></i> تحميل ملف قاعدة البيانات (.db)
+                        </button>
                         <input type="file" id="dbRestoreFileInput" accept=".db" style="display: none;" onchange="submitRestoreBackup()">
                         <button class="pin-btn" onclick="document.getElementById('dbRestoreFileInput').click()" style="background: #DC2626; font-size: 13px; margin: 0;">
                             <i class="fa-solid fa-cloud-arrow-up"></i> استرجاع نسخة احتياطية (Restore DB)
@@ -2381,28 +2391,53 @@
                     </div>
                 </div>
 
-                <!-- CSV Export -->
-                <div style="background: white; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px;">
-                    <div style="width: 44px; height: 44px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 12px;">
-                        <i class="fa-solid fa-file-excel"></i>
+                <!-- Comprehensive Excel Backup -->
+                <div style="background: white; border: 1.5px solid #BBF7D0; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.06);">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <div style="width: 44px; height: 44px; border-radius: 12px; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                                <i class="fa-solid fa-file-excel"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 15px; font-weight: 900; color: #14532D; margin: 0;">نسخة شاملة إكسل (تفتح مباشرة)</h3>
+                                <span style="font-size: 11px; color: #16A34A; font-weight: 800;">تفتح فوراً في Microsoft Excel</span>
+                            </div>
+                        </div>
+                        <p style="font-size: 12px; color: #4B5563; line-height: 1.5; margin-bottom: 12px;">
+                            تحميل ملف إكسل شامل يحتوي على كافة أقسام الكافيه بوضوح: المنيو، المخزون، الموظفين، وسجل المبيعات، مع ترميز عربي كامل (UTF-8).
+                        </p>
                     </div>
-                    <h3 style="font-size: 15px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 6px;">تصدير سجل المبيعات (Excel / CSV)</h3>
-                    <p style="font-size: 12px; color: #666; margin-bottom: 16px;">تصدير كافة العمليات والفواتير والخصومات بترميز UTF-8 متوافق تماماً مع Microsoft Excel.</p>
-                    <a href="/api/export/sales-csv" download class="pin-btn" style="background: #059669; font-size: 13px; text-decoration: none;">
-                        <i class="fa-solid fa-file-csv"></i> تصدير المبيعات CSV
-                    </a>
+                    <div>
+                        <a href="/api/export/full-data-csv" download class="pin-btn" style="background: #16A34A; font-size: 13px; text-decoration: none; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fa-solid fa-file-excel"></i> تحميل كل بيانات الكافيه كـ Excel
+                        </a>
+                        <a href="/api/export/sales-csv" download class="pin-btn" style="background: #0D9488; font-size: 12px; text-decoration: none; margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fa-solid fa-receipt"></i> تصدير سجل المبيعات فقط (CSV)
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Safe Reset -->
-                <div style="background: #FFF1F2; border: 1.5px solid #FECDD3; border-radius: 16px; padding: 20px;">
-                    <div style="width: 44px; height: 44px; border-radius: 12px; background: #FFE4E6; color: #E11D48; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 12px;">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
+                <div style="background: #FFF1F2; border: 1.5px solid #FECDD3; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <div style="width: 44px; height: 44px; border-radius: 12px; background: #FFE4E6; color: #E11D48; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 15px; font-weight: 900; color: #9F1239; margin: 0;">تصفير الطلبات التجريبية بأمان</h3>
+                                <span style="font-size: 11px; color: #BE123C; font-weight: 800;">قبل بدء العمل الفعلي</span>
+                            </div>
+                        </div>
+                        <p style="font-size: 12px; color: #881337; line-height: 1.5; margin-bottom: 12px;">
+                            مسح الطلبات والحجوزات والمصروفات التجريبية فقط، مع **الحفاظ التام والآمن 100% على أصناف المنيو، الأسعار، المخزون، بيانات الموظفين، والإعدادات**.
+                        </p>
                     </div>
-                    <h3 style="font-size: 15px; font-weight: 900; color: #9F1239; margin-bottom: 6px;">تصفير الطلبات التجريبية بأمان</h3>
-                    <p style="font-size: 12px; color: #881337; margin-bottom: 16px;">مسح الطلبات والحجوزات والمصروفات التجريبية فقط، مع **الحفاظ التام على المنيو والأسعار، المخزون، الموظفين، والإعدادات**.</p>
-                    <button class="pin-btn" onclick="resetTestDataSafe()" style="background: #E11D48; font-size: 13px;">
-                        <i class="fa-solid fa-trash-can"></i> تصفير الطلبات التجريبية فقط
-                    </button>
+                    <div>
+                        <button class="pin-btn" onclick="resetTestDataSafe()" style="background: #E11D48; font-size: 13px; margin: 0;">
+                            <i class="fa-solid fa-rotate-left"></i> تصفير الطلبات التجريبية فقط
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -8234,9 +8269,11 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
         }
 
         async function resetTestDataSafe() {
-            const pwd = prompt('⚠️ لتأكيد تصفير الطلبات التجريبية، يرجى كتابة (تأكيد):');
-            if (pwd !== 'تأكيد') {
-                alert('تم إلغاء التصفير');
+            const input = prompt('⚠️ هل أنت متأكد من تصفير كافة الطلبات والمبيعات التجريبية؟\n(المنيو والأسعار والمخزون والموظفين سيبقون محفوظين بالكامل 100%)\n\nاكتب (تأكيد) أو (نعم) للمتابعة:');
+            if (!input) return;
+            const clean = input.trim().toLowerCase();
+            if (clean !== 'تأكيد' && clean !== 'تاكيد' && clean !== 'نعم' && clean !== 'ok' && clean !== 'yes') {
+                alert('تم إلغاء التصفير، لم يتم إجراء أي تغيير.');
                 return;
             }
 
@@ -8245,9 +8282,11 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                 const data = await res.json();
                 if (res.ok && data.status === 'success') {
                     alert('🧹 ' + data.message);
-                    fetchOrders();
-                    fetchTablesStatus();
-                    fetchCurrentShift();
+                    if (typeof fetchOrders === 'function') fetchOrders();
+                    if (typeof fetchTablesStatus === 'function') fetchTablesStatus();
+                    if (typeof fetchCurrentShift === 'function') fetchCurrentShift();
+                    if (typeof fetchAnalytics === 'function') fetchAnalytics();
+                    if (typeof filterTablesReport === 'function') filterTablesReport('today');
                 } else {
                     alert('خطأ: ' + (data.detail || 'تعذر التصفير'));
                 }
