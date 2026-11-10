@@ -122,6 +122,14 @@ class InventoryItem(Base):
     cost_per_unit = Column(Float, default=0.0)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    @property
+    def cost_price(self):
+        return self.cost_per_unit or 0.0
+
+    @cost_price.setter
+    def cost_price(self, val):
+        self.cost_per_unit = float(val or 0.0)
+
 
 class PromoCode(Base):
     """نظام الخصومات والبروموكود للزبائن والكاشير."""
