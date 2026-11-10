@@ -6339,6 +6339,10 @@
                 }
                 const s = data.z_report;
                 const printWindow = window.open('', '_blank', 'width=380,height=650');
+                if (!printWindow) {
+                    alert('يرجى السماح بالنوافذ المنبثقة (Popups) في المتصفح لطباعة تقرير الـ Z-Report');
+                    return;
+                }
 
                 let expensesHtml = '';
                 if (s.expenses && s.expenses.length > 0) {
@@ -6396,9 +6400,17 @@
                         </div>
                         ${s.notes ? `<div style="text-align:right; font-size:11px; margin-top:6px;">ملاحظات: ${s.notes}</div>` : ''}
                         <div class="line"></div>
-                        <div style="display:flex; justify-content:space-between; margin-top:30px; font-size:11px;">
+                        <div style="display:flex; justify-content:space-between; margin-top:20px; font-size:11px;">
                             <div>توقيع الكاشير: ..........</div>
                             <div>توقيع الإدارة: ..........</div>
+                        </div>
+                        <div style="border-top: 1px dotted #333; margin-top: 14px; padding-top: 6px; font-size: 10px; color: #111; line-height: 1.5; text-align: center;">
+                            <div style="font-weight: 900; font-size: 11px; color: #000;">🏢 Sanad Digital | سند لتطوير البرمجيات</div>
+                            <div style="font-weight: 800; font-size: 10px; margin-top: 2px; color: #222;">تم تطوير النظام بواسطة: م/ محمد الدباح</div>
+                            <div style="font-size: 9.5px; color: #444; margin-top: 1px;">لحلول إدارة المطاعم والكافيهات</div>
+                            <div style="font-size: 10px; font-weight: 900; margin-top: 3px; direction: ltr;">
+                                <span style="direction: rtl;">📱 واتساب / اتصال:</span> <strong>01501084747</strong>
+                            </div>
                         </div>
                     </body>
                     </html>
