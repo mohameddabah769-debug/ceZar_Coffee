@@ -177,6 +177,64 @@
             letter-spacing: 0.5px;
         }
 
+        /* Developer Branding Footprint (بصمة المطور كما في الفاتورة) */
+        .card-dev-footprint {
+            width: 100%;
+            margin-top: 8px;
+            padding-top: 6px;
+            text-align: center;
+            line-height: 1.45;
+            font-family: 'Cairo', sans-serif;
+            border-top: 1px dotted rgba(43, 24, 16, 0.4);
+            background: rgba(253, 248, 243, 0.6);
+            border-radius: 10px;
+            padding: 5px 8px;
+        }
+
+        .footprint-brand {
+            font-size: 11px;
+            font-weight: 900;
+            color: #190E09;
+            letter-spacing: 0.3px;
+        }
+
+        .footprint-author {
+            font-size: 10px;
+            font-weight: 800;
+            color: #2B1810;
+            margin-top: 1px;
+        }
+
+        .footprint-service {
+            font-size: 9px;
+            font-weight: 600;
+            color: #555;
+            margin-top: 1px;
+        }
+
+        .footprint-phone {
+            font-size: 10px;
+            font-weight: 900;
+            color: #0284C7;
+            margin-top: 2px;
+            direction: ltr;
+            display: inline-block;
+        }
+
+        .footprint-phone span {
+            direction: rtl;
+            color: #222;
+            font-weight: 700;
+            font-size: 9.5px;
+        }
+
+        .footprint-phone strong {
+            font-family: monospace, 'Cairo', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            color: #0284C7;
+        }
+
         /* Print Media Styles */
         @media print {
             body {
@@ -191,7 +249,7 @@
             .cards-grid {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
-                gap: 20px;
+                gap: 16px;
                 max-width: 100%;
                 margin: 0;
             }
@@ -201,7 +259,37 @@
                 box-shadow: none;
                 page-break-inside: avoid;
                 break-inside: avoid;
-                margin-bottom: 20px;
+                margin-bottom: 16px;
+                min-height: auto;
+            }
+
+            .card-dev-footprint {
+                border-top: 1px dotted #222 !important;
+                background: transparent !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .footprint-brand {
+                color: #000 !important;
+                font-weight: 900 !important;
+            }
+
+            .footprint-author {
+                color: #111 !important;
+                font-weight: 800 !important;
+            }
+
+            .footprint-service {
+                color: #333 !important;
+            }
+
+            .footprint-phone {
+                color: #000 !important;
+            }
+
+            .footprint-phone strong {
+                color: #000 !important;
             }
         }
     </style>
@@ -274,12 +362,22 @@
                         <img src="${qrUrl}" alt="QR Code Table ${t}" class="card-qr-img">
                     </div>
 
-                    <div>
+                    <div style="width: 100%;">
                         <p class="card-instruction">
                             امسح الكود بكاميرا الموبايل<br>
                             لتصفح المنيو وقائمة الأسعار مباشرة ☕✨
                         </p>
                         <div class="card-footer">ceZar COFFEE • Luxury Coffee Experience</div>
+
+                        <!-- Developer Footprint (بصمة المطور كما في الفاتورة) -->
+                        <div class="card-dev-footprint">
+                            <div class="footprint-brand">🏢 Sanad Digital | سند لتطوير البرمجيات</div>
+                            <div class="footprint-author">تم تطوير وبرمجة النظام: م/ محمد الدباح</div>
+                            <div class="footprint-service">لحلول إدارة المطاعم والكافيهات الذكية</div>
+                            <div class="footprint-phone">
+                                <span>📱 واتساب / اتصال:</span> <strong>01501084747</strong>
+                            </div>
+                        </div>
                     </div>
                 `;
 

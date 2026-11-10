@@ -8067,9 +8067,14 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                             </select>
                         </td>
                         <td>
-                            <a href="/menu?table=${t.table_number}" target="_blank" style="color: var(--cezar-orange); font-weight: 800; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
-                                <i class="fa-solid fa-qrcode"></i> فتح منيو الترابيزة
-                            </a>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <a href="/menu?table=${t.table_number}" target="_blank" style="color: var(--cezar-orange); font-weight: 800; text-decoration: none; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> فتح منيو الترابيزة
+                                </a>
+                                <a href="/qr-cards?table=${t.table_number}" target="_blank" style="color: #0284C7; font-weight: 800; text-decoration: none; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="طباعة كارت الباركود مع بصمة المطور">
+                                    <i class="fa-solid fa-print"></i> طباعة كارت QR
+                                </a>
+                            </div>
                         </td>
                         <td>
                             <button onclick="saveOwnerSingleTable(${t.table_number})" style="background: #0284C7; color: white; border: none; padding: 5px 12px; border-radius: 8px; font-weight: 800; font-size: 11px; cursor: pointer;">
