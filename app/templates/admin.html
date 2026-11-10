@@ -1453,15 +1453,17 @@
             <!-- Peak Hours Card -->
             <div style="background: white; border-radius: 16px; padding: 18px; border: 1px solid var(--border-color); box-shadow: 0 3px 12px rgba(43, 24, 16, 0.05);">
                 <h4 style="font-size: 15px; font-weight: 900; margin-bottom: 14px; color: var(--primary-espresso);"><i class="fa-solid fa-fire" style="color: var(--cezar-orange);"></i> ساعات الذروة اليومية (Peak Hours)</h4>
-                <div id="peakHoursChart" style="display: flex; align-items: flex-end; gap: 6px; height: 180px; padding-top: 10px; border-bottom: 2px solid var(--border-color);">
+                <div id="peakHoursChart" style="display: flex; align-items: flex-end; gap: 4px; height: 180px; padding-top: 10px; border-bottom: 2px solid var(--border-color);">
                     <!-- Rendered by JS bars -->
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #888; font-weight: 800; margin-top: 6px;">
+                <div style="display: flex; justify-content: space-between; font-size: 10px; color: #888; font-weight: 800; margin-top: 6px;">
+                    <span>12 ص</span>
+                    <span>4 فجراً</span>
                     <span>8 ص</span>
-                    <span>12 ظهراً</span>
+                    <span>12 ظ</span>
                     <span>4 عصراً</span>
-                    <span>8 مساءً</span>
-                    <span>12 منتصف الليل</span>
+                    <span>8 م</span>
+                    <span>11 م</span>
                 </div>
             </div>
         </div>
@@ -6163,11 +6165,13 @@
                         const maxHourVal = Math.max(...peakHours.map(h => Number(h.count || 0)), 1);
                         peakContainer.innerHTML = peakHours.map(h => {
                             const count = Number(h.count || 0);
-                            const hPct = Math.max(5, Math.round((count / maxHourVal) * 100));
+                            const hPct = count > 0 ? Math.max(12, Math.round((count / maxHourVal) * 100)) : 6;
                             const isPeak = count === maxHourVal && count > 0;
-                            return `<div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;" title="${h.hour}:00 - ${count} طلبات">
-                                <div style="font-size: 9px; font-weight: 800; color: ${isPeak ? 'var(--cezar-orange)' : '#888'}; margin-bottom: 2px;">${count > 0 ? count : ''}</div>
-                                <div style="width: 100%; max-width: 14px; background: ${isPeak ? 'var(--cezar-orange)' : '#0284C7'}; height: ${hPct}%; border-radius: 4px 4px 0 0; opacity: ${count > 0 ? '1' : '0.2'};"></div>
+                            const barColor = isPeak ? 'var(--cezar-orange)' : (count > 0 ? '#0284C7' : '#E2E8F0');
+                            const label = h.hour || (h.hour_num !== undefined ? `${h.hour_num}:00` : '');
+                            return `<div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0;" title="الساعة ${label}: ${count} طلبات">
+                                <div style="font-size: 10px; font-weight: 900; color: ${isPeak ? 'var(--cezar-orange)' : '#0284C7'}; margin-bottom: 3px;">${count > 0 ? count : ''}</div>
+                                <div style="width: 100%; max-width: 14px; background: ${barColor}; height: ${hPct}%; border-radius: 4px 4px 0 0; transition: height 0.3s; opacity: ${count > 0 ? '1' : '0.45'}; cursor: pointer;"></div>
                             </div>`;
                         }).join('');
                     }

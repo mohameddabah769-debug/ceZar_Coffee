@@ -1488,12 +1488,29 @@ def get_analytics():
             })
         top_items = sorted(top_items, key=lambda x: x["quantity"], reverse=True)[:6]
 
+        from datetime import timedelta
+        cairo_offset = timedelta(hours=2)
         hourly_counts = {h: 0 for h in range(24)}
         for o in orders:
             if o.created_at:
-                hourly_counts[o.created_at.hour] += 1
+                cairo_time = o.created_at + cairo_offset
+                hourly_counts[cairo_time.hour] += 1
 
-        peak_hours = [{"hour": f"{h}:00", "count": hourly_counts[h]} for h in range(8, 24)]
+        peak_hours = []
+        for h in range(24):
+            if h == 0:
+                label = "12 ص"
+            elif h < 12:
+                label = f"{h} ص"
+            elif h == 12:
+                label = "12 م"
+            else:
+                label = f"{h - 12} م"
+            peak_hours.append({
+                "hour_num": h,
+                "hour": label,
+                "count": hourly_counts[h]
+            })
 
         sales_by_type = {"صالة": 0.0, "تيك أواي": 0.0, "دليفري": 0.0}
         for o in orders:
