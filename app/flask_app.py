@@ -1522,6 +1522,8 @@ def export_sales_csv():
     with SessionLocal() as db:
         orders = db.query(TableOrder).filter(
             TableOrder.status != "ملغي",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر",
             TableOrder.total_price > 0
         ).order_by(desc(TableOrder.id)).all()
 

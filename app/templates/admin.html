@@ -897,7 +897,12 @@
 
                     <!-- Items Cart Table -->
                     <div style="border-top: 1px dashed var(--border-color); padding-top: 8px; margin-top: 8px;">
-                        <div style="font-size: 12px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 6px;">الأصناف المختارة:</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <div style="font-size: 12px; font-weight: 900; color: var(--primary-espresso);">الأصناف المختارة:</div>
+                            <button type="button" onclick="resetPosCart()" style="background: none; border: none; color: #dc3545; font-size: 11px; font-weight: 800; cursor: pointer;" title="إفراغ سلة الكاشير">
+                                <i class="fa-solid fa-trash-can"></i> إفراغ السلة
+                            </button>
+                        </div>
                         <div id="posCartItemsList" style="max-height: 220px; overflow-y: auto;">
                             <!-- Dynamic Cart Items -->
                         </div>
@@ -4130,6 +4135,18 @@
             document.getElementById('posCartSubtotal').textContent = subtotal + ' ج';
             // hall tables only
             document.getElementById('posCartGrandTotal').textContent = grandTotal + ' ج';
+        }
+
+        function resetPosCart() {
+            if (!posCartItems || posCartItems.length === 0) return;
+            if (!confirm('هل تريد بالتأكيد إفراغ الأصناف المختارة من السلة؟')) return;
+            posCartItems = [];
+            posAppliedPromo = null;
+            const pInp = document.getElementById('posPromoCodeInput');
+            if (pInp) pInp.value = '';
+            const pRow = document.getElementById('posPromoAppliedRow');
+            if (pRow) pRow.style.display = 'none';
+            renderPosCart();
         }
 
         

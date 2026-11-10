@@ -1647,7 +1647,14 @@
             document.getElementById('payMethodCard').classList.toggle('selected', method === 'فيزا');
         }
 
+        let lastBillRequestTime = 0;
         async function confirmBillRequest() {
+            const now = Date.now();
+            if (now - lastBillRequestTime < 20000) {
+                const waitSec = Math.ceil((20000 - (now - lastBillRequestTime)) / 1000);
+                alert(`⏳ تم إرسال طلب الحساب للكاشير بالفعل والويتر في الطريق إليك!\nيرجى الانتظار (${waitSec} ثانية) قبل تكرار الطلب.`);
+                return;
+            }
             closeBillModal();
             try {
                 const res = await fetch('/api/orders/request-bill', {
@@ -1659,6 +1666,7 @@
                     })
                 });
                 const data = await res.json();
+                lastBillRequestTime = Date.now();
                 const icon = selectedPaymentMethod === 'كاش' ? '💵' : '💳';
                 const totalNote = data.total_bill ? `\nالإجمالي المطلوب: ${data.total_bill} جنيه` : '';
                 alert(`✅ تم إرسال طلب الحساب لترابيزة رقم ${currentTable} بنجاح!${totalNote}\nطريقة الدفع: ${selectedPaymentMethod} ${icon}\nالويتر في الطريق ومعه الفاتورة ☕✨`);
@@ -1667,7 +1675,14 @@
             }
         }
 
+        let lastWaiterCallTime = 0;
         async function sendWaiterCall() {
+            const now = Date.now();
+            if (now - lastWaiterCallTime < 25000) {
+                const waitSec = Math.ceil((25000 - (now - lastWaiterCallTime)) / 1000);
+                alert(`⏳ تم إرسال نداء للويتر بالفعل وهو في الطريق إليك!\nيرجى الانتظار (${waitSec} ثانية) قبل إرسال نداء جديد.`);
+                return;
+            }
             if (!confirm(`هل تود إرسال نداء للويتر لترابيزة رقم ${currentTable}؟`)) return;
             try {
                 const res = await fetch('/api/orders/call-waiter', {
@@ -1676,6 +1691,7 @@
                     body: JSON.stringify({ table_number: currentTable })
                 });
                 const data = await res.json();
+                lastWaiterCallTime = Date.now();
                 alert(`🔔 تم إرسال نداء الويتر لترابيزة رقم ${currentTable} بنجاح!\nالويتر في الطريق إليك حالاً ☕✨`);
             } catch (e) {
                 alert('حدث خطأ في الاتصال، يرجى المحاولة ثانية.');
