@@ -7837,6 +7837,13 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                 if (pSec) pSec.classList.add('active');
                 const oSec = document.getElementById('ownerSubSecurity');
                 if (oSec) oSec.style.display = 'block';
+                const badgeCount = document.getElementById('badgeVoidCount');
+                if (badgeCount) {
+                    badgeCount.style.display = 'none';
+                    badgeCount.innerText = '0';
+                }
+                const total = (typeof lastTotalVoidCount !== 'undefined') ? lastTotalVoidCount : (document.getElementById('kpiVoidTotalCount') ? parseInt(document.getElementById('kpiVoidTotalCount').innerText) || 0 : 0);
+                localStorage.setItem('cezar_voids_read_count', String(total));
                 fetchVoidLogs();
             }
         }
@@ -8713,18 +8720,38 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
             }
         }
 
+        var lastTotalVoidCount = 0;
+
         async function fetchVoidLogs() {
             try {
                 const res = await fetch('/api/security/void-logs');
                 const data = await res.json();
                 if (data.status === 'success') {
                     const stats = data.stats || {};
+                    const totalCount = Number(stats.total_count || 0);
+                    lastTotalVoidCount = totalCount;
+
                     const kpiTotalCount = document.getElementById('kpiVoidTotalCount');
-                    if (kpiTotalCount) kpiTotalCount.innerText = stats.total_count || 0;
+                    if (kpiTotalCount) kpiTotalCount.innerText = totalCount;
+
                     const badgeCount = document.getElementById('badgeVoidCount');
                     if (badgeCount) {
-                        badgeCount.innerText = stats.total_count || 0;
-                        badgeCount.style.display = stats.total_count > 0 ? 'inline-block' : 'none';
+                        const isSecurityPanelOpen = document.getElementById('ownerSubSecurity') && document.getElementById('ownerSubSecurity').style.display !== 'none';
+                        if (isSecurityPanelOpen) {
+                            localStorage.setItem('cezar_voids_read_count', String(totalCount));
+                            badgeCount.style.display = 'none';
+                            badgeCount.innerText = '0';
+                        } else {
+                            const readCount = parseInt(localStorage.getItem('cezar_voids_read_count') || '0', 10);
+                            const unread = Math.max(0, totalCount - readCount);
+                            if (unread > 0) {
+                                badgeCount.innerText = unread;
+                                badgeCount.style.display = 'inline-block';
+                            } else {
+                                badgeCount.style.display = 'none';
+                                badgeCount.innerText = '0';
+                            }
+                        }
                     }
 
                     const kpiTotalAmount = document.getElementById('kpiVoidTotalAmount');
