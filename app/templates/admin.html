@@ -3659,7 +3659,11 @@
                         if (a) {
                             a.currentTime = 0;
                             a.volume = 1.0;
-                            a.play().catch(() => {});
+                            a.play().catch(() => {
+                                playSynthesizerFallback(currentAlarmOrderType === 'نداء ويتر' ? 'waiter' : (currentAlarmOrderType && currentAlarmOrderType.startsWith('طلب حساب') ? 'bill' : 'order'));
+                            });
+                        } else {
+                            playSynthesizerFallback(currentAlarmOrderType === 'نداء ويتر' ? 'waiter' : (currentAlarmOrderType && currentAlarmOrderType.startsWith('طلب حساب') ? 'bill' : 'order'));
                         }
                     } else {
                         silenceActiveAlarm();
@@ -5252,6 +5256,9 @@
         function initDashboard() {
             fetchOrders();
             fetchCurrentShift();
+            fetchTablesStatus();
+            fetchAnalytics();
+            fetchEmployees();
             if (!isPolling) {
                 isPolling = true;
                 setInterval(fetchOrders, 3000); // 3-second live orders polling
@@ -6068,61 +6075,77 @@
                 const res = await fetch('/api/analytics');
                 const data = await res.json();
 
+                // Net Profit & Executive KPIs (Render FIRST so metrics always update immediately)
+                const gross = Number(data.gross_sales || data.total_sales || 0);
+                const cogs = Number(data.total_cogs || data.cogs || 0);
+                const exp = Number(data.total_expenses || 0);
+                const sal = Number(data.total_salaries || 0);
+                const waste = Number(data.total_waste || 0);
+                const net = Number(data.net_profit !== undefined ? data.net_profit : (gross - cogs - exp - sal - waste));
+                const margin = Number(data.profit_margin_pct !== undefined ? data.profit_margin_pct : (gross > 0 ? ((net / gross) * 100).toFixed(1) : 0));
+
+                if (document.getElementById('kpiGrossSales')) document.getElementById('kpiGrossSales').textContent = `${gross} ج`;
+                if (document.getElementById('kpiTotalCogs')) document.getElementById('kpiTotalCogs').textContent = `${cogs} ج`;
+                if (document.getElementById('kpiTotalExpenses')) document.getElementById('kpiTotalExpenses').textContent = `${exp} ج`;
+                if (document.getElementById('kpiTotalSalaries')) document.getElementById('kpiTotalSalaries').textContent = `${sal} ج`;
+                if (document.getElementById('kpiTotalWaste')) document.getElementById('kpiTotalWaste').textContent = `${waste} ج`;
+                if (document.getElementById('kpiNetProfit')) document.getElementById('kpiNetProfit').textContent = `${net} ج`;
+                if (document.getElementById('kpiProfitMargin')) document.getElementById('kpiProfitMargin').textContent = `${margin}%`;
+
                 // Top Sellers
-                const topContainer = document.getElementById('topSellersList');
-                const topSellers = data.top_sellers || [];
-                if (!topContainer) return;
-                if (topSellers.length === 0) {
-                    topContainer.innerHTML = '<div style="color: #888; text-align: center; font-size: 13px;">لا توجد مبيعات مسجلة حتى الآن</div>';
-                } else {
-                    const maxQty = Math.max(...topSellers.map(s => s.quantity), 1);
-                    topContainer.innerHTML = topSellers.map((item, idx) => {
-                        const pct = Math.round((item.quantity / maxQty) * 100);
-                        const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `#${idx+1}`));
-                        return `<div>
-                            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 4px;">
-                                <span>${medal} ${item.name}</span>
-                                <span style="color: var(--cezar-orange);">${item.quantity} طلب (${item.total_revenue} ج)</span>
-                            </div>
-                            <div style="background: #F0EDE8; border-radius: 8px; height: 10px; overflow: hidden;">
-                                <div style="background: linear-gradient(90deg, var(--cezar-orange), var(--cezar-gold)); width: ${pct}%; height: 100%; border-radius: 8px;"></div>
-                            </div>
-                        </div>`;
-                    }).join('');
+                try {
+                    const topContainer = document.getElementById('topSellersList');
+                    const topSellers = data.top_sellers || [];
+                    if (topContainer) {
+                        if (topSellers.length === 0) {
+                            topContainer.innerHTML = '<div style="color: #888; text-align: center; font-size: 13px; padding: 15px;">لا توجد مبيعات مسجلة حتى الآن</div>';
+                        } else {
+                            const maxQty = Math.max(...topSellers.map(s => Number(s.quantity || s.orders_count || 1)), 1);
+                            topContainer.innerHTML = topSellers.map((item, idx) => {
+                                const qty = Number(item.quantity || item.orders_count || 0);
+                                const rev = Number(item.total_revenue || (qty * 35));
+                                const pct = Math.max(10, Math.round((qty / maxQty) * 100));
+                                const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `#${idx+1}`));
+                                return `<div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 4px;">
+                                        <span>${medal} ${item.name}</span>
+                                        <span style="color: var(--cezar-orange);">${qty} طلب (${rev} ج)</span>
+                                    </div>
+                                    <div style="background: #F0EDE8; border-radius: 8px; height: 10px; overflow: hidden;">
+                                        <div style="background: linear-gradient(90deg, var(--cezar-orange), var(--cezar-gold)); width: ${pct}%; height: 100%; border-radius: 8px;"></div>
+                                    </div>
+                                </div>`;
+                            }).join('');
+                        }
+                    }
+                } catch(topErr) {
+                    console.error("Top sellers render error:", topErr);
                 }
 
                 // Peak Hours Bars
-                const peakContainer = document.getElementById('peakHoursChart');
-                const peakHours = data.peak_hours || [];
-                if (peakContainer) {
-                    const maxHourVal = Math.max(...peakHours.map(h => h.count), 1);
-                    peakContainer.innerHTML = peakHours.map(h => {
-                        const hPct = Math.max(5, Math.round((h.count / maxHourVal) * 100));
-                        const isPeak = h.count === maxHourVal && h.count > 0;
-                        return `<div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;" title="${h.hour}:00 - ${h.count} طلبات">
-                            <div style="font-size: 9px; font-weight: 800; color: ${isPeak ? 'var(--cezar-orange)' : '#888'}; margin-bottom: 2px;">${h.count > 0 ? h.count : ''}</div>
-                            <div style="width: 100%; max-width: 14px; background: ${isPeak ? 'var(--cezar-orange)' : '#0284C7'}; height: ${hPct}%; border-radius: 4px 4px 0 0; opacity: ${h.count > 0 ? '1' : '0.2'};"></div>
-                        </div>`;
-                    }).join('');
+                try {
+                    const peakContainer = document.getElementById('peakHoursChart');
+                    const peakHours = data.peak_hours || [];
+                    if (peakContainer) {
+                        const maxHourVal = Math.max(...peakHours.map(h => Number(h.count || 0)), 1);
+                        peakContainer.innerHTML = peakHours.map(h => {
+                            const count = Number(h.count || 0);
+                            const hPct = Math.max(5, Math.round((count / maxHourVal) * 100));
+                            const isPeak = count === maxHourVal && count > 0;
+                            return `<div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;" title="${h.hour}:00 - ${count} طلبات">
+                                <div style="font-size: 9px; font-weight: 800; color: ${isPeak ? 'var(--cezar-orange)' : '#888'}; margin-bottom: 2px;">${count > 0 ? count : ''}</div>
+                                <div style="width: 100%; max-width: 14px; background: ${isPeak ? 'var(--cezar-orange)' : '#0284C7'}; height: ${hPct}%; border-radius: 4px 4px 0 0; opacity: ${count > 0 ? '1' : '0.2'};"></div>
+                            </div>`;
+                        }).join('');
+                    }
+                } catch(peakErr) {
+                    console.error("Peak hours render error:", peakErr);
                 }
 
-                // Net Profit & Executive KPIs
-                if (document.getElementById('kpiGrossSales')) document.getElementById('kpiGrossSales').textContent = `${(data.gross_sales || 0)} ج`;
-                if (document.getElementById('kpiTotalCogs')) document.getElementById('kpiTotalCogs').textContent = `${(data.total_cogs || 0)} ج`;
-                if (document.getElementById('kpiTotalExpenses')) document.getElementById('kpiTotalExpenses').textContent = `${(data.total_expenses || 0)} ج`;
-                if (document.getElementById('kpiTotalSalaries')) document.getElementById('kpiTotalSalaries').textContent = `${(data.total_salaries || 0)} ج`;
-                if (document.getElementById('kpiTotalWaste')) document.getElementById('kpiTotalWaste').textContent = `${(data.total_waste || 0)} ج`;
-                if (document.getElementById('kpiNetProfit')) document.getElementById('kpiNetProfit').textContent = `${(data.net_profit || 0)} ج`;
-                if (document.getElementById('kpiProfitMargin')) document.getElementById('kpiProfitMargin').textContent = `${(data.profit_margin_pct || 0)}%`;
-
                 // Channel Sales
-                const byChannel = data.by_channel || {};
+                const byChannel = data.by_channel || data.sales_by_type || {};
                 const sHall = document.getElementById('analyticsSalesHall');
-                
-                
                 if (sHall) sHall.textContent = `${(byChannel['صالة'] || 0)} ج`;
-                
-                
             } catch(e) {
                 console.error("Error fetching analytics", e);
             }
@@ -8640,7 +8663,7 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                                         ترابيزة ${l.table_number || '-'} (#${l.order_id || '-'})
                                     </td>
                                     <td style="padding: 12px 14px; max-width: 260px; font-size: 11px; color: #374151; white-space: pre-line;">${l.items_summary || '-'}</td>
-                                    <td style="padding: 12px 14px; font-weight: 900; color: #DC2626;"> ج</td>
+                                    <td style="padding: 12px 14px; font-weight: 900; color: #DC2626;">${l.total_amount || 0} ج</td>
                                     <td style="padding: 12px 14px;">
                                         <span style="background: #FEE2E2; color: #991B1B; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid #FCA5A5;">
                                             ${l.reason}

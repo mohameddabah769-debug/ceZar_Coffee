@@ -780,6 +780,8 @@ def update_order_status(order_id):
             return jsonify({"detail": "Order not found"}), 404
         order.status = new_status
         is_bill_request = bool(order.items_summary and "طلب الحساب" in order.items_summary) or bool(order.status and "طلب حساب" in str(order.status))
+        if is_bill_request:
+            order.total_price = 0.0
         if new_status == "تمت التسوية" or (is_bill_request and new_status in ["تمت التسوية", "تم التقديم"]):
             if order.table_number and order.table_number > 0:
                 table_orders = db.query(TableOrder).filter(
@@ -788,6 +790,8 @@ def update_order_status(order_id):
                 ).all()
                 for to in table_orders:
                     to.status = "تمت التسوية"
+                    if bool(to.items_summary and "طلب الحساب" in to.items_summary) or bool(to.status and "طلب حساب" in str(to.status)):
+                        to.total_price = 0.0
         db.commit()
         return jsonify({"status": "success", "order_id": order.id, "new_status": order.status})
 
@@ -860,7 +864,7 @@ def request_bill_endpoint():
             table_number=table_num,
             order_type="صالة",
             items_summary=summary,
-            total_price=total_bill,
+            total_price=0.0,
             payment_method=method,
             customer_name=f"ترابيزة {table_num}",
             status=f"طلب حساب ({method})"
@@ -1449,6 +1453,8 @@ def get_analytics():
             TableOrder.status != "ملغي",
             ~TableOrder.status.like("طلب حساب%"),
             TableOrder.status != "نداء ويتر",
+            ~TableOrder.items_summary.like("%طلب الحساب%"),
+            ~TableOrder.items_summary.like("%نداء الويتر%"),
             TableOrder.total_price > 0
         ).all()
 
@@ -1469,11 +1475,17 @@ def get_analytics():
                     except Exception:
                         pass
 
-        top_items = sorted(
-            [{"name": k, "orders_count": v} for k, v in item_counter.items()],
-            key=lambda x: x["orders_count"],
-            reverse=True
-        )[:6]
+        menu_items_map = {item.name: item.price for item in db.query(MenuItem).all()}
+        top_items = []
+        for k, v in item_counter.items():
+            price = menu_items_map.get(k, 35.0)
+            top_items.append({
+                "name": k,
+                "orders_count": v,
+                "quantity": v,
+                "total_revenue": round(v * price, 2)
+            })
+        top_items = sorted(top_items, key=lambda x: x["quantity"], reverse=True)[:6]
 
         hourly_counts = {h: 0 for h in range(24)}
         for o in orders:

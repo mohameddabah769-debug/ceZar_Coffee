@@ -55,6 +55,7 @@ if needs_rebuild:
         except Exception:
             pass
 
+from sqlalchemy import text
 from app.database import engine, Base, SessionLocal
 from app.models import (
     MenuItem, TableOrder, ManagerAccount, Shift, Expense, Reservation,
@@ -70,6 +71,11 @@ print("Database tables created / verified cleanly.")
 with SessionLocal() as db:
     seed_menu(db)
     seed_recipes(db)
+    try:
+        db.execute(text("UPDATE table_orders SET total_price = 0.0 WHERE items_summary LIKE '%طلب الحساب%' OR status LIKE 'طلب حساب%' OR items_summary LIKE '%نداء الويتر%' OR status = 'نداء ويتر'"))
+        db.commit()
+    except Exception:
+        pass
     print("Menu, inventory, staff, tables, and recipes verified successfully!")
 
 # 4. Set write permissions
