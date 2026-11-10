@@ -648,8 +648,10 @@ def transfer_table_orders():
     with SessionLocal() as db:
         active_orders = db.query(TableOrder).filter(
             TableOrder.table_number == from_table,
-            TableOrder.order_type == "صالة",
-            ~TableOrder.status.in_(["ملغي", "تمت التسوية"])
+            TableOrder.status != "ملغي",
+            TableOrder.status != "تمت التسوية",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر"
         ).all()
         
         if not active_orders:
@@ -657,7 +659,8 @@ def transfer_table_orders():
             
         for o in active_orders:
             o.table_number = to_table
-            if f"ترابيزة {from_table}" in (o.customer_name or ""):
+            o.order_type = "صالة"
+            if not o.customer_name or f"ترابيزة {from_table}" in o.customer_name or "ترابيزة" in o.customer_name:
                 o.customer_name = f"ترابيزة {to_table}"
                 
         db.commit()
@@ -681,8 +684,10 @@ def merge_tables():
     with SessionLocal() as db:
         sec_orders = db.query(TableOrder).filter(
             TableOrder.table_number == secondary_table,
-            TableOrder.order_type == "صالة",
-            ~TableOrder.status.in_(["ملغي", "تمت التسوية"])
+            TableOrder.status != "ملغي",
+            TableOrder.status != "تمت التسوية",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر"
         ).all()
         
         if not sec_orders:
@@ -690,6 +695,7 @@ def merge_tables():
             
         for o in sec_orders:
             o.table_number = primary_table
+            o.order_type = "صالة"
             o.customer_name = f"ترابيزة {primary_table} (مدمجة مع {secondary_table})"
             
         db.commit()

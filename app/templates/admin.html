@@ -3739,12 +3739,18 @@
         // ====================================================
         // TABLE TRANSFER & MERGE LOGIC
         // ====================================================
+        var currentModalTable = null;
+
         async function promptTransferTable() {
-            if (!currentModalTable) return;
-            const targetTableStr = prompt(`نقل حساب أوردر ترابيزة ${currentModalTable} إلى ترابيزة رقم (1-25):`);
+            const currentTable = currentModalTable || currentActiveTableNum;
+            if (!currentTable) {
+                alert('يرجى تحديد الترابيزة أولاً!');
+                return;
+            }
+            const targetTableStr = prompt(`نقل حساب أوردر ترابيزة ${currentTable} إلى ترابيزة رقم (1-25):`);
             if (!targetTableStr) return;
-            const targetTable = parseInt(targetTableStr);
-            if (isNaN(targetTable) || targetTable < 1 || targetTable > 25 || targetTable === currentModalTable) {
+            const targetTable = parseInt(targetTableStr.trim());
+            if (isNaN(targetTable) || targetTable < 1 || targetTable > 25 || targetTable === currentTable) {
                 alert('يرجى إدخال رقم ترابيزة صالح ومختلف!');
                 return;
             }
@@ -3753,14 +3759,14 @@
                 const res = await fetch('/api/tables/transfer', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ from_table: currentModalTable, to_table: targetTable })
+                    body: JSON.stringify({ from_table: currentTable, to_table: targetTable })
                 });
                 const data = await res.json();
                 if (res.ok && data.status === 'success') {
                     alert(data.message || '✅ تم نقل الأوردر بنجاح!');
                     closeModal('tableActionModal');
-                    fetchTablesStatus();
-                    fetchOrders();
+                    if (typeof fetchTablesStatus === 'function') fetchTablesStatus();
+                    if (typeof fetchOrders === 'function') fetchOrders();
                 } else {
                     alert('خطأ: ' + (data.detail || 'تعذر نقل الترابيزة'));
                 }
@@ -3770,12 +3776,15 @@
         }
 
         async function promptMergeTables() {
-            if (!currentModalTable) return;
-            const targetTableStr = prompt(`دمج حساب ترابيزة أخرى في ترابيزة ${currentModalTable}:
-أدخل رقم الترابيزة الأخرى المراد دمجها هنا:`);
+            const currentTable = currentModalTable || currentActiveTableNum;
+            if (!currentTable) {
+                alert('يرجى تحديد الترابيزة أولاً!');
+                return;
+            }
+            const targetTableStr = prompt(`دمج حساب ترابيزة أخرى في ترابيزة ${currentTable}:\nأدخل رقم الترابيزة الأخرى المراد دمجها هنا (1-25):`);
             if (!targetTableStr) return;
-            const secTable = parseInt(targetTableStr);
-            if (isNaN(secTable) || secTable < 1 || secTable > 25 || secTable === currentModalTable) {
+            const secTable = parseInt(targetTableStr.trim());
+            if (isNaN(secTable) || secTable < 1 || secTable > 25 || secTable === currentTable) {
                 alert('يرجى إدخال رقم ترابيزة صالح ومختلف!');
                 return;
             }
@@ -3784,14 +3793,14 @@
                 const res = await fetch('/api/tables/merge', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ primary_table: currentModalTable, secondary_table: secTable })
+                    body: JSON.stringify({ primary_table: currentTable, secondary_table: secTable })
                 });
                 const data = await res.json();
                 if (res.ok && data.status === 'success') {
                     alert(data.message || '✅ تم دمج الحساب بنجاح!');
                     closeModal('tableActionModal');
-                    fetchTablesStatus();
-                    fetchOrders();
+                    if (typeof fetchTablesStatus === 'function') fetchTablesStatus();
+                    if (typeof fetchOrders === 'function') fetchOrders();
                 } else {
                     alert('خطأ: ' + (data.detail || 'تعذر دمج الترابيزات'));
                 }
@@ -4515,6 +4524,7 @@
 
         async function openTableDetails(tableNum) {
             currentActiveTableNum = tableNum;
+            currentModalTable = tableNum;
             document.getElementById('modalTableTitle').textContent = `ترابيزة رقم ${tableNum}`;
             document.getElementById('modalTableStatusBadge').innerHTML = '<span style="color: #888;">جاري تحميل الحساب...</span>';
             document.getElementById('modalTableOrdersList').textContent = 'جاري التحميل...';
