@@ -1500,17 +1500,17 @@
 
             <!-- KPI Cards for Tables Report -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-                <div style="background: #FFF7ED; padding: 14px; border-radius: 12px; border: 1.5px solid #FFEDD5; display: flex; align-items: center; gap: 12px;">
+                <div onclick="openTopTableAction()" style="cursor: pointer; background: #FFF7ED; padding: 14px; border-radius: 12px; border: 1.5px solid #FFEDD5; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.03);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" title="اضغط لفتح تفاصيل وحساب أعلى ترابيزة">
                     <div style="width: 44px; height: 44px; border-radius: 10px; background: #FFEDD5; color: #C2410C; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                         <i class="fa-solid fa-trophy"></i>
                     </div>
                     <div>
-                        <div style="font-size: 11px; color: #9A3412; font-weight: 800;">أعلى ترابيزة مبيعاً</div>
+                        <div style="font-size: 11px; color: #9A3412; font-weight: 800;">أعلى ترابيزة مبيعاً <span style="font-size: 10px; color: #EA580C;">(اضغط لفتحها)</span></div>
                         <div style="font-size: 18px; font-weight: 900; color: #7C2D12;" id="kpiTopTableTitle">-</div>
                     </div>
                 </div>
 
-                <div style="background: #F0FDF4; padding: 14px; border-radius: 12px; border: 1.5px solid #DCFCE7; display: flex; align-items: center; gap: 12px;">
+                <div onclick="scrollToTablesReportTable()" style="cursor: pointer; background: #F0FDF4; padding: 14px; border-radius: 12px; border: 1.5px solid #DCFCE7; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.03);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" title="اضغط للتنقل لجدول الترابيزات بالأسفل">
                     <div style="width: 44px; height: 44px; border-radius: 10px; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                         <i class="fa-solid fa-money-bill-trend-up"></i>
                     </div>
@@ -1520,7 +1520,7 @@
                     </div>
                 </div>
 
-                <div style="background: #EFF6FF; padding: 14px; border-radius: 12px; border: 1.5px solid #DBEAFE; display: flex; align-items: center; gap: 12px;">
+                <div onclick="scrollToTablesReportTable()" style="cursor: pointer; background: #EFF6FF; padding: 14px; border-radius: 12px; border: 1.5px solid #DBEAFE; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.03);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" title="اضغط للتنقل لجدول الترابيزات بالأسفل">
                     <div style="width: 44px; height: 44px; border-radius: 10px; background: #DBEAFE; color: #1D4ED8; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                         <i class="fa-solid fa-receipt"></i>
                     </div>
@@ -1530,7 +1530,7 @@
                     </div>
                 </div>
 
-                <div style="background: #FAF5FF; padding: 14px; border-radius: 12px; border: 1.5px solid #F3E8FF; display: flex; align-items: center; gap: 12px;">
+                <div onclick="scrollToTablesReportTable()" style="cursor: pointer; background: #FAF5FF; padding: 14px; border-radius: 12px; border: 1.5px solid #F3E8FF; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.03);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" title="اضغط للتنقل لجدول الترابيزات بالأسفل">
                     <div style="width: 44px; height: 44px; border-radius: 10px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                         <i class="fa-solid fa-calculator"></i>
                     </div>
@@ -5969,17 +5969,38 @@
             }
         }
 
-        function printTablesReport() {
-            if (!currentTablesReportData) {
-                alert('جاري تحميل بيانات تقرير الترابيزات...');
+        function openTopTableAction() {
+            if (currentTablesReportData && currentTablesReportData.summary && currentTablesReportData.summary.top_table) {
+                const tbl = currentTablesReportData.summary.top_table.table_number;
+                if (typeof openTableDetails === 'function') {
+                    openTableDetails(tbl);
+                }
+            } else {
+                alert('لا توجد مبيعات مسجلة للطاولات في هذه الفترة بعد');
+            }
+        }
+
+        function scrollToTablesReportTable() {
+            const tableEl = document.getElementById('tablesReportTableBody');
+            if (tableEl) {
+                tableEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        async function printTablesReport() {
+            if (!currentTablesReportData || !currentTablesReportData.tables) {
+                await filterTablesReport(currentTablesPeriod || 'today');
+            }
+            if (!currentTablesReportData || !currentTablesReportData.tables) {
+                alert('تعذر تحميل بيانات تقرير الترابيزات للطباعة، يرجى المحاولة مرة أخرى.');
                 return;
             }
             const d = currentTablesReportData;
-            const s = d.summary;
+            const s = d.summary || {};
 
             const printWin = window.open('', '_blank', 'width=880,height=900');
             if (!printWin) {
-                alert('يرجى السماح بالنوافذ المنبثقة للطباعة');
+                window.print();
                 return;
             }
 
