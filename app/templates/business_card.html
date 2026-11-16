@@ -15,19 +15,19 @@
 
     <style>
         :root {
-            /* Theme: Deep Tech Neon Cyan (Matches Logo Perfectly) */
-            --bg-canvas: #070a10;
-            --card-bg-gradient: linear-gradient(135deg, #0d1522 0%, #04070d 100%);
-            --card-border: #00d2ff;
-            --accent-primary: #00d2ff;
-            --accent-secondary: #00f2fe;
-            --accent-glow: rgba(0, 210, 255, 0.25);
+            /* Theme: Calmed Deep Slate / Matte Dark (Print-Safe & Elegant) */
+            --bg-canvas: #090c12;
+            --card-bg-gradient: linear-gradient(145deg, #0c111a 0%, #06090e 100%);
+            --card-border: rgba(0, 180, 216, 0.45);
+            --accent-primary: #00b4d8;
+            --accent-secondary: #0077b6;
+            --accent-glow: rgba(0, 180, 216, 0.08);
             --text-title: #FFFFFF;
-            --text-subtitle: #E2E8F0;
-            --text-muted: #8E9FB8;
-            --badge-bg: rgba(0, 210, 255, 0.12);
-            --badge-border: rgba(0, 210, 255, 0.35);
-            --badge-text: #00d2ff;
+            --text-subtitle: #CBD5E1;
+            --text-muted: #94A3B8;
+            --badge-bg: rgba(0, 180, 216, 0.08);
+            --badge-border: rgba(0, 180, 216, 0.25);
+            --badge-text: #00b4d8;
         }
 
         /* Luxury Gold Theme */
@@ -269,7 +269,7 @@
             height: 44px;
             width: auto;
             object-fit: contain;
-            filter: drop-shadow(0 0 8px rgba(0, 210, 255, 0.65));
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
             background: transparent !important;
             border: none !important;
             padding: 0 !important;
@@ -415,7 +415,7 @@
             height: 24px;
             width: auto;
             object-fit: contain;
-            filter: drop-shadow(0 0 6px rgba(0, 210, 255, 0.6));
+            filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
         }
 
         .back-brand-name {
@@ -441,7 +441,7 @@
             letter-spacing: 0.3px;
             line-height: 1.25;
             margin: 3px 0 2px;
-            text-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
+            /* Crisp print without text-shadow glow */
         }
 
         .back-pills-container {
@@ -464,12 +464,15 @@
         }
 
         .back-slogan-text {
-            font-size: 8px;
+            font-size: 7.2px;
             font-weight: 700;
             color: var(--text-muted);
-            font-style: italic;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
             padding-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
         }
 
         /* Subtle Elegant Vertical Divider */
@@ -545,9 +548,13 @@
         }
 
         .qr-col-sub {
-            font-size: 7.5px;
+            font-size: 6.8px;
             font-weight: 700;
             color: var(--text-muted);
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+            text-align: center;
         }
 
         .edit-hint {
@@ -764,7 +771,7 @@
                             </div>
 
                             <div class="qr-col-sub">
-                                امسح الكود بالكاميرا
+                                Scan the code with your camera
                             </div>
                         </div>
 
