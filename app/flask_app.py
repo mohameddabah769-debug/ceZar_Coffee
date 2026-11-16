@@ -2699,6 +2699,291 @@ def get_tables_sales_report():
 
 
 # ==========================================
+# 8.2 شاشة التقارير العامة المتقدمة (Advanced General Reports)
+# ==========================================
+
+@app.route("/api/reports/advanced", methods=["GET"])
+@app.route("/api/cezar/reports/advanced", methods=["GET"])
+def get_advanced_sales_report():
+    from datetime import datetime, timedelta
+    from sqlalchemy import or_
+
+    start_date_str = request.args.get("start_date", "").strip()
+    end_date_str = request.args.get("end_date", "").strip()
+    start_time_str = request.args.get("start_time", "").strip()
+    end_time_str = request.args.get("end_time", "").strip()
+    order_type = request.args.get("order_type", "all").strip()
+    category = request.args.get("category", "all").strip()
+    item_filter = request.args.get("item_name", "all").strip()
+    payment_method = request.args.get("payment_method", "all").strip()
+    report_type = request.args.get("report_type", "sales").strip()
+
+    cairo_offset = timedelta(hours=2)
+
+    with SessionLocal() as db:
+        query = db.query(TableOrder).filter(
+            TableOrder.status != "ملغي",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر",
+            ~TableOrder.items_summary.like("%طلب الحساب%"),
+            ~TableOrder.items_summary.like("%نداء الويتر%"),
+            TableOrder.total_price > 0
+        )
+
+        if start_date_str:
+            try:
+                t_str = start_time_str if start_time_str else "00:00"
+                dt_local = datetime.strptime(f"{start_date_str} {t_str}", "%Y-%m-%d %H:%M")
+                dt_utc = dt_local - cairo_offset
+                query = query.filter(TableOrder.created_at >= dt_utc)
+            except Exception:
+                pass
+
+        if end_date_str:
+            try:
+                t_str = end_time_str if end_time_str else "23:59:59"
+                if len(t_str.split(":")) == 2:
+                    t_str += ":59"
+                dt_local = datetime.strptime(f"{end_date_str} {t_str}", "%Y-%m-%d %H:%M:%S")
+                dt_utc = dt_local - cairo_offset
+                query = query.filter(TableOrder.created_at <= dt_utc)
+            except Exception:
+                pass
+
+        if order_type and order_type != "all":
+            query = query.filter(TableOrder.order_type == order_type)
+
+        if payment_method and payment_method != "all":
+            query = query.filter(TableOrder.payment_method.like(f"%{payment_method}%"))
+
+        orders = query.order_by(TableOrder.created_at.desc()).all()
+
+        menu_items = db.query(MenuItem).all()
+        menu_map = {m.name: m for m in menu_items}
+
+        item_sales = {}
+        for m in menu_items:
+            item_sales[m.name] = {
+                "name": m.name,
+                "category": m.category or "أخرى",
+                "price": m.price,
+                "qty": 0,
+                "revenue": 0.0,
+                "orders_count": 0
+            }
+
+        filtered_orders = []
+        for o in orders:
+            order_items = []
+            has_matching_item = (item_filter == "all" and category == "all")
+
+            if o.items_summary:
+                for line in o.items_summary.split("\n"):
+                    line = line.strip().lstrip("- ")
+                    if "x " in line:
+                        try:
+                            parts = line.split("x ", 1)
+                            qty = int(parts[0].strip())
+                            name_part = parts[1].split(":")[0].strip()
+                            if "[" in name_part:
+                                name_part = name_part.split("[")[0].strip()
+
+                            m_obj = menu_map.get(name_part)
+                            m_cat = m_obj.category if m_obj else "أخرى"
+                            m_price = m_obj.price if m_obj else 0.0
+
+                            match_cat = (category == "all" or m_cat == category)
+                            match_item = (item_filter == "all" or name_part == item_filter)
+
+                            if match_cat and match_item:
+                                has_matching_item = True
+
+                            if name_part not in item_sales:
+                                item_sales[name_part] = {
+                                    "name": name_part,
+                                    "category": m_cat,
+                                    "price": m_price,
+                                    "qty": 0,
+                                    "revenue": 0.0,
+                                    "orders_count": 0
+                                }
+                            item_sales[name_part]["qty"] += qty
+                            item_sales[name_part]["revenue"] += round(qty * m_price, 2)
+                            item_sales[name_part]["orders_count"] += 1
+
+                            order_items.append({"name": name_part, "qty": qty, "category": m_cat, "price": m_price})
+                        except Exception:
+                            pass
+
+            if has_matching_item:
+                c_time = (o.created_at + cairo_offset).strftime("%Y-%m-%d %I:%M %p") if o.created_at else "-"
+                filtered_orders.append({
+                    "id": o.id,
+                    "order_type": o.order_type or "صالة",
+                    "table_number": o.table_number or 0,
+                    "customer_name": o.customer_name or "عميل صالة",
+                    "customer_phone": o.customer_phone or "-",
+                    "payment_method": o.payment_method or "كاش",
+                    "discount_amount": o.discount_amount or 0.0,
+                    "delivery_fee": o.delivery_fee or 0.0,
+                    "total_price": o.total_price,
+                    "status": o.status,
+                    "created_at": c_time,
+                    "items": order_items,
+                    "items_summary": o.items_summary
+                })
+
+        total_orders_cnt = len(filtered_orders)
+        gross_sales = round(sum(o["total_price"] + o["discount_amount"] for o in filtered_orders), 2)
+        total_discount = round(sum(o["discount_amount"] for o in filtered_orders), 2)
+        net_sales = round(sum(o["total_price"] for o in filtered_orders), 2)
+        avg_order = round(net_sales / total_orders_cnt, 2) if total_orders_cnt > 0 else 0.0
+
+        all_items_list = list(item_sales.values())
+        if category != "all":
+            all_items_list = [it for it in all_items_list if it["category"] == category]
+        if item_filter != "all":
+            all_items_list = [it for it in all_items_list if it["name"] == item_filter]
+
+        top_sellers = sorted(all_items_list, key=lambda x: x["qty"], reverse=True)
+        least_sellers = sorted(all_items_list, key=lambda x: (x["qty"], x["revenue"]))
+
+        cat_group = {}
+        for it in all_items_list:
+            c = it["category"]
+            if c not in cat_group:
+                cat_group[c] = {"category": c, "total_qty": 0, "total_revenue": 0.0, "items_count": 0}
+            cat_group[c]["total_qty"] += it["qty"]
+            cat_group[c]["total_revenue"] = round(cat_group[c]["total_revenue"] + it["revenue"], 2)
+            cat_group[c]["items_count"] += 1
+        by_category = sorted(list(cat_group.values()), key=lambda x: x["total_revenue"], reverse=True)
+
+        type_group = {"صالة": 0.0, "تيك أواي": 0.0, "دليفري": 0.0}
+        type_counts = {"صالة": 0, "تيك أواي": 0, "دليفري": 0}
+        for o in filtered_orders:
+            t = o["order_type"]
+            type_group[t] = round(type_group.get(t, 0.0) + o["total_price"], 2)
+            type_counts[t] = type_counts.get(t, 0) + 1
+        by_type = [{"order_type": k, "total_revenue": v, "orders_count": type_counts.get(k, 0)} for k, v in type_group.items()]
+
+        categories_list = sorted(list(set(m.category for m in menu_items if m.category)))
+
+        return jsonify({
+            "status": "success",
+            "report_type": report_type,
+            "filters": {
+                "start_date": start_date_str,
+                "end_date": end_date_str,
+                "order_type": order_type,
+                "category": category,
+                "item_name": item_filter,
+                "payment_method": payment_method
+            },
+            "summary": {
+                "total_orders": total_orders_cnt,
+                "gross_sales": gross_sales,
+                "total_discount": total_discount,
+                "net_sales": net_sales,
+                "avg_order": avg_order
+            },
+            "categories": categories_list,
+            "orders": filtered_orders,
+            "top_sellers": top_sellers[:50],
+            "least_sellers": least_sellers[:50],
+            "by_category": by_category,
+            "by_type": by_type
+        })
+
+
+@app.route("/api/reports/advanced/export-csv", methods=["GET"])
+@app.route("/api/cezar/reports/advanced/export-csv", methods=["GET"])
+def export_advanced_report_csv():
+    import io, csv
+    from datetime import datetime, timedelta
+
+    start_date_str = request.args.get("start_date", "").strip()
+    end_date_str = request.args.get("end_date", "").strip()
+    order_type = request.args.get("order_type", "all").strip()
+    payment_method = request.args.get("payment_method", "all").strip()
+    report_type = request.args.get("report_type", "sales").strip()
+
+    cairo_offset = timedelta(hours=2)
+
+    with SessionLocal() as db:
+        query = db.query(TableOrder).filter(
+            TableOrder.status != "ملغي",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر",
+            TableOrder.total_price > 0
+        )
+        if start_date_str:
+            try:
+                dt_utc = datetime.strptime(start_date_str, "%Y-%m-%d") - cairo_offset
+                query = query.filter(TableOrder.created_at >= dt_utc)
+            except Exception:
+                pass
+        if end_date_str:
+            try:
+                dt_utc = datetime.strptime(end_date_str + " 23:59:59", "%Y-%m-%d %H:%M:%S") - cairo_offset
+                query = query.filter(TableOrder.created_at <= dt_utc)
+            except Exception:
+                pass
+        if order_type and order_type != "all":
+            query = query.filter(TableOrder.order_type == order_type)
+        if payment_method and payment_method != "all":
+            query = query.filter(TableOrder.payment_method.like(f"%{payment_method}%"))
+
+        orders = query.order_by(TableOrder.created_at.desc()).all()
+
+        output = io.StringIO()
+        output.write("\ufeff")
+        writer = csv.writer(output)
+
+        if report_type in ["least_sellers", "top_sellers"]:
+            menu_items = db.query(MenuItem).all()
+            menu_map = {m.name: m for m in menu_items}
+            item_sales = {m.name: {"name": m.name, "category": m.category, "price": m.price, "qty": 0, "rev": 0.0} for m in menu_items}
+            for o in orders:
+                if o.items_summary:
+                    for line in o.items_summary.split("\n"):
+                        if "x " in line:
+                            try:
+                                parts = line.split("x ", 1)
+                                q = int(parts[0].strip().lstrip("- "))
+                                n = parts[1].split(":")[0].split("[")[0].strip()
+                                p = menu_map[n].price if n in menu_map else 0.0
+                                if n not in item_sales:
+                                    item_sales[n] = {"name": n, "category": "أخرى", "price": p, "qty": 0, "rev": 0.0}
+                                item_sales[n]["qty"] += q
+                                item_sales[n]["rev"] += q * p
+                            except Exception:
+                                pass
+            items_list = list(item_sales.values())
+            if report_type == "least_sellers":
+                items_list = sorted(items_list, key=lambda x: (x["qty"], x["rev"]))
+                writer.writerow(["تقرير الأصناف الأقل مبيعاً (الراكدة) - ceZar Coffee"])
+            else:
+                items_list = sorted(items_list, key=lambda x: x["qty"], reverse=True)
+                writer.writerow(["تقرير الأصناف الأكثر طلباً - ceZar Coffee"])
+            writer.writerow(["اسم الصنف", "القسم", "سعر البيع", "إجمالي الكمية المباعة", "إجمالي الإيراد"])
+            for it in items_list:
+                writer.writerow([it["name"], it["category"], it["price"], it["qty"], it["rev"]])
+        else:
+            writer.writerow(["رقم الفاتورة", "نوع الطلب", "الترابيزة", "العميل", "طريقة الدفع", "الخصم", "الإجمالي", "الحالة", "التاريخ والوقت", "الأصناف"])
+            for o in orders:
+                c_time = (o.created_at + cairo_offset).strftime("%Y-%m-%d %I:%M %p") if o.created_at else "-"
+                writer.writerow([
+                    o.id, o.order_type or "صالة", o.table_number or "-", o.customer_name or "-",
+                    o.payment_method or "كاش", o.discount_amount or 0.0, o.total_price, o.status, c_time,
+                    (o.items_summary or "").replace("\n", " | ")
+                ])
+
+        csv_data = output.getvalue().encode("utf-8-sig")
+        filename = f"ceZar_Advanced_Report_{report_type}_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.csv"
+        return Response(csv_data, mimetype="text/csv; charset=utf-8-sig", headers={"Content-Disposition": f"attachment; filename={filename}"})
+
+
+# ==========================================
 # 9. دعم العمليات أوفلاين والمزامنة السحابية (Offline Mode & Cloud Sync - Flask)
 # ==========================================
 

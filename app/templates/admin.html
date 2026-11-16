@@ -1469,6 +1469,145 @@
         </div>
 
         <!-- ==================================================== -->
+        <!-- ADVANCED GENERAL REPORTS (التقارير العامة المتقدمة والمبيعات والراكدة) -->
+        <!-- ==================================================== -->
+        <div style="background: white; border-radius: 16px; padding: 20px; border: 1.5px solid var(--border-color); box-shadow: 0 3px 12px rgba(43, 24, 16, 0.05); margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1.5px solid #EDE8E1; padding-bottom: 12px;">
+                <div>
+                    <h4 style="font-size: 17px; font-weight: 900; margin: 0; color: var(--primary-espresso); display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-file-invoice-dollar" style="color: var(--cezar-orange);"></i> مركز التقارير العامة المتقدمة (الفترات المخصصة - الأصناف الراكدة والأكثر طلباً)
+                    </h4>
+                    <div style="font-size: 12px; color: #666; font-weight: 700; margin-top: 3px;">
+                        فلترة دقيقة بالتواريخ والساعات، تحليل مبيعات الأقسام، وحصر الأصناف الراكدة الأقل مبيعاً
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <button class="pin-btn" onclick="exportAdvancedReportCsv()" style="margin: 0; width: auto; padding: 7px 16px; background: #16A34A; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-file-excel"></i> تصدير إكسل (CSV)
+                    </button>
+                    <button class="pin-btn" onclick="printAdvancedReport()" style="margin: 0; width: auto; padding: 7px 16px; background: var(--primary-espresso); font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-print"></i> طباعة التقرير
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report Mode Navigation Pills (Matching Old System Sidebar Buttons) -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; background: #F8F5F0; padding: 6px; border-radius: 12px; border: 1px solid #E2D9CF;">
+                <button class="filter-pill active" id="btnAdvRepSales" onclick="setAdvReportMode('sales')" style="padding: 7px 14px; font-size: 12px;">
+                    <i class="fa-solid fa-receipt"></i> فواتير المبيعات
+                </button>
+                <button class="filter-pill" id="btnAdvRepLeast" onclick="setAdvReportMode('least_sellers')" style="padding: 7px 14px; font-size: 12px; background: #FFF1F2; color: #E11D48; border-color: #FECDD3;">
+                    <i class="fa-solid fa-arrow-trend-down"></i> مبيعات الأصناف الأقل (الراكدة)
+                </button>
+                <button class="filter-pill" id="btnAdvRepTop" onclick="setAdvReportMode('top_sellers')" style="padding: 7px 14px; font-size: 12px;">
+                    <i class="fa-solid fa-trophy"></i> مبيعات الأصناف الأكثر
+                </button>
+                <button class="filter-pill" id="btnAdvRepCat" onclick="setAdvReportMode('by_category')" style="padding: 7px 14px; font-size: 12px;">
+                    <i class="fa-solid fa-layer-group"></i> مبيعات حسب القسم
+                </button>
+                <button class="filter-pill" id="btnAdvRepType" onclick="setAdvReportMode('by_type')" style="padding: 7px 14px; font-size: 12px;">
+                    <i class="fa-solid fa-motorcycle"></i> مبيعات الصالة vs التيك واي
+                </button>
+            </div>
+
+            <!-- Filter Controls Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; background: #FAFAF9; padding: 14px; border-radius: 12px; border: 1px solid #E7E5E4; margin-bottom: 16px;">
+                <div>
+                    <label style="display: block; font-size: 11px; font-weight: 800; color: #57534E; margin-bottom: 4px;"><i class="fa-solid fa-calendar"></i> من تاريخ:</label>
+                    <input type="date" id="advRepStartDate" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #D6D3D1; font-size: 12px; font-weight: 700; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; font-weight: 800; color: #57534E; margin-bottom: 4px;"><i class="fa-solid fa-clock"></i> من وقت:</label>
+                    <input type="time" id="advRepStartTime" value="00:00" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #D6D3D1; font-size: 12px; font-weight: 700; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; font-weight: 800; color: #57534E; margin-bottom: 4px;"><i class="fa-solid fa-calendar-check"></i> إلى تاريخ:</label>
+                    <input type="date" id="advRepEndDate" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #D6D3D1; font-size: 12px; font-weight: 700; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; font-weight: 800; color: #57534E; margin-bottom: 4px;"><i class="fa-solid fa-clock"></i> إلى وقت:</label>
+                    <input type="time" id="advRepEndTime" value="23:59" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #D6D3D1; font-size: 12px; font-weight: 700; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; font-weight: 800; color: #57534E; margin-bottom: 4px;"><i class="fa-solid fa-folder-tree"></i> القسم:</label>
+                    <select id="advRepCategory" onchange="updateAdvRepItemsDropdown()" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #D6D3D1; font-size: 12px; font-weight: 700; box-sizing: border-box;">
+                        <option value="all">كل الأقسام</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; font-weight: 800; color: #57534E; margin-bottom: 4px;"><i class="fa-solid fa-mug-hot"></i> صنف محدد:</label>
+                    <select id="advRepItem" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #D6D3D1; font-size: 12px; font-weight: 700; box-sizing: border-box;">
+                        <option value="all">كل الأصناف</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; font-weight: 800; color: #57534E; margin-bottom: 4px;"><i class="fa-solid fa-chair"></i> نوع الطلب:</label>
+                    <select id="advRepOrderType" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #D6D3D1; font-size: 12px; font-weight: 700; box-sizing: border-box;">
+                        <option value="all">الكل (صالة / سفري)</option>
+                        <option value="صالة">صالة</option>
+                        <option value="تيك أواي">تيك أواي</option>
+                        <option value="دليفري">دليفري</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; font-weight: 800; color: #57534E; margin-bottom: 4px;"><i class="fa-solid fa-credit-card"></i> طريقة الدفع:</label>
+                    <select id="advRepPayment" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #D6D3D1; font-size: 12px; font-weight: 700; box-sizing: border-box;">
+                        <option value="all">كل طرق الدفع</option>
+                        <option value="كاش">كاش فقط</option>
+                        <option value="فيزا">فيزا فقط</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Action buttons: Filter & Quick presets -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button class="filter-pill" onclick="setAdvDatePreset('today')" style="font-size: 11px; padding: 4px 10px;">اليوم</button>
+                    <button class="filter-pill" onclick="setAdvDatePreset('yesterday')" style="font-size: 11px; padding: 4px 10px;">أمس</button>
+                    <button class="filter-pill" onclick="setAdvDatePreset('week')" style="font-size: 11px; padding: 4px 10px;">آخر 7 أيام</button>
+                    <button class="filter-pill" onclick="setAdvDatePreset('month')" style="font-size: 11px; padding: 4px 10px;">هذا الشهر</button>
+                    <button class="filter-pill" onclick="setAdvDatePreset('all')" style="font-size: 11px; padding: 4px 10px;">كل الأوقات</button>
+                </div>
+                <button onclick="fetchAdvancedReport()" class="pin-btn" style="margin: 0; width: auto; padding: 8px 24px; background: var(--cezar-orange); font-size: 13px; font-weight: 900; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-rotate"></i> تطبيق الفلاتر وعرض النتائج
+                </button>
+            </div>
+
+            <!-- Totals Strip -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px;" id="advRepTotalsStrip">
+                <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 10px; padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; font-weight: 800; color: #166534;">إجمالي المبيعات (صافي)</div>
+                    <div style="font-size: 18px; font-weight: 900; color: #15803D;" id="advRepTotalRev">0 ج</div>
+                </div>
+                <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 10px; padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; font-weight: 800; color: #92400E;">إجمالي الخصومات</div>
+                    <div style="font-size: 18px; font-weight: 900; color: #B45309;" id="advRepTotalDiscount">0 ج</div>
+                </div>
+                <div style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 10px; padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; font-weight: 800; color: #1E40AF;">عدد الفواتير / الطلبات</div>
+                    <div style="font-size: 18px; font-weight: 900; color: #2563EB;" id="advRepTotalOrders">0</div>
+                </div>
+                <div style="background: #FAF5FF; border: 1.5px solid #E9D5FF; border-radius: 10px; padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; font-weight: 800; color: #6B21A8;">متوسط الفاتورة</div>
+                    <div style="font-size: 18px; font-weight: 900; color: #7E22CE;" id="advRepAvgOrder">0 ج</div>
+                </div>
+            </div>
+
+            <!-- Results Table Container -->
+            <div style="overflow-x: auto; border: 1px solid #E5E7EB; border-radius: 12px;">
+                <table class="report-table" id="advReportTable" style="margin: 0; width: 100%;">
+                    <thead id="advRepThead">
+                        <!-- Populated by JS -->
+                    </thead>
+                    <tbody id="advRepTbody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==================================================== -->
         <!-- Table Sales & Usage Report (تقرير كل ترابيزة فاليوم والأسبوع والشهر) -->
         <!-- ==================================================== -->
         <div style="background: white; border-radius: 16px; padding: 18px; border: 1.5px solid var(--border-color); box-shadow: 0 3px 12px rgba(43, 24, 16, 0.05); margin-top: 20px;">
@@ -3870,6 +4009,8 @@
             if (tabName === 'analytics') {
                 fetchAnalytics();
                 if (typeof filterTablesReport === 'function') filterTablesReport(currentTablesPeriod || 'today');
+                if (typeof initAdvReportFilters === 'function') initAdvReportFilters();
+                if (typeof setAdvDatePreset === 'function' && !document.getElementById('advRepStartDate')?.value) setAdvDatePreset('today');
             }
             if (tabName === 'promos') fetchPromoCodes();
             if (tabName === 'staff') { fetchEmployees(); fetchSalaries(); fetchSystemUsers(); }
@@ -5901,6 +6042,418 @@
 
         // ANALYTICS & CHARTS LOGIC
         // ====================================================
+
+        // ====================================================
+        // ADVANCED GENERAL REPORTS LOGIC (التقارير العامة المتقدمة والمبيعات والراكدة)
+        // ====================================================
+        var currentAdvRepMode = 'sales';
+        var currentAdvRepData = null;
+        var advRepMenuItems = [];
+
+        function setAdvReportMode(mode) {
+            currentAdvRepMode = mode;
+            const btnMap = {
+                'sales': 'btnAdvRepSales',
+                'least_sellers': 'btnAdvRepLeast',
+                'top_sellers': 'btnAdvRepTop',
+                'by_category': 'btnAdvRepCat',
+                'by_type': 'btnAdvRepType'
+            };
+            document.querySelectorAll('#btnAdvRepSales, #btnAdvRepLeast, #btnAdvRepTop, #btnAdvRepCat, #btnAdvRepType').forEach(b => b.classList.remove('active'));
+            const targetBtn = document.getElementById(btnMap[mode]);
+            if (targetBtn) targetBtn.classList.add('active');
+
+            if (currentAdvRepData) {
+                renderAdvancedReportTable();
+            } else {
+                fetchAdvancedReport();
+            }
+        }
+
+        function setAdvDatePreset(preset) {
+            const startInput = document.getElementById('advRepStartDate');
+            const endInput = document.getElementById('advRepEndDate');
+            const startTimeInput = document.getElementById('advRepStartTime');
+            const endTimeInput = document.getElementById('advRepEndTime');
+            if (!startInput || !endInput) return;
+
+            const now = new Date();
+            const toYmd = (d) => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            if (preset === 'today') {
+                startInput.value = toYmd(now);
+                endInput.value = toYmd(now);
+                if (startTimeInput) startTimeInput.value = '00:00';
+                if (endTimeInput) endTimeInput.value = '23:59';
+            } else if (preset === 'yesterday') {
+                const y = new Date(now);
+                y.setDate(y.getDate() - 1);
+                startInput.value = toYmd(y);
+                endInput.value = toYmd(y);
+            } else if (preset === 'week') {
+                const w = new Date(now);
+                w.setDate(w.getDate() - 7);
+                startInput.value = toYmd(w);
+                endInput.value = toYmd(now);
+            } else if (preset === 'month') {
+                const m = new Date(now.getFullYear(), now.getMonth(), 1);
+                startInput.value = toYmd(m);
+                endInput.value = toYmd(now);
+            } else if (preset === 'all') {
+                startInput.value = '';
+                endInput.value = '';
+            }
+            fetchAdvancedReport();
+        }
+
+        async function initAdvReportFilters() {
+            try {
+                if (advRepMenuItems.length === 0) {
+                    const res = await fetch('/api/menu-items?all_items=true');
+                    const d = await res.json();
+                    advRepMenuItems = d.items || [];
+                }
+                const catSel = document.getElementById('advRepCategory');
+                if (catSel && catSel.options.length <= 1) {
+                    const cats = [...new Set(advRepMenuItems.map(i => i.category).filter(Boolean))].sort();
+                    cats.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c;
+                        opt.textContent = c;
+                        catSel.appendChild(opt);
+                    });
+                }
+                updateAdvRepItemsDropdown();
+            } catch (e) {
+                console.error("initAdvReportFilters error", e);
+            }
+        }
+
+        function updateAdvRepItemsDropdown() {
+            const catSel = document.getElementById('advRepCategory');
+            const itemSel = document.getElementById('advRepItem');
+            if (!itemSel) return;
+            const selectedCat = catSel ? catSel.value : 'all';
+
+            itemSel.innerHTML = '<option value="all">كل الأصناف</option>';
+            const filtered = selectedCat === 'all' 
+                ? advRepMenuItems 
+                : advRepMenuItems.filter(i => i.category === selectedCat);
+
+            filtered.sort((a,b) => a.name.localeCompare(b.name, 'ar')).forEach(i => {
+                const opt = document.createElement('option');
+                opt.value = i.name;
+                opt.textContent = i.name + (i.price ? ` (${i.price} ج)` : '');
+                itemSel.appendChild(opt);
+            });
+        }
+
+        async function fetchAdvancedReport() {
+            const start_date = document.getElementById('advRepStartDate')?.value || '';
+            const end_date = document.getElementById('advRepEndDate')?.value || '';
+            const start_time = document.getElementById('advRepStartTime')?.value || '';
+            const end_time = document.getElementById('advRepEndTime')?.value || '';
+            const category = document.getElementById('advRepCategory')?.value || 'all';
+            const item_name = document.getElementById('advRepItem')?.value || 'all';
+            const order_type = document.getElementById('advRepOrderType')?.value || 'all';
+            const payment_method = document.getElementById('advRepPayment')?.value || 'all';
+
+            const tbody = document.getElementById('advRepTbody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: #888; font-weight: 800;"><i class="fa-solid fa-spinner fa-spin"></i> جاري استخراج التقرير وتطبيق الفلاتر...</td></tr>';
+            }
+
+            try {
+                const params = new URLSearchParams({
+                    start_date, end_date, start_time, end_time,
+                    category, item_name, order_type, payment_method,
+                    report_type: currentAdvRepMode
+                });
+
+                const res = await fetch(`/api/reports/advanced?${params.toString()}`);
+                const data = await res.json();
+                if (!res.ok || data.status !== 'success') {
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #DC2626; font-weight: 800;">تعذر جلب التقرير</td></tr>';
+                    return;
+                }
+
+                currentAdvRepData = data;
+
+                // Update Totals Strip
+                const s = data.summary || {};
+                if (document.getElementById('advRepTotalRev')) document.getElementById('advRepTotalRev').textContent = `${s.net_sales || 0} ج`;
+                if (document.getElementById('advRepTotalDiscount')) document.getElementById('advRepTotalDiscount').textContent = `${s.total_discount || 0} ج`;
+                if (document.getElementById('advRepTotalOrders')) document.getElementById('advRepTotalOrders').textContent = `${s.total_orders || 0}`;
+                if (document.getElementById('advRepAvgOrder')) document.getElementById('advRepAvgOrder').textContent = `${s.avg_order || 0} ج`;
+
+                renderAdvancedReportTable();
+            } catch (err) {
+                console.error("fetchAdvancedReport error", err);
+                if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #DC2626; font-weight: 800;">حدث خطأ في الاتصال بالخادم</td></tr>';
+            }
+        }
+
+        function renderAdvancedReportTable() {
+            if (!currentAdvRepData) return;
+            const thead = document.getElementById('advRepThead');
+            const tbody = document.getElementById('advRepTbody');
+            if (!thead || !tbody) return;
+
+            const d = currentAdvRepData;
+
+            if (currentAdvRepMode === 'sales') {
+                thead.innerHTML = `
+                    <tr>
+                        <th style="width: 80px; text-align: center;">رقم الفاتورة</th>
+                        <th style="text-align: center;">نوع الطلب</th>
+                        <th>الترابيزة / العميل</th>
+                        <th style="text-align: center;">طريقة الدفع</th>
+                        <th style="text-align: center;">الخصم</th>
+                        <th style="text-align: center;">الإجمالي</th>
+                        <th style="text-align: center;">التاريخ والوقت</th>
+                        <th>الأصناف المطلوبة</th>
+                    </tr>
+                `;
+                const orders = d.orders || [];
+                if (orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 30px; color: #888; font-weight: 800;">لا توجد فواتير مبيعات مطابقة لهذه الفلاتر</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = orders.map(o => `
+                    <tr>
+                        <td style="text-align: center; font-weight: 900; color: var(--primary-espresso);">#${o.id}</td>
+                        <td style="text-align: center;">
+                            <span class="badge ${o.order_type === 'صالة' ? 'badge-primary' : 'badge-warning'}" style="font-size: 11px;">${o.order_type}</span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 800;">${o.order_type === 'صالة' ? `ترابيزة ${o.table_number}` : (o.customer_name || 'تيك أواي')}</div>
+                            ${o.customer_phone && o.customer_phone !== '-' ? `<div style="font-size: 11px; color: #666;">${o.customer_phone}</div>` : ''}
+                        </td>
+                        <td style="text-align: center; font-weight: 800;">${o.payment_method}</td>
+                        <td style="text-align: center; color: #DC2626; font-weight: 800;">${o.discount_amount > 0 ? `-${o.discount_amount} ج` : '0 ج'}</td>
+                        <td style="text-align: center; font-weight: 900; color: #166534; font-size: 13px;">${o.total_price} ج</td>
+                        <td style="text-align: center; font-size: 11px; color: #555;">${o.created_at}</td>
+                        <td style="font-size: 11.5px; color: #222; max-width: 280px; line-height: 1.4;">${(o.items_summary || '').replace(/\\n/g, ' • ')}</td>
+                    </tr>
+                `).join('');
+
+            } else if (currentAdvRepMode === 'least_sellers') {
+                thead.innerHTML = `
+                    <tr>
+                        <th style="width: 60px; text-align: center;">#</th>
+                        <th>اسم المشروب / الصنف</th>
+                        <th>القسم</th>
+                        <th style="text-align: center;">سعر البيع</th>
+                        <th style="text-align: center;">إجمالي الكمية المباعة</th>
+                        <th style="text-align: center;">إجمالي الإيراد</th>
+                        <th style="text-align: center;">مستوى حركة الصنف</th>
+                    </tr>
+                `;
+                const items = d.least_sellers || [];
+                if (items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #888;">لا توجد بيانات للأصناف</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = items.map((it, idx) => {
+                    const isZero = it.qty === 0;
+                    const statusBadge = isZero 
+                        ? '<span style="background: #FEE2E2; color: #DC2626; border: 1px solid #FCA5A5; padding: 2px 8px; border-radius: 6px; font-weight: 900; font-size: 11px;"><i class="fa-solid fa-triangle-exclamation"></i> راكد تماماً (0 طلب)</span>'
+                        : (it.qty <= 3 
+                            ? '<span style="background: #FEF3C7; color: #D97706; border: 1px solid #FCD34D; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 11px;">حركة بطيئة جداً</span>'
+                            : '<span style="background: #F3F4F6; color: #4B5563; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">حركة عادية</span>');
+
+                    return `
+                        <tr style="${isZero ? 'background: #FFFBFB;' : ''}">
+                            <td style="text-align: center; font-weight: 800; color: #888;">${idx + 1}</td>
+                            <td style="font-weight: 900; color: var(--primary-espresso); font-size: 13px;">${it.name}</td>
+                            <td><span style="background: #F4EFEA; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800;">${it.category}</span></td>
+                            <td style="text-align: center; font-weight: 800;">${it.price} ج</td>
+                            <td style="text-align: center; font-weight: 900; font-size: 14px; color: ${isZero ? '#DC2626' : '#222'};">${it.qty}</td>
+                            <td style="text-align: center; font-weight: 900; color: #166534;">${it.revenue} ج</td>
+                            <td style="text-align: center;">${statusBadge}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } else if (currentAdvRepMode === 'top_sellers') {
+                thead.innerHTML = `
+                    <tr>
+                        <th style="width: 60px; text-align: center;">الترتيب</th>
+                        <th>اسم المشروب / الصنف</th>
+                        <th>القسم</th>
+                        <th style="text-align: center;">سعر البيع</th>
+                        <th style="text-align: center;">الكمية المباعة</th>
+                        <th style="text-align: center;">إجمالي الإيراد</th>
+                        <th style="text-align: center;">الأداء</th>
+                    </tr>
+                `;
+                const items = d.top_sellers || [];
+                tbody.innerHTML = items.map((it, idx) => `
+                    <tr>
+                        <td style="text-align: center; font-weight: 900; color: ${idx === 0 ? '#D97706' : (idx === 1 ? '#4B5563' : (idx === 2 ? '#B45309' : '#888'))}; font-size: ${idx < 3 ? '16px' : '12px'};">
+                            ${idx === 0 ? '🥇 1' : (idx === 1 ? '🥈 2' : (idx === 2 ? '🥉 3' : idx + 1))}
+                        </td>
+                        <td style="font-weight: 900; color: var(--primary-espresso); font-size: 13px;">${it.name}</td>
+                        <td><span style="background: #F4EFEA; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800;">${it.category}</span></td>
+                        <td style="text-align: center; font-weight: 800;">${it.price} ج</td>
+                        <td style="text-align: center; font-weight: 900; font-size: 14px; color: #166534;">${it.qty}</td>
+                        <td style="text-align: center; font-weight: 900; color: #166534;">${it.revenue} ج</td>
+                        <td style="text-align: center;">
+                            <span style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 11px;">
+                                <i class="fa-solid fa-fire"></i> صنف نشط جداً
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } else if (currentAdvRepMode === 'by_category') {
+                thead.innerHTML = `
+                    <tr>
+                        <th style="width: 60px; text-align: center;">#</th>
+                        <th>اسم القسم</th>
+                        <th style="text-align: center;">عدد الأصناف المندرجة</th>
+                        <th style="text-align: center;">إجمالي الكميات المباعة</th>
+                        <th style="text-align: center;">إجمالي مبيعات القسم</th>
+                    </tr>
+                `;
+                const cats = d.by_category || [];
+                tbody.innerHTML = cats.map((c, idx) => `
+                    <tr>
+                        <td style="text-align: center; font-weight: 800; color: #888;">${idx + 1}</td>
+                        <td style="font-weight: 900; font-size: 14px; color: var(--primary-espresso);">${c.category}</td>
+                        <td style="text-align: center; font-weight: 800;">${c.items_count} أصناف</td>
+                        <td style="text-align: center; font-weight: 900; font-size: 14px;">${c.total_qty}</td>
+                        <td style="text-align: center; font-weight: 900; font-size: 15px; color: #166534;">${c.total_revenue} ج</td>
+                    </tr>
+                `).join('');
+
+            } else if (currentAdvRepMode === 'by_type') {
+                thead.innerHTML = `
+                    <tr>
+                        <th style="width: 60px; text-align: center;">#</th>
+                        <th>نوع الطلب / القناة</th>
+                        <th style="text-align: center;">عدد الفواتير المنفذة</th>
+                        <th style="text-align: center;">إجمالي الإيراد</th>
+                    </tr>
+                `;
+                const types = d.by_type || [];
+                tbody.innerHTML = types.map((t, idx) => `
+                    <tr>
+                        <td style="text-align: center; font-weight: 800; color: #888;">${idx + 1}</td>
+                        <td style="font-weight: 900; font-size: 14px; color: var(--primary-espresso);">${t.order_type}</td>
+                        <td style="text-align: center; font-weight: 900; font-size: 14px;">${t.orders_count} طلب</td>
+                        <td style="text-align: center; font-weight: 900; font-size: 15px; color: #166534;">${t.total_revenue} ج</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function exportAdvancedReportCsv() {
+            const start_date = document.getElementById('advRepStartDate')?.value || '';
+            const end_date = document.getElementById('advRepEndDate')?.value || '';
+            const order_type = document.getElementById('advRepOrderType')?.value || 'all';
+            const payment_method = document.getElementById('advRepPayment')?.value || 'all';
+            const params = new URLSearchParams({
+                start_date, end_date, order_type, payment_method,
+                report_type: currentAdvRepMode
+            });
+            window.open(`/api/reports/advanced/export-csv?${params.toString()}`, '_blank');
+        }
+
+        function printAdvancedReport() {
+            if (!currentAdvRepData) return;
+            const printWin = window.open('', '_blank', 'width=900,height=700');
+            if (!printWin) {
+                alert('يرجى السماح بالنوافذ المنبثقة لطباعة التقرير');
+                return;
+            }
+
+            const titleMap = {
+                'sales': 'تقرير فواتير المبيعات العامة المفصل',
+                'least_sellers': 'تقرير الأصناف الأقل مبيعاً (الأصناف الراكدة)',
+                'top_sellers': 'تقرير الأصناف الأكثر طلباً ومبيعاً',
+                'by_category': 'تقرير مبيعات الأقسام الرئيسية والفرعية',
+                'by_type': 'تقرير مبيعات الصالة مقابل التيك واي والدليفري'
+            };
+
+            const s = currentAdvRepData.summary || {};
+            const theadHtml = document.getElementById('advRepThead')?.innerHTML || '';
+            const tbodyHtml = document.getElementById('advRepTbody')?.innerHTML || '';
+
+            const html = `
+            <!DOCTYPE html>
+            <html lang="ar" dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <title>${titleMap[currentAdvRepMode]} - ceZar Coffee</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; color: #111; direction: rtl; }
+                    .header { text-align: center; border-bottom: 2px solid #2B1810; padding-bottom: 12px; margin-bottom: 20px; }
+                    .logo-text { font-size: 22px; font-weight: 900; color: #2B1810; }
+                    .title { font-size: 16px; font-weight: 800; color: #D97706; margin-top: 4px; }
+                    .meta-box { display: flex; justify-content: space-between; background: #f9f6f0; border: 1px solid #e5dec9; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 12px; }
+                    .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+                    .card { border: 1px solid #ccc; padding: 10px; border-radius: 6px; text-align: center; }
+                    .card-title { font-size: 11px; color: #666; font-weight: bold; margin-bottom: 4px; }
+                    .card-val { font-size: 16px; font-weight: 900; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 12px; }
+                    th, td { border: 1px solid #ddd; padding: 7px 10px; text-align: right; }
+                    th { background: #f3ece4; font-weight: 800; }
+                    @media print { body { padding: 10px; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="logo-text">☕ ceZar Coffee - كافيه سيزر</div>
+                    <div class="title">${titleMap[currentAdvRepMode]}</div>
+                </div>
+                <div class="meta-box">
+                    <div><strong>تاريخ الاستخراج:</strong> ${new Date().toLocaleDateString('ar-EG')} - ${new Date().toLocaleTimeString('ar-EG')}</div>
+                    <div><strong>الفترة:</strong> من (${document.getElementById('advRepStartDate')?.value || 'البداية'}) إلى (${document.getElementById('advRepEndDate')?.value || 'الآن'})</div>
+                    <div><strong>إدارة كافيه سيزر</strong></div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card" style="background: #f0fdf4;">
+                        <div class="card-title">صافي المبيعات</div>
+                        <div class="card-val" style="color: #15803d;">${s.net_sales || 0} ج</div>
+                    </div>
+                    <div class="card" style="background: #fffbeb;">
+                        <div class="card-title">إجمالي الخصومات</div>
+                        <div class="card-val" style="color: #b45309;">${s.total_discount || 0} ج</div>
+                    </div>
+                    <div class="card" style="background: #eff6ff;">
+                        <div class="card-title">عدد الطلبات</div>
+                        <div class="card-val" style="color: #1e40af;">${s.total_orders || 0} طلب</div>
+                    </div>
+                    <div class="card" style="background: #faf5ff;">
+                        <div class="card-title">متوسط الطلب</div>
+                        <div class="card-val" style="color: #7e22ce;">${s.avg_order || 0} ج</div>
+                    </div>
+                </div>
+                <table>
+                    <thead>${theadHtml}</thead>
+                    <tbody>${tbodyHtml}</tbody>
+                </table>
+                <div style="border-top: 1px dotted #333; margin-top: 20px; padding-top: 8px; font-size: 11px; text-align: center; line-height: 1.5;">
+                    <div style="font-weight: 900; font-size: 11px; color: #000;">🏢 Sanad Digital | سند لتطوير البرمجيات</div>
+                    <div style="font-weight: 800; font-size: 10px; color: #222;">تم تطوير وبرمجة النظام بواسطة: م/ محمد الدباح</div>
+                    <div style="font-size: 10px; color: #0284C7;">📱 01501084747</div>
+                </div>
+                <script>
+                    window.onload = function() { window.print(); };
+                <\/script>
+            </body>
+            </html>
+            `;
+            printWin.document.open();
+            printWin.document.write(html);
+            printWin.document.close();
+        }
         
         // ====================================================
         // TABLE SALES REPORT LOGIC (تقرير كل ترابيزة فاليوم والأسبوع والشهر)
