@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الكرت الشخصي | م. محمد الدباح - Sanad Digital</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        :root {
+            /* Theme 1: Luxury Dark Gold (Default) */
+            --bg-canvas: #0f1115;
+            --card-bg-gradient: linear-gradient(135deg, #18191f 0%, #0d0e12 100%);
+            --card-border: #D4AF37;
+            --accent-primary: #D4AF37;
+            --accent-secondary: #f3ce65;
+            --accent-glow: rgba(212, 175, 55, 0.25);
+            --text-title: #FFFFFF;
+            --text-subtitle: #E2E8F0;
+            --text-muted: #94A3B8;
+            --badge-bg: rgba(212, 175, 55, 0.12);
+            --badge-border: rgba(212, 175, 55, 0.3);
+            --badge-text: #D4AF37;
+        }
+
+        /* Tech Cyan Theme */
+        [data-theme="cyan"] {
+            --card-bg-gradient: linear-gradient(135deg, #0b1528 0%, #050b14 100%);
+            --card-border: #00f2fe;
+            --accent-primary: #00c6ff;
+            --accent-secondary: #0072ff;
+            --accent-glow: rgba(0, 242, 254, 0.25);
+            --badge-bg: rgba(0, 198, 255, 0.12);
+            --badge-border: rgba(0, 198, 255, 0.3);
+            --badge-text: #00f2fe;
+        }
+
+        /* Minimal White Theme */
+        [data-theme="white"] {
+            --card-bg-gradient: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            --card-border: #0f172a;
+            --accent-primary: #0f172a;
+            --accent-secondary: #334155;
+            --accent-glow: rgba(15, 23, 42, 0.1);
+            --text-title: #0f172a;
+            --text-subtitle: #334155;
+            --text-muted: #64748b;
+            --badge-bg: #f1f5f9;
+            --badge-border: #cbd5e1;
+            --badge-text: #0f172a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 15px;
+        }
+
+        /* Top Action Bar */
+        .action-bar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .action-title {
+            font-size: 16px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+        }
+
+        .action-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .theme-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .theme-btn:hover, .theme-btn.active {
+            background: var(--accent-primary);
+            color: #000;
+            border-color: var(--accent-primary);
+        }
+
+        .btn-print {
+            background: linear-gradient(135deg, #D4AF37 0%, #b89324 100%);
+            color: #111;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 900;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-print:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.45);
+        }
+
+        /* Cards Container */
+        .cards-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .card-row {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Exact Business Card Dimensions: 90mm x 50mm */
+        .business-card {
+            width: 90mm;
+            height: 50mm;
+            background: var(--card-bg-gradient);
+            border: 1.5px solid var(--card-border);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 25px var(--accent-glow);
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+        }
+
+        .business-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 35px var(--accent-glow);
+        }
+
+        /* Luxury Background Watermark / Accent */
+        .card-ambient-glow {
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .card-tech-lines {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+        }
+
+        /* FRONT CARD STYLES */
+        .front-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+            z-index: 2;
+        }
+
+        .brand-logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-emblem {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.05) 100%);
+            border: 1.5px solid var(--accent-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--accent-primary);
+            box-shadow: 0 4px 10px var(--accent-glow);
+        }
+
+        .brand-title {
+            font-size: 14px;
+            font-weight: 900;
+            color: var(--text-title);
+            line-height: 1.2;
+        }
+
+        .brand-sub {
+            font-size: 9px;
+            color: var(--accent-primary);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .qr-wrapper {
+            background: #ffffff;
+            padding: 4px;
+            border-radius: 8px;
+            border: 1.5px solid var(--accent-primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-wrapper img, .qr-wrapper canvas {
+            display: block;
+            width: 48px !important;
+            height: 48px !important;
+        }
+
+        .front-body {
+            position: relative;
+            z-index: 2;
+            margin-top: 4px;
+        }
+
+        .person-name {
+            font-size: 17px;
+            font-weight: 900;
+            color: var(--text-title);
+            letter-spacing: -0.2px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .person-name small {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .person-title {
+            font-size: 11px;
+            color: var(--accent-primary);
+            font-weight: 800;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .front-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            position: relative;
+            z-index: 2;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 8px;
+        }
+
+        .contact-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-subtitle);
+            direction: ltr;
+        }
+
+        .contact-pill i {
+            color: var(--accent-primary);
+            font-size: 12px;
+        }
+
+        .tag-country {
+            font-size: 9px;
+            font-weight: 700;
+            background: var(--badge-bg);
+            border: 1px solid var(--badge-border);
+            color: var(--badge-text);
+            padding: 2px 7px;
+            border-radius: 6px;
+        }
+
+        /* BACK CARD STYLES */
+        .back-content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            z-index: 2;
+        }
+
+        .back-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 6px;
+        }
+
+        .back-title {
+            font-size: 12px;
+            font-weight: 900;
+            color: var(--accent-primary);
+            letter-spacing: 0.5px;
+        }
+
+        .back-services-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 12px;
+            margin: 6px 0;
+        }
+
+        .service-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-subtitle);
+        }
+
+        .service-item i {
+            font-size: 10px;
+            color: var(--accent-primary);
+            width: 14px;
+            text-align: center;
+        }
+
+        .back-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 6px;
+        }
+
+        .slogan {
+            font-size: 9.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .badge-verified {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+            font-weight: 800;
+            color: var(--accent-primary);
+        }
+
+        /* Editable Label Notice */
+        .edit-hint {
+            font-size: 12px;
+            color: #94A3B8;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ==================================================== */
+        /* PRINT SPECIFICATIONS (EXACT 90x50 mm)               */
+        /* ==================================================== */
+        @media print {
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .action-bar, .edit-hint, .page-header {
+                display: none !important;
+            }
+
+            .cards-wrapper {
+                gap: 20mm;
+            }
+
+            .card-row {
+                gap: 15mm;
+                page-break-inside: avoid;
+            }
+
+            .business-card {
+                box-shadow: none !important;
+                border: 1px solid #111 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Action Bar -->
+    <div class="action-bar">
+        <div class="action-title">
+            <i class="fa-solid fa-id-card" style="color: var(--accent-primary);"></i>
+            <span>الكرت الشخصي الاحترافي (Business Card)</span>
+            <span style="font-size: 11px; background: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 6px; font-weight: 600;">مقاس قياسي: 90x50 مم</span>
+        </div>
+
+        <div class="action-controls">
+            <!-- Theme Selectors -->
+            <button class="theme-btn active" onclick="setTheme('gold', this)" title="أسود كربوني وفاخر بلمسات ذهبية">
+                <i class="fa-solid fa-crown" style="color: #D4AF37;"></i> أسود وذهبي
+            </button>
+            <button class="theme-btn" onclick="setTheme('cyan', this)" title="أزرق تقني نيون عصري">
+                <i class="fa-solid fa-code" style="color: #00f2fe;"></i> تقني نيون
+            </button>
+            <button class="theme-btn" onclick="setTheme('white', this)" title="أبيض ناصع وكلاسيكي">
+                <i class="fa-solid fa-sun" style="color: #64748b;"></i> أبيض نقي
+            </button>
+
+            <!-- Print Button -->
+            <button class="btn-print" onclick="window.print()">
+                <i class="fa-solid fa-print"></i> طباعة الكرت (جاهز للقص)
+            </button>
+        </div>
+    </div>
+
+    <!-- Cards Display Wrapper -->
+    <div class="cards-wrapper">
+        <div class="card-row">
+
+            <!-- ============================================== -->
+            <!-- CARD 1: FRONT SIDE (الوجه الأمامي)             -->
+            <!-- ============================================== -->
+            <div>
+                <div style="font-size: 12px; font-weight: 800; color: #94A3B8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-arrow-left"></i> الوجه الأمامي (Front)
+                </div>
+                <div class="business-card" id="cardFront">
+                    <div class="card-ambient-glow"></div>
+                    <div class="card-tech-lines"></div>
+
+                    <!-- Header: Brand & QR -->
+                    <div class="front-header">
+                        <div class="brand-logo-area">
+                            <div class="logo-emblem">
+                                <i class="fa-solid fa-cube"></i>
+                            </div>
+                            <div>
+                                <div class="brand-title" contenteditable="true" title="اضغط للتعديل">سند ديجيتال</div>
+                                <div class="brand-sub" contenteditable="true" title="اضغط للتعديل">SANAD DIGITAL</div>
+                            </div>
+                        </div>
+
+                        <!-- Interactive QR to WhatsApp -->
+                        <div class="qr-wrapper" id="qrContainerFront" title="امسح الكود للتواصل واتساب فوراً">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Body: Name & Role -->
+                    <div class="front-body">
+                        <div class="person-name" contenteditable="true" title="اضغط للتعديل">
+                            م. محمد الدباح
+                            <small>Eng. Mohamed El-Dabbah</small>
+                        </div>
+                        <div class="person-title" contenteditable="true" title="اضغط للتعديل">
+                            <i class="fa-solid fa-laptop-code"></i> مؤسس ومطور أنظمة البرمجيات | Software Engineer
+                        </div>
+                    </div>
+
+                    <!-- Footer: Contact & Location -->
+                    <div class="front-footer">
+                        <div style="display: flex; gap: 14px; align-items: center;">
+                            <div class="contact-pill" title="رقم الهاتف والواتساب">
+                                <i class="fa-brands fa-whatsapp"></i>
+                                <span contenteditable="true">01501084747</span>
+                            </div>
+                            <div class="contact-pill" title="مكالمات">
+                                <i class="fa-solid fa-phone"></i>
+                                <span contenteditable="true">+20 1501084747</span>
+                            </div>
+                        </div>
+
+                        <div class="tag-country" contenteditable="true">
+                            مصر | EGYPT
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- CARD 2: BACK SIDE (الوجه الخلفي)              -->
+            <!-- ============================================== -->
+            <div>
+                <div style="font-size: 12px; font-weight: 800; color: #94A3B8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-arrow-left"></i> الوجه الخلفي (Back)
+                </div>
+                <div class="business-card" id="cardBack">
+                    <div class="card-ambient-glow"></div>
+                    <div class="card-tech-lines"></div>
+
+                    <div class="back-content">
+                        <!-- Back Header -->
+                        <div class="back-header">
+                            <div class="back-title">
+                                <i class="fa-solid fa-microchip"></i> خدماتنا وحلولنا البرمجية
+                            </div>
+                            <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); font-family: 'Outfit';">
+                                SMART TECH SOLUTIONS
+                            </div>
+                        </div>
+
+                        <!-- Back Services Grid -->
+                        <div class="back-services-grid">
+                            <div class="service-item">
+                                <i class="fa-solid fa-cash-register"></i>
+                                <span>أنظمة كاشير ونقاط بيع POS</span>
+                            </div>
+                            <div class="service-item">
+                                <i class="fa-solid fa-qrcode"></i>
+                                <span>المنيو الإلكتروني الذكي (QR)</span>
+                            </div>
+                            <div class="service-item">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                                <span>إدارة المخزون وتكاليف الهالك</span>
+                            </div>
+                            <div class="service-item">
+                                <i class="fa-solid fa-cloud"></i>
+                                <span>حلول وربط السيرفرات السحابية</span>
+                            </div>
+                            <div class="service-item">
+                                <i class="fa-solid fa-chart-line"></i>
+                                <span>تقارير مالية ولوحات تحكم ERP</span>
+                            </div>
+                            <div class="service-item">
+                                <i class="fa-solid fa-globe"></i>
+                                <span>برمجة مواقع وتطبيقات مخصصة</span>
+                            </div>
+                        </div>
+
+                        <!-- Back Footer -->
+                        <div class="back-footer">
+                            <div class="slogan" contenteditable="true">
+                                "نبتكر حلولاً رقمية ذكية تدير أعمالك باحترافية"
+                            </div>
+                            <div class="badge-verified">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>SANAD.DIGITAL</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="edit-hint">
+            <i class="fa-solid fa-circle-info" style="color: var(--accent-primary);"></i>
+            <span>يمكنك الضغط على أي نص في الكرت لتعديل الاسم أو الوظيفة أو الهاتف مباشرة قبل الطباعة!</span>
+        </div>
+    </div>
+
+    <script>
+        // Generate WhatsApp QR Code
+        function generateQRCode() {
+            const container = document.getElementById('qrContainerFront');
+            container.innerHTML = '';
+            new QRCode(container, {
+                text: "https://wa.me/201501084747",
+                width: 48,
+                height: 48,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.M
+            });
+        }
+        generateQRCode();
+
+        // Theme Switcher Logic
+        function setTheme(themeName, btn) {
+            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            if (themeName === 'gold') {
+                document.body.removeAttribute('data-theme');
+            } else {
+                document.body.setAttribute('data-theme', themeName);
+            }
+        }
+    </script>
+</body>
+</html>

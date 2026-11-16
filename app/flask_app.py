@@ -181,6 +181,16 @@ def get_qr_cards_page():
     return Response("<h2>جاري تحميل كروت الـ QR للترابيزات...</h2>", mimetype="text/html; charset=utf-8")
 
 
+@app.route("/card")
+@app.route("/business-card")
+def get_business_card_page():
+    file_path = os.path.join(TEMPLATES_DIR, "business_card.html")
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            return Response(f.read(), mimetype="text/html; charset=utf-8")
+    return Response("<h2>جاري تحميل الكرت الشخصي...</h2>", mimetype="text/html; charset=utf-8")
+
+
 # ==========================================
 # 2. الأصناف (Menu Items)
 # ==========================================
