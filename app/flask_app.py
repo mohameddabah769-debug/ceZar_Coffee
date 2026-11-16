@@ -1639,9 +1639,9 @@ def export_full_data_csv():
             writer.writerow([
                 i.id,
                 i.name,
-                i.stock,
+                getattr(i, 'current_stock', getattr(i, 'stock', 0.0)),
                 i.unit,
-                i.min_stock,
+                getattr(i, 'min_alert_stock', getattr(i, 'min_stock', 0.0)),
                 i.cost_per_unit or 0.0
             ])
         writer.writerow([])
