@@ -3875,7 +3875,7 @@
         var currentUserRole = 'admin';
 
         function selectLoginRole(role) {
-            document.querySelectorAll('#managerLoginModal .filter-pill').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#loginModal .filter-pill, #managerLoginModal .filter-pill').forEach(b => b.classList.remove('active'));
             if (role === 'admin') {
                 document.getElementById('btnRoleAdmin')?.classList.add('active');
                 document.getElementById('loginUsername').value = 'admin';
