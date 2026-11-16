@@ -717,9 +717,11 @@
 
 
             <!-- User Menu -->
-            <button class="nav-btn" onclick="openChangeCredModal()" title="تغيير كلمة المرور">
-                <i class="fa-solid fa-user-shield"></i>
-                <span id="managerNameDisplay">المدير</span>
+            <div id="userInfoPill" style="display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.12); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; border: 1px solid rgba(255,255,255,0.2); color: white;">
+                <span id="managerNameDisplay"><i class="fa-solid fa-crown" style="color: #D4AF37;"></i> المدير العام</span>
+            </div>
+            <button class="nav-btn" id="btnChangeCred" onclick="openChangeCredModal()" title="تغيير كلمة المرور للمدير" style="background: rgba(212, 175, 55, 0.2); border-color: #D4AF37; color: #D4AF37;">
+                <i class="fa-solid fa-key"></i>
             </button>
             <button class="nav-btn" onclick="logoutManager()" style="background: rgba(220, 53, 69, 0.25); border-color: rgba(220, 53, 69, 0.4);" title="تسجيل الخروج">
                 <i class="fa-solid fa-right-from-bracket"></i>
@@ -3309,27 +3311,51 @@
 
     <!-- 9. Login Modal -->
     <div class="pin-modal-overlay" id="loginModal" style="display: none;">
-        <div class="pin-card" style="max-width: 360px; text-align: center;">
-            <img src="/static/images/cezar_logo.jpg" alt="ceZar Logo" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--cezar-gold); margin-bottom: 10px;" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=100'">
-            <h3 style="font-size: 18px; font-weight: 900; color: var(--primary-espresso);">تسجيل الدخول للنظام</h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">كافيه سيزر | ceZar COFFEE</p>
-            <!-- Quick Role Select Buttons -->
-            <div style="display: flex; gap: 6px; margin-bottom: 14px;">
-                <button type="button" onclick="selectLoginRole('admin')" class="filter-pill active" id="btnRoleAdmin" style="flex: 1; justify-content: center; font-size: 11px; padding: 6px 4px;">👑 مدير</button>
-                <button type="button" onclick="selectLoginRole('cashier')" class="filter-pill" id="btnRoleCashier" style="flex: 1; justify-content: center; font-size: 11px; padding: 6px 4px;">💵 كاشير</button>
-                <button type="button" onclick="selectLoginRole('barista')" class="filter-pill" id="btnRoleBarista" style="flex: 1; justify-content: center; font-size: 11px; padding: 6px 4px;">☕ باريستا</button>
+        <div class="pin-card" style="max-width: 440px; text-align: center; border-radius: 22px; box-shadow: 0 16px 40px rgba(0,0,0,0.4); padding: 24px;">
+            <img src="/static/images/cezar_logo.jpg" alt="ceZar Logo" style="width: 72px; height: 72px; border-radius: 50%; border: 2.5px solid var(--cezar-gold); margin-bottom: 8px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=100'">
+            <h3 style="font-size: 20px; font-weight: 900; color: var(--primary-espresso); margin: 0 0 4px;">تسجيل الدخول للنظام</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">كافيه سيزر | ceZar COFFEE</p>
+
+            <!-- Dynamic System Users Selection Container -->
+            <div style="margin-bottom: 14px; text-align: right; background: #FAF7F2; padding: 10px 12px; border-radius: 14px; border: 1.5px solid #EBE3D7;">
+                <label style="font-size: 12px; font-weight: 800; color: #444; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span><i class="fa-solid fa-users" style="color: var(--cezar-orange);"></i> اضغط على اسم المستخدم للدخول:</span>
+                    <span id="loginUsersLoading" style="font-size: 11px; color: #888; font-weight: 600;"><i class="fa-solid fa-spinner fa-spin"></i> جاري التحميل...</span>
+                </label>
+                <!-- Grid of user selection pills/cards -->
+                <div id="loginUsersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 6px; max-height: 150px; overflow-y: auto; padding: 2px;">
+                    <!-- Dynamically populated from database with all registered users -->
+                </div>
             </div>
 
-            <div style="margin-bottom: 10px; text-align: right;">
-                <label style="font-size: 12px; font-weight: 800;">اسم المستخدم:</label>
-                <input type="text" id="loginUsername" value="cezar" class="form-control">
-            </div>
-            <div style="margin-bottom: 14px; text-align: right;">
-                <label style="font-size: 12px; font-weight: 800;">كلمة المرور:</label>
-                <input type="password" id="loginPassword" value="0000" class="form-control">
-            </div>
-            <div id="loginError" style="color: #dc3545; font-size: 12px; font-weight: 800; display: none; margin-bottom: 10px;"></div>
-            <button class="pin-btn" onclick="submitManagerLogin()">دخول لوحة التحكم</button>
+            <!-- Login Form -->
+            <form onsubmit="event.preventDefault(); submitManagerLogin();" style="text-align: right;">
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 800; color: #444;">اسم المستخدم (Login Username):</label>
+                    <div style="position: relative;">
+                        <input type="text" id="loginUsername" value="admin" class="form-control" placeholder="اسم الدخول" style="padding-right: 12px; font-weight: 700;" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="font-size: 12px; font-weight: 800; color: #444; display: flex; justify-content: space-between; align-items: center;">
+                        <span>كلمة المرور / الـ PIN:</span>
+                        <span id="selectedUserRoleBadge" style="font-size: 11px; font-weight: 800; color: #B45309;">👑 مدير عام</span>
+                    </label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <input type="password" id="loginPassword" value="0000" class="form-control" placeholder="••••••••" style="padding-left: 38px; font-weight: 700;" required autocomplete="current-password">
+                        <button type="button" onclick="toggleLoginPasswordVisibility()" style="position: absolute; left: 8px; background: none; border: none; cursor: pointer; color: #666; font-size: 14px; padding: 4px;" title="إظهار / إخفاء كلمة المرور">
+                            <i class="fa-solid fa-eye" id="togglePasswordIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="loginError" style="color: #dc3545; background: #FFF5F5; border: 1px solid #FED7D7; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; display: none; margin-bottom: 12px; text-align: center;"></div>
+                
+                <button type="submit" class="pin-btn" id="btnLoginSubmit" style="width: 100%; padding: 11px; font-size: 14px; font-weight: 900; background: linear-gradient(135deg, var(--primary-espresso) 0%, var(--secondary-espresso) 100%);">
+                    <i class="fa-solid fa-right-to-bracket"></i> دخول لوحة التحكم
+                </button>
+            </form>
         </div>
     </div>
 
@@ -3681,19 +3707,155 @@
         }
         initTableSelectors();
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        let cachedLoginUsers = [];
+
+        async function loadLoginUsers() {
+            const loadingEl = document.getElementById('loginUsersLoading');
+            const container = document.getElementById('loginUsersList');
+            if (!container) return;
+
+            try {
+                if (loadingEl) loadingEl.style.display = 'inline-block';
+                const res = await fetch('/api/auth/users');
+                const data = await res.json();
+                cachedLoginUsers = (data && data.users) ? data.users : [];
+                renderLoginUsersPills();
+            } catch (e) {
+                console.error('Failed to load login users:', e);
+                if (loadingEl) loadingEl.textContent = 'تعذر التحميل';
+            } finally {
+                if (loadingEl) loadingEl.style.display = 'none';
+            }
+        }
+
+        function renderLoginUsersPills() {
+            const container = document.getElementById('loginUsersList');
+            if (!container) return;
+
+            if (!cachedLoginUsers || cachedLoginUsers.length === 0) {
+                container.innerHTML = '<span style="font-size: 11px; color: #888; grid-column: 1 / -1;">لا يوجد مستخدمين مسجلين، يمكنك كتابة اسم الدخول يدوياً.</span>';
+                return;
+            }
+
+            const currentVal = document.getElementById('loginUsername')?.value?.trim();
+
+            container.innerHTML = cachedLoginUsers.map(u => {
+                const isSelected = (currentVal && (currentVal.toLowerCase() === (u.username || '').toLowerCase()));
+                let roleIcon = 'fa-user';
+                let roleBg = '#F3F4F6';
+                let roleColor = '#374151';
+                let roleBorder = '#E5E7EB';
+                let roleLabel = 'مستخدم';
+
+                if (u.role === 'admin') {
+                    roleIcon = 'fa-crown';
+                    roleBg = isSelected ? '#FEF3C7' : '#FFFBEB';
+                    roleColor = '#B45309';
+                    roleBorder = isSelected ? '#F59E0B' : '#FDE68A';
+                    roleLabel = 'مدير عام';
+                } else if (u.role === 'cashier') {
+                    roleIcon = 'fa-cash-register';
+                    roleBg = isSelected ? '#ECFDF5' : '#F0FDF4';
+                    roleColor = '#047857';
+                    roleBorder = isSelected ? '#10B981' : '#A7F3D0';
+                    roleLabel = 'كاشير';
+                } else if (u.role === 'barista') {
+                    roleIcon = 'fa-mug-hot';
+                    roleBg = isSelected ? '#EFF6FF' : '#F8FAFC';
+                    roleColor = '#1D4ED8';
+                    roleBorder = isSelected ? '#3B82F6' : '#BFDBFE';
+                    roleLabel = 'باريستا';
+                }
+
+                const activeStyle = isSelected ? 'box-shadow: 0 0 0 2px ' + roleBorder + '; font-weight: 900;' : '';
+
+                return `
+                    <button type="button" onclick="selectLoginUser('${encodeURIComponent(u.username)}', '${encodeURIComponent(u.manager_name || u.username)}', '${u.role}')" 
+                            class="filter-pill login-user-pill" 
+                            id="userPill_${u.id}"
+                            style="width: 100%; justify-content: flex-start; text-align: right; font-size: 11px; padding: 7px 9px; background: ${roleBg}; color: ${roleColor}; border: 1.5px solid ${roleBorder}; border-radius: 10px; cursor: pointer; transition: all 0.15s; ${activeStyle}">
+                        <div style="display: flex; align-items: center; gap: 6px; width: 100%; overflow: hidden;">
+                            <i class="fa-solid ${roleIcon}"></i>
+                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                                <div style="font-weight: 900; line-height: 1.2;">${escapeHtml(u.manager_name || u.username)}</div>
+                                <div style="font-size: 9px; opacity: 0.8;">${escapeHtml(u.username)} (${roleLabel})</div>
+                            </div>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectLoginUser(usernameEnc, nameEnc, role) {
+            const username = decodeURIComponent(usernameEnc);
+            const name = decodeURIComponent(nameEnc);
+            const userInput = document.getElementById('loginUsername');
+            const pwdInput = document.getElementById('loginPassword');
+            const roleBadge = document.getElementById('selectedUserRoleBadge');
+
+            if (userInput) userInput.value = username;
+            if (pwdInput) {
+                pwdInput.value = '';
+                pwdInput.focus();
+            }
+
+            if (roleBadge) {
+                let text = '👑 مدير عام';
+                let color = '#B45309';
+                if (role === 'cashier') {
+                    text = '💳 كاشير';
+                    color = '#047857';
+                } else if (role === 'barista') {
+                    text = '☕ باريستا';
+                    color = '#1D4ED8';
+                }
+                roleBadge.textContent = text;
+                roleBadge.style.color = color;
+            }
+
+            renderLoginUsersPills();
+        }
+
+        function toggleLoginPasswordVisibility() {
+            const pwdInput = document.getElementById('loginPassword');
+            const icon = document.getElementById('togglePasswordIcon');
+            if (!pwdInput) return;
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                if (icon) { icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash'); }
+            } else {
+                pwdInput.type = 'password';
+                if (icon) { icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
+            }
+        }
+
         // Check Manager Authentication
         function checkManagerAuth() {
             var token = sessionStorage.getItem('cezar_manager_token');
             var user = sessionStorage.getItem('cezar_manager_username');
+            var role = sessionStorage.getItem('cezar_role') || 'admin';
+            var managerName = sessionStorage.getItem('cezar_manager_name') || user;
             var modal = document.getElementById('loginModal');
 
             if (!token || !user) {
                 if (modal) modal.style.display = 'flex';
+                loadLoginUsers();
                 return false;
             } else {
                 if (modal) modal.style.display = 'none';
-                document.getElementById('managerNameDisplay').textContent = user;
+                applyRolePermissions(role, managerName);
                 initDashboard();
+                loadLoginUsers(); // Keep in cache for seamless logout/switch
                 return true;
             }
         }
@@ -3717,10 +3879,15 @@
                 });
                 const data = await res.json();
                 if (res.ok && data.status === 'success') {
+                    const role = data.role || 'admin';
+                    const managerName = data.manager_name || data.username;
                     sessionStorage.setItem('cezar_manager_token', 'token_' + Date.now());
                     sessionStorage.setItem('cezar_manager_username', data.username);
-                    document.getElementById('managerNameDisplay').textContent = data.username;
+                    sessionStorage.setItem('cezar_manager_name', managerName);
+                    sessionStorage.setItem('cezar_role', role);
+
                     document.getElementById('loginModal').style.display = 'none';
+                    applyRolePermissions(role, managerName);
                     initDashboard();
                 } else {
                     errEl.textContent = data.detail || 'اسم المستخدم أو كلمة المرور غير صحيحة';
@@ -3736,6 +3903,8 @@
             if (confirm('هل تريد بالتأكيد تسجيل الخروج من لوحة التحكم؟')) {
                 sessionStorage.removeItem('cezar_manager_token');
                 sessionStorage.removeItem('cezar_manager_username');
+                sessionStorage.removeItem('cezar_manager_name');
+                sessionStorage.removeItem('cezar_role');
                 location.reload();
             }
         }
@@ -3891,31 +4060,88 @@
             }
         }
 
-        function applyRolePermissions(role) {
+        function applyRolePermissions(role, managerName) {
             currentUserRole = role || 'admin';
             sessionStorage.setItem('cezar_role', currentUserRole);
 
-            if (currentUserRole === 'barista') {
-                window.location.href = '/kitchen';
-                return;
-            }
+            const dispName = managerName || sessionStorage.getItem('cezar_manager_name') || sessionStorage.getItem('cezar_manager_username') || 'المستخدم';
 
-            const btnAnalytics = document.querySelector('[data-tab="analytics"]');
-            const btnPromos = document.querySelector('[data-tab="promos"]');
+            const btnOrders = document.querySelector('[data-tab="orders"]');
+            const btnPos = document.querySelector('[data-tab="pos"]');
+            const btnTables = document.querySelector('[data-tab="tables"]');
+            const btnShifts = document.querySelector('[data-tab="shifts"]');
+            const btnReservations = document.querySelector('[data-tab="reservations"]');
             const btnInventory = document.querySelector('[data-tab="inventory"]');
-            const roleBadge = document.getElementById('managerNameDisplay');
+            const btnAnalytics = document.querySelector('[data-tab="analytics"]');
+            const btnStaff = document.querySelector('[data-tab="staff"]');
+            const btnMenu = document.querySelector('[data-tab="menu"]');
+            const btnOwner = document.querySelector('[data-tab="owner"]');
+            const btnChangeCred = document.getElementById('btnChangeCred');
+            const nameEl = document.getElementById('managerNameDisplay');
 
-            if (currentUserRole === 'cashier') {
-                if (btnAnalytics) btnAnalytics.style.display = 'none';
-                if (btnPromos) btnPromos.style.display = 'none';
+            if (currentUserRole === 'admin') {
+                // Admin: Full access to everything
+                if (btnOrders) btnOrders.style.display = 'inline-flex';
+                if (btnPos) btnPos.style.display = 'inline-flex';
+                if (btnTables) btnTables.style.display = 'inline-flex';
+                if (btnShifts) btnShifts.style.display = 'inline-flex';
+                if (btnReservations) btnReservations.style.display = 'inline-flex';
+                if (btnInventory) btnInventory.style.display = 'inline-flex';
+                if (btnAnalytics) btnAnalytics.style.display = 'inline-flex';
+                if (btnStaff) btnStaff.style.display = 'inline-flex';
+                if (btnMenu) btnMenu.style.display = 'inline-flex';
+                if (btnOwner) btnOwner.style.display = 'inline-flex';
+                if (btnChangeCred) btnChangeCred.style.display = 'inline-flex';
+
+                if (nameEl) {
+                    nameEl.innerHTML = `<i class="fa-solid fa-crown" style="color: #D4AF37;"></i> ${escapeHtml(dispName)} <span style="font-size: 10px; background: rgba(212,175,55,0.25); color: #FFF8E7; padding: 2px 7px; border-radius: 8px;">مدير عام</span>`;
+                }
+            } else if (currentUserRole === 'cashier') {
+                // Cashier: Only POS, Orders, Tables, Shifts, Reservations
+                if (btnOrders) btnOrders.style.display = 'inline-flex';
+                if (btnPos) btnPos.style.display = 'inline-flex';
+                if (btnTables) btnTables.style.display = 'inline-flex';
+                if (btnShifts) btnShifts.style.display = 'inline-flex';
+                if (btnReservations) btnReservations.style.display = 'inline-flex';
+
+                // Strictly HIDE forbidden tabs
                 if (btnInventory) btnInventory.style.display = 'none';
-                if (roleBadge) roleBadge.textContent = 'كاشير الصالة (صلاحية كاشير)';
-                switchTab('pos', document.querySelector('[data-tab=pos]'));
-            } else {
-                if (btnAnalytics) btnAnalytics.style.display = 'flex';
-                if (btnPromos) btnPromos.style.display = 'flex';
-                if (btnInventory) btnInventory.style.display = 'flex';
-                if (roleBadge) roleBadge.textContent = 'المدير العام';
+                if (btnAnalytics) btnAnalytics.style.display = 'none';
+                if (btnStaff) btnStaff.style.display = 'none';
+                if (btnMenu) btnMenu.style.display = 'none';
+                if (btnOwner) btnOwner.style.display = 'none';
+                if (btnChangeCred) btnChangeCred.style.display = 'none';
+
+                if (nameEl) {
+                    nameEl.innerHTML = `<i class="fa-solid fa-cash-register" style="color: #10B981;"></i> ${escapeHtml(dispName)} <span style="font-size: 10px; background: #065F46; color: #D1FAE5; padding: 2px 7px; border-radius: 8px;">كاشير</span>`;
+                }
+
+                // If currently on an unauthorized tab, redirect to POS
+                const activeTab = document.querySelector('.tab-content.active');
+                if (activeTab && ['tabInventory', 'tabAnalytics', 'tabStaff', 'tabMenu', 'tabOwner'].includes(activeTab.id)) {
+                    switchTab('pos', document.querySelector('[data-tab="pos"]'));
+                }
+            } else if (currentUserRole === 'barista') {
+                // Barista: Only Orders / Kitchen KDS
+                if (btnOrders) btnOrders.style.display = 'inline-flex';
+
+                // Strictly HIDE all management, POS, inventory, staff, owner, shifts, tables, menu tabs
+                if (btnPos) btnPos.style.display = 'none';
+                if (btnTables) btnTables.style.display = 'none';
+                if (btnShifts) btnShifts.style.display = 'none';
+                if (btnReservations) btnReservations.style.display = 'none';
+                if (btnInventory) btnInventory.style.display = 'none';
+                if (btnAnalytics) btnAnalytics.style.display = 'none';
+                if (btnStaff) btnStaff.style.display = 'none';
+                if (btnMenu) btnMenu.style.display = 'none';
+                if (btnOwner) btnOwner.style.display = 'none';
+                if (btnChangeCred) btnChangeCred.style.display = 'none';
+
+                if (nameEl) {
+                    nameEl.innerHTML = `<i class="fa-solid fa-mug-hot" style="color: #60A5FA;"></i> ${escapeHtml(dispName)} <span style="font-size: 10px; background: #1E3A8A; color: #DBEAFE; padding: 2px 7px; border-radius: 8px;">باريستا</span>`;
+                }
+
+                switchTab('orders', document.querySelector('[data-tab="orders"]'));
             }
         }
 
@@ -3993,6 +4219,23 @@
         }
 
         function switchTab(tabName, btnEl) {
+            // Strict Role-Based Access Control (RBAC) Guard
+            if (currentUserRole === 'cashier') {
+                const allowedCashierTabs = ['pos', 'orders', 'tables', 'shifts', 'reservations'];
+                if (!allowedCashierTabs.includes(tabName)) {
+                    alert('⚠️ عذراً، هذا القسم يتطلب صلاحية المدير العام (Admin) فقط!');
+                    tabName = 'pos';
+                    btnEl = document.querySelector('[data-tab="pos"]');
+                }
+            } else if (currentUserRole === 'barista') {
+                const allowedBaristaTabs = ['orders'];
+                if (!allowedBaristaTabs.includes(tabName)) {
+                    alert('⚠️ عذراً، صلاحية الباريستا مخصصة لشاشة الطلبات والمطبخ فقط!');
+                    tabName = 'orders';
+                    btnEl = document.querySelector('[data-tab="orders"]');
+                }
+            }
+
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
@@ -8341,6 +8584,7 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                 if (res.ok && data.status === 'success') {
                     closeModal('addUserModal');
                     fetchSystemUsers();
+                    if (typeof loadLoginUsers === 'function') loadLoginUsers();
                     alert('✅ تم حفظ بيانات المستخدم وصلاحيته بنجاح!');
                 } else {
                     alert('خطأ: ' + (data.detail || 'تعذر الحفظ'));
@@ -8357,6 +8601,7 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                 const data = await res.json();
                 if (res.ok && data.status === 'success') {
                     fetchSystemUsers();
+                    if (typeof loadLoginUsers === 'function') loadLoginUsers();
                 } else {
                     alert(data.detail || 'تعذر الحذف');
                 }

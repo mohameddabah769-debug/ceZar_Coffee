@@ -1733,7 +1733,7 @@ def manager_login():
     pwd = (data.get("password") or "").strip()
     with SessionLocal() as db:
         account = db.query(ManagerAccount).filter(
-            ManagerAccount.username == user,
+            func.lower(ManagerAccount.username) == user.lower(),
             ManagerAccount.password == pwd
         ).first()
         if not account:
@@ -1742,7 +1742,7 @@ def manager_login():
             "status": "success",
             "username": account.username,
             "manager_name": account.manager_name or "المدير العام",
-        "role": account.role or "admin"
+            "role": account.role or "admin"
         })
 
 
@@ -2065,19 +2065,30 @@ def save_system_user():
         if u_id:
             u = db.query(ManagerAccount).filter(ManagerAccount.id == u_id).first()
             if not u: return jsonify({"detail": "المستخدم غير موجود"}), 404
-            u.username = data.get("username", "").strip()
-            u.manager_name = data.get("manager_name", "").strip()
+            username = data.get("username", "").strip()
+            if not username:
+                return jsonify({"detail": "اسم المستخدم مطلوب!"}), 400
+            # Check duplicate username on another user
+            existing = db.query(ManagerAccount).filter(func.lower(ManagerAccount.username) == username.lower(), ManagerAccount.id != u_id).first()
+            if existing:
+                return jsonify({"detail": "اسم المستخدم مستخدم بالفعل لحساب آخر!"}), 400
+            u.username = username
+            u.manager_name = data.get("manager_name", "").strip() or username
             u.role = data.get("role", "cashier").strip()
-            if data.get("password"):
-                u.password = data.get("password", "").strip()
+            new_pwd = (data.get("password") or "").strip()
+            if new_pwd:
+                u.password = new_pwd
         else:
             username = data.get("username", "").strip()
-            if db.query(ManagerAccount).filter(ManagerAccount.username == username).first():
+            if not username:
+                return jsonify({"detail": "اسم المستخدم مطلوب!"}), 400
+            if db.query(ManagerAccount).filter(func.lower(ManagerAccount.username) == username.lower()).first():
                 return jsonify({"detail": "اسم المستخدم مستخدم بالفعل!"}), 400
+            pwd = (data.get("password") or "").strip() or "1234"
             u = ManagerAccount(
                 username=username,
-                password=data.get("password", "1234").strip(),
-                manager_name=data.get("manager_name", "موظف").strip(),
+                password=pwd,
+                manager_name=data.get("manager_name", "").strip() or username,
                 role=data.get("role", "cashier").strip()
             )
             db.add(u)
@@ -2090,7 +2101,7 @@ def delete_system_user(user_id):
     with SessionLocal() as db:
         u = db.query(ManagerAccount).filter(ManagerAccount.id == user_id).first()
         if not u: return jsonify({"detail": "المستخدم غير موجود"}), 404
-        if u.username == "admin":
+        if u.username in ["admin", "cezar"]:
             return jsonify({"detail": "لا يمكن حذف حساب المدير العام الرئيسي!"}), 400
         db.delete(u)
         db.commit()
