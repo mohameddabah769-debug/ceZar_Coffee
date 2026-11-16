@@ -1662,28 +1662,55 @@ def export_full_data_csv():
             ])
         writer.writerow([])
 
-        # 4. Sales
-        writer.writerow(["--- [ 4. سجل كافة المبيعات والطلبات ] ---"])
-        writer.writerow(["رقم الطلب", "نوع الطلب", "رقم الترابيزة", "اسم العميل", "الأصناف المطلوبة", "طريقة الدفع", "الخصم (ج)", "الإجمالي المدفوع (ج)", "الحالة", "التاريخ والوقت"])
-        orders = db.query(TableOrder).filter(
-            TableOrder.status != "ملغي",
-            ~TableOrder.status.like("طلب حساب%"),
-            TableOrder.status != "نداء ويتر",
-            TableOrder.total_price > 0
-        ).order_by(desc(TableOrder.id)).all()
-        for o in orders:
-            writer.writerow([
-                o.id,
-                o.order_type or "صالة",
-                o.table_number or "-",
-                o.customer_name or "-",
-                (o.items_summary or "").replace("\n", " | "),
-                o.payment_method or "كاش",
-                o.discount_amount or 0.0,
-                o.total_price,
-                o.status,
-                o.created_at.strftime("%Y-%m-%d %I:%M %p") if o.created_at else "-"
-            ])
+        # 4. Expenses
+        try:
+            writer.writerow(["--- [ 4. سجل المصروفات والنثريات ] ---"])
+            writer.writerow(["كود المصروف", "البند / البيان", "المبلغ (ج)", "التاريخ والوقت"])
+            expenses = db.query(Expense).order_by(Expense.id.desc()).all()
+            for exp in expenses:
+                c_time = (exp.created_at + timedelta(hours=2)).strftime("%Y-%m-%d %I:%M %p") if getattr(exp, "created_at", None) else "-"
+                writer.writerow([exp.id, exp.title, exp.amount, c_time])
+            writer.writerow([])
+        except Exception:
+            pass
+
+        # 5. Sales
+        try:
+            writer.writerow(["--- [ 5. سجل كافة المبيعات والطلبات ] ---"])
+            writer.writerow(["رقم الطلب", "نوع الطلب", "رقم الترابيزة", "اسم العميل", "الأصناف المطلوبة", "طريقة الدفع", "الخصم (ج)", "الإجمالي المدفوع (ج)", "الحالة", "التاريخ والوقت"])
+            orders = db.query(TableOrder).filter(
+                TableOrder.status != "ملغي",
+                ~TableOrder.status.like("طلب حساب%"),
+                TableOrder.status != "نداء ويتر",
+                TableOrder.total_price > 0
+            ).order_by(desc(TableOrder.id)).all()
+            for o in orders:
+                c_time = (o.created_at + timedelta(hours=2)).strftime("%Y-%m-%d %I:%M %p") if o.created_at else "-"
+                writer.writerow([
+                    o.id,
+                    o.order_type or "صالة",
+                    o.table_number or "-",
+                    o.customer_name or "-",
+                    (o.items_summary or "").replace("\n", " | "),
+                    o.payment_method or "كاش",
+                    o.discount_amount or 0.0,
+                    o.total_price,
+                    o.status,
+                    c_time
+                ])
+            writer.writerow([])
+        except Exception:
+            pass
+
+        # 6. Cafe Settings
+        try:
+            writer.writerow(["--- [ 6. إعدادات وهوية الكافيه ] ---"])
+            writer.writerow(["المفتاح / الإعداد", "القيمة"])
+            settings = db.query(CafeSetting).all()
+            for s in settings:
+                writer.writerow([s.key, s.value])
+        except Exception:
+            pass
 
         csv_data = output.getvalue().encode("utf-8-sig")
         filename = f"ceZar_Full_Backup_Excel_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.csv"
@@ -2389,23 +2416,37 @@ def delete_menu_category():
 @db_retry(max_retries=3, delay=0.4)
 def reset_test_data():
     with SessionLocal() as db:
-        db.query(TableOrder).delete()
-        db.query(Reservation).delete()
-        db.query(WaitingList).delete()
-        db.query(Expense).delete()
-        open_shifts = db.query(Shift).filter(Shift.status == "مفتوح").all()
-        for s in open_shifts:
-            s.status = "مغلق"
-            s.end_time = datetime.utcnow()
-        db.commit()
-        return jsonify({
-            "status": "success",
-            "message": "تم تصفير كافة الطلبات والحجوزات والمصروفات التجريبية بنجاح مع الحفاظ الكامل على المنيو والمخزون والإعدادات!"
-        })
+        try:
+            db.query(TableOrder).delete()
+            db.query(Reservation).delete()
+            db.query(WaitingList).delete()
+            db.query(Expense).delete()
+            try:
+                db.query(VoidAuditLog).delete()
+            except Exception:
+                pass
+            try:
+                db.query(InventoryWaste).delete()
+            except Exception:
+                pass
+            open_shifts = db.query(Shift).filter(Shift.status == "مفتوح").all()
+            for s in open_shifts:
+                s.status = "مغلق"
+                s.end_time = datetime.utcnow()
+            db.commit()
+            return jsonify({
+                "status": "success",
+                "message": "تم تصفير كافة الطلبات والحجوزات والمصروفات وسجلات الرقابة التجريبية بنجاح مع الحفاظ الكامل على المنيو والمخزون والإعدادات!"
+            })
+        except Exception as e:
+            db.rollback()
+            return jsonify({"status": "error", "detail": f"تعذر تصفير البيانات: {str(e)}"}), 500
 
 
 @app.route("/api/backup/restore", methods=["POST"])
 @app.route("/api/cezar/backup/restore", methods=["POST"])
+@app.route("/api/admin/restore-db", methods=["POST"])
+@app.route("/api/cezar/admin/restore-db", methods=["POST"])
 def restore_database_backup():
     import shutil
     if "file" not in request.files:
@@ -2417,6 +2458,40 @@ def restore_database_backup():
     content = file.read()
     if len(content) < 100 or not content.startswith(b"SQLite format 3"):
         return jsonify({"detail": "الملف المرفوع ليس ملف قاعدة بيانات SQLite صالح", "status": "error"}), 400
+
+    import tempfile, sqlite3
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix=".db")
+    with os.fdopen(tmp_fd, "wb") as tmp_file:
+        tmp_file.write(content)
+
+    con = None
+    is_valid_db = False
+    error_msg = "الملف المرفوع ليس قاعدة بيانات SQLite صالحة"
+    try:
+        con = sqlite3.connect(tmp_path)
+        cur = con.cursor()
+        cur.execute("PRAGMA integrity_check;")
+        check_res = cur.fetchone()
+        if check_res and check_res[0].lower() == "ok":
+            is_valid_db = True
+        else:
+            error_msg = "فحص سلامة الملف فشل: قاعدة البيانات تالفة أو غير مكتملة"
+    except Exception as e:
+        error_msg = f"الملف المرفوع ليس قاعدة بيانات SQLite صالحة: {str(e)}"
+    finally:
+        if con:
+            try:
+                con.close()
+            except Exception:
+                pass
+
+    if not is_valid_db:
+        try:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        except Exception:
+            pass
+        return jsonify({"detail": error_msg, "status": "error"}), 400
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     target_db = os.path.join(base_dir, "cezar_coffee.db")
@@ -2433,8 +2508,22 @@ def restore_database_backup():
     except Exception:
         pass
 
-    with open(target_db, "wb") as f:
-        f.write(content)
+    try:
+        shutil.copyfile(tmp_path, target_db)
+        if os.path.exists(tmp_path): os.remove(tmp_path)
+    except Exception as e:
+        with open(target_db, "wb") as f:
+            f.write(content)
+        if os.path.exists(tmp_path): os.remove(tmp_path)
+
+    # Also sync if there's a relative cezar_coffee.db
+    alt_db = os.path.abspath("cezar_coffee.db")
+    if alt_db != target_db and os.path.exists(alt_db):
+        try:
+            with open(alt_db, "wb") as f:
+                f.write(content)
+        except Exception:
+            pass
 
     try:
         Base.metadata.create_all(bind=engine)
@@ -2453,10 +2542,6 @@ def restore_database_backup():
                 pass
 
     return jsonify({"status": "success", "message": "تم استرجاع قاعدة البيانات وإعادة تحميل النظام بنجاح!"})
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
 
 # ==========================================
 # 11. إعدادات المالك والتحكم الشامل (Flask)

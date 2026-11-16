@@ -2520,9 +2520,9 @@
                         </p>
                     </div>
                     <div>
-                        <button class="pin-btn" onclick="downloadDbBackup()" style="background: #4F46E5; font-size: 13px; margin-bottom: 8px;">
+                        <a href="/api/admin/backup-db" download="cezar_coffee_backup.db" class="pin-btn" style="background: #4F46E5; font-size: 13px; margin-bottom: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             <i class="fa-solid fa-cloud-arrow-down"></i> تحميل ملف قاعدة البيانات (.db)
-                        </button>
+                        </a>
                         <input type="file" id="dbRestoreFileInput" accept=".db" style="display: none;" onchange="submitRestoreBackup()">
                         <button class="pin-btn" onclick="document.getElementById('dbRestoreFileInput').click()" style="background: #DC2626; font-size: 13px; margin: 0;">
                             <i class="fa-solid fa-cloud-arrow-up"></i> استرجاع نسخة احتياطية (Restore DB)
