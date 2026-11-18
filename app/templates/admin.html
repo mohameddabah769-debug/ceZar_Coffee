@@ -5743,35 +5743,37 @@
             try {
                 const res = await fetch('/api/inventory');
                 const data = await res.json();
-                inventoryItems = data.items || [];
+                inventoryItems = data.items || data.inventory || [];
 
                 const tbody = document.getElementById('inventoryTableBody');
                 if (!tbody) return;
                 if (inventoryItems.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #888;">لا توجد مواد خام مسجلة حالياً</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #888; padding: 24px;">لا توجد مواد خام مسجلة حالياً</td></tr>';
                 } else {
                     tbody.innerHTML = inventoryItems.map(item => {
-                        const isLow = item.is_low_stock;
+                        const stock = item.current_stock !== undefined ? item.current_stock : (item.quantity !== undefined ? item.quantity : 0);
+                        const minStock = item.min_alert_stock !== undefined ? item.min_alert_stock : (item.min_quantity !== undefined ? item.min_quantity : 0);
+                        const isLow = item.is_low_stock !== undefined ? item.is_low_stock : (item.is_low !== undefined ? item.is_low : (stock <= minStock));
                         const statusBadge = isLow 
                             ? '<span style="background: #FEE2E2; color: #DC2626; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-triangle-exclamation"></i> قارب على النفاد</span>'
                             : '<span style="background: #DCFCE7; color: #16A34A; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-circle-check"></i> متوفر</span>';
 
                         return `<tr>
                             <td style="font-weight: 900; color: var(--primary-espresso);">${item.name}</td>
-                            <td>${item.unit}</td>
-                            <td style="font-size: 15px; font-weight: 900; color: ${isLow ? '#DC2626' : 'var(--primary-espresso)'};">${item.quantity}</td>
-                            <td style="color: #666; font-weight: 800;">${item.min_quantity}</td>
-                            <td>${item.cost_per_unit || 0} ج</td>
+                            <td><span style="background: #F3F4F6; padding: 2px 8px; border-radius: 6px; font-weight: 800;">${item.unit}</span></td>
+                            <td style="font-size: 15px; font-weight: 900; color: ${isLow ? '#DC2626' : 'var(--primary-espresso)'};">${stock}</td>
+                            <td style="color: #666; font-weight: 800;">${minStock}</td>
+                            <td style="font-weight: 800;">${item.cost_per_unit || 0} ج</td>
                             <td>${statusBadge}</td>
                             <td>
                                 <div style="display: flex; gap: 4px;">
-                                    <button onclick="adjustInventoryStock(${item.id}, 1)" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; border-radius: 6px; padding: 2px 8px; font-weight: 900; cursor: pointer;">+1</button>
-                                    <button onclick="adjustInventoryStock(${item.id}, 5)" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; border-radius: 6px; padding: 2px 8px; font-weight: 900; cursor: pointer;">+5</button>
-                                    <button onclick="adjustInventoryStock(${item.id}, -1)" style="background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; border-radius: 6px; padding: 2px 8px; font-weight: 900; cursor: pointer;">-1</button>
+                                    <button onclick="adjustInventoryStock(${item.id}, 1)" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; border-radius: 6px; padding: 2px 8px; font-weight: 900; cursor: pointer;" title="زيادة 1">+1</button>
+                                    <button onclick="adjustInventoryStock(${item.id}, 5)" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; border-radius: 6px; padding: 2px 8px; font-weight: 900; cursor: pointer;" title="زيادة 5">+5</button>
+                                    <button onclick="adjustInventoryStock(${item.id}, -1)" style="background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; border-radius: 6px; padding: 2px 8px; font-weight: 900; cursor: pointer;" title="نقص 1">-1</button>
                                 </div>
                             </td>
                             <td>
-                                <button onclick="deleteInventoryItem(${item.id})" style="border: none; background: #FFEBEE; color: #DC2626; padding: 6px 10px; border-radius: 8px; font-weight: 800; cursor: pointer;">
+                                <button onclick="deleteInventoryItem(${item.id})" style="border: none; background: #FFEBEE; color: #DC2626; padding: 6px 10px; border-radius: 8px; font-weight: 800; cursor: pointer;" title="حذف الخامة">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </td>
@@ -5779,7 +5781,7 @@
                     }).join('');
                 }
 
-                const lowCount = data.low_stock_count || 0;
+                const lowCount = data.low_stock_count !== undefined ? data.low_stock_count : (data.alerts_count || 0);
                 const badge = document.getElementById('lowStockBadge');
                 const banner = document.getElementById('inventoryAlertBanner');
                 const bannerText = document.getElementById('inventoryAlertText');
@@ -5808,13 +5810,18 @@
         async function adjustInventoryStock(id, delta) {
             const item = inventoryItems.find(it => it.id === id);
             if (!item) return;
-            const newQty = Math.max(0, (item.quantity || 0) + delta);
+            const currentStock = item.current_stock !== undefined ? item.current_stock : (item.quantity !== undefined ? item.quantity : 0);
+            const newQty = Math.max(0, currentStock + delta);
             try {
-                await fetch(`/api/inventory/${id}`, {
+                const res = await fetch(`/api/inventory/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ quantity: newQty })
+                    body: JSON.stringify({ current_stock: newQty, quantity: newQty })
                 });
+                if (!res.ok) {
+                    alert('تعذر تعديل الرصيد');
+                    return;
+                }
                 fetchInventory();
             } catch(e) {
                 alert('تعذر تعديل الرصيد');
@@ -5822,10 +5829,16 @@
         }
 
         async function deleteInventoryItem(id) {
-            if (!confirm('هل أنت متأكد من حذف هذه المادة الخام من المخزن؟')) return;
+            if (!confirm('هل أنت متأكد من حذف هذه المادة الخام من المخزن نهائياً؟')) return;
             try {
-                await fetch(`/api/inventory/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/inventory/${id}`, { method: 'DELETE' });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    alert(err.detail || 'تعذر الحذف');
+                    return;
+                }
                 fetchInventory();
+                alert('✅ تم حذف المادة الخام من المخزن');
             } catch(e) {
                 alert('تعذر الحذف');
             }
@@ -5848,23 +5861,35 @@
             }
 
             try {
-                await fetch('/api/inventory', {
+                const res = await fetch('/api/inventory', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         name: name,
                         unit: unit,
                         quantity: qty,
+                        current_stock: qty,
                         min_quantity: minQty,
+                        min_alert_stock: minQty,
                         cost_per_unit: cost
                     })
                 });
+
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    alert('⚠️ ' + (data.detail || data.message || 'تعذر إضافة المادة الخام'));
+                    return;
+                }
+
                 closeModal('addInventoryModal');
                 document.getElementById('invItemName').value = '';
-                fetchInventory();
-                alert('✅ تم إضافة المادة الخام بنجاح!');
+                document.getElementById('invItemQuantity').value = '10';
+                document.getElementById('invItemMinQuantity').value = '3';
+                document.getElementById('invItemCost').value = '0';
+                await fetchInventory();
+                alert('✅ تم إضافة المادة الخام بنجاح للمخزن!');
             } catch(e) {
-                alert('تعذر إضافة المادة الخام');
+                alert('تعذر الاتصال بالسيرفر لإضافة المادة الخام');
             }
         }
 

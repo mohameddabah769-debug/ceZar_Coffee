@@ -1376,15 +1376,18 @@ def get_inventory():
         alerts = []
         inv_list = []
         for i in items:
-            is_low = i.current_stock <= i.min_alert_stock
+            is_low = (i.current_stock or 0.0) <= (i.min_alert_stock or 0.0)
             item_data = {
                 "id": i.id,
                 "name": i.name,
                 "unit": i.unit,
-                "current_stock": i.current_stock,
-                "min_alert_stock": i.min_alert_stock,
-                "cost_per_unit": i.cost_per_unit,
-                "is_low": is_low
+                "current_stock": i.current_stock or 0.0,
+                "quantity": i.current_stock or 0.0,
+                "min_alert_stock": i.min_alert_stock or 0.0,
+                "min_quantity": i.min_alert_stock or 0.0,
+                "cost_per_unit": i.cost_per_unit or 0.0,
+                "is_low": is_low,
+                "is_low_stock": is_low
             }
             inv_list.append(item_data)
             if is_low:
@@ -1392,8 +1395,10 @@ def get_inventory():
 
         return jsonify({
             "status": "success",
+            "items": inv_list,
             "inventory": inv_list,
             "low_stock_alerts": alerts,
+            "low_stock_count": len(alerts),
             "alerts_count": len(alerts)
         })
 
@@ -1403,16 +1408,22 @@ def get_inventory():
 def add_inventory_item():
     data = request.json or {}
     name_str = (data.get("name") or "").strip()
+    if not name_str:
+        return jsonify({"detail": "يرجى كتابة اسم المادة الخام"}), 400
+
     with SessionLocal() as db:
         existing = db.query(InventoryItem).filter(InventoryItem.name == name_str).first()
         if existing:
-            return jsonify({"detail": "الصنف موجود بالفعل في المخزن"}), 400
+            return jsonify({"detail": f"المادة الخام '{name_str}' مسجلة بالفعل في المخزن برصيد ({existing.current_stock} {existing.unit})! يمكنك تعديل رصيدها مباشرة من الجدول."}), 400
+
+        stock_val = data.get("current_stock") if data.get("current_stock") is not None else data.get("quantity")
+        min_val = data.get("min_alert_stock") if data.get("min_alert_stock") is not None else data.get("min_quantity")
 
         item = InventoryItem(
             name=name_str,
             unit=(data.get("unit") or "كجم").strip(),
-            current_stock=float(data.get("current_stock") or 0.0),
-            min_alert_stock=float(data.get("min_alert_stock") or 5.0),
+            current_stock=float(stock_val if stock_val is not None else 0.0),
+            min_alert_stock=float(min_val if min_val is not None else 5.0),
             cost_per_unit=float(data.get("cost_per_unit") or 0.0)
         )
         db.add(item)
@@ -1429,15 +1440,21 @@ def update_inventory_item(item_id):
         if not item:
             return jsonify({"detail": "الصنف غير موجود بالمخزن"}), 404
 
-        if "current_stock" in data and data["current_stock"] is not None:
-            item.current_stock = float(data["current_stock"])
-        if "min_alert_stock" in data and data["min_alert_stock"] is not None:
-            item.min_alert_stock = float(data["min_alert_stock"])
+        qty_val = data.get("current_stock") if "current_stock" in data else data.get("quantity")
+        if qty_val is not None:
+            item.current_stock = float(qty_val)
+        min_val = data.get("min_alert_stock") if "min_alert_stock" in data else data.get("min_quantity")
+        if min_val is not None:
+            item.min_alert_stock = float(min_val)
         if "cost_per_unit" in data and data["cost_per_unit"] is not None:
             item.cost_per_unit = float(data["cost_per_unit"])
+        if "name" in data and data["name"]:
+            item.name = data["name"].strip()
+        if "unit" in data and data["unit"]:
+            item.unit = data["unit"].strip()
 
         db.commit()
-        return jsonify({"status": "success", "message": "تم تحديث رصيد المخزن بنجاح"})
+        return jsonify({"status": "success", "message": "تم تحديث بيانات الخامة بنجاح"})
 
 
 @app.route("/api/inventory/<int:item_id>", methods=["DELETE"])
