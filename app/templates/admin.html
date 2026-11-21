@@ -3140,6 +3140,60 @@
         </div>
     </div>
 
+    <!-- Adjust Item Modal (تعديل كمية / حذف صنف من الفاتورة) -->
+    <div class="pin-modal-overlay" id="adjustItemModal" style="display: none;">
+        <div class="pin-card" style="max-width: 440px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 900;" id="adjustItemModalTitle">
+                    <i class="fa-solid fa-pen-to-square"></i> تعديل الصنف في الفاتورة
+                </h3>
+                <button type="button" onclick="closeModal('adjustItemModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitAdjustItemForm();">
+                <input type="hidden" id="adjustOrderId">
+                <input type="hidden" id="adjustItemIndex">
+                <input type="hidden" id="adjustAction">
+
+                <div id="adjustItemDetailsBox" style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+                    <div style="font-size: 11px; color: #92400E; font-weight: 800; margin-bottom: 4px;">الصنف المحدد بالفاتورة:</div>
+                    <div id="adjustItemText" style="font-size: 14px; font-weight: 900; color: #78350F;"></div>
+                    <div id="adjustItemActionDesc" style="font-size: 12px; font-weight: 800; margin-top: 6px; color: #B45309;"></div>
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 800;">سبب التعديل أو الحذف (للتوثيق والرقابة):</label>
+                    <select id="adjustReasonSelect" class="form-control" required style="font-weight: 800;">
+                        <option value="طلب بالخطأ">❌ طلب بالخطأ من الويتر أو الكاشير</option>
+                        <option value="استرجاع من العميل">🔄 استرجاع أو اعتذار من العميل</option>
+                        <option value="تأخر في التحضير">⏳ تأخر وقت التحضير في البار</option>
+                        <option value="تغيير رغبة العميل">🍽️ تغيير العميل لطلبه بصنف آخر</option>
+                        <option value="مشكلة جودة">⚠️ مشكلة في جودة الصنف</option>
+                        <option value="تعديل إداري">📋 تعديل إداري بمعرفة المشرف</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 12px; font-weight: 800;">ملاحظات إضافية (اختياري):</label>
+                    <input type="text" id="adjustNotesInput" class="form-control" placeholder="مثال: تم إرجاعه للباريستا">
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="font-size: 12px; font-weight: 800;">رمز PIN المشرف / المدير (اختياري):</label>
+                    <input type="password" id="adjustPinInput" class="form-control" placeholder="أدخل PIN إذا تم تفعيل الرقابة">
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <button type="submit" id="btnAdjustSubmit" class="pin-btn" style="flex: 1; margin: 0; font-size: 13px; font-weight: 900;">
+                        <i class="fa-solid fa-check"></i> تأكيد التعديل
+                    </button>
+                    <button type="button" class="pin-btn" onclick="closeModal('adjustItemModal')" style="flex: 1; background: #666; margin: 0; font-size: 13px;">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Add / Edit System User Modal -->
     <div class="pin-modal-overlay" id="addUserModal" style="display: none;">
         <div class="pin-card" style="max-width: 420px;">
@@ -4543,6 +4597,32 @@
                 let typeBadge = `<span style="background: #FFF3E0; color: #E65100; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 900;"><i class="fa-solid fa-chair"></i> صالة ترابيزة ${o.table_number}</span>`;
                 // tables only
 
+                const orderLines = (o.items_summary || '').split('\n').filter(l => l.trim());
+                let itemsListHtml = '';
+                if (orderLines.length > 0) {
+                    itemsListHtml = orderLines.map((line, lineIdx) => {
+                        const canEdit = (o.status !== 'تمت التسوية' && o.status !== 'ملغي');
+                        const cleanLine = line.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed #E5E7EB; gap: 6px;">
+                                <span style="font-size: 12px; font-weight: 800; color: #1F2937; flex: 1;">${line}</span>
+                                ${canEdit ? `
+                                <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                                    <button type="button" onclick="event.stopPropagation(); openAdjustItemModal(${o.id}, ${lineIdx}, 'decrease', '${cleanLine}')" style="background: #FFFBEB; color: #B45309; border: 1.5px solid #FDE68A; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;" title="تقليل كمية هذا الصنف بمقدار 1">
+                                        <i class="fa-solid fa-minus" style="font-size: 9px;"></i> 1
+                                    </button>
+                                    <button type="button" onclick="event.stopPropagation(); openAdjustItemModal(${o.id}, ${lineIdx}, 'delete', '${cleanLine}')" style="background: #FEF2F2; color: #DC2626; border: 1.5px solid #FECACA; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;" title="حذف وإلغاء هذا الصنف بالكامل">
+                                        <i class="fa-solid fa-trash-can" style="font-size: 10px;"></i> حذف
+                                    </button>
+                                </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    itemsListHtml = '<div style="color: #888; font-size: 11px;">لا توجد أصناف</div>';
+                }
+
                 card.innerHTML = `
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -4557,8 +4637,8 @@
                             ${o.customer_name}
                         </div>
 
-                        <div style="background: #FDFBF7; padding: 10px; border-radius: 10px; border: 1px solid #EFEAE3; font-size: 12px; font-weight: 700; white-space: pre-line; line-height: 1.5; color: #333;">
-                            ${o.items_summary}
+                        <div style="background: #FDFBF7; padding: 8px 10px; border-radius: 10px; border: 1px solid #EFEAE3; font-size: 12px; font-weight: 700; line-height: 1.5; color: #333;">
+                            ${itemsListHtml}
                         </div>
 
                         
@@ -5198,8 +5278,8 @@
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed #F3F4F6; gap: 6px;">
                                     <span style="font-weight: 800; color: #2B1810; font-size: 12px; flex: 1;">${line}</span>
                                     <div style="display: flex; gap: 4px;">
-                                        <button onclick="adjustOrderItem(${o.id}, ${lineIdx}, 'decrease')" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer;" title="تقليل كمية هذا الصنف بمقدار 1">-1</button>
-                                        <button onclick="adjustOrderItem(${o.id}, ${lineIdx}, 'delete')" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer;" title="إلغاء وحذف الصنف بالكامل"><i class="fa-solid fa-trash"></i></button>
+                                        <button onclick="openAdjustItemModal(${o.id}, ${lineIdx}, 'decrease', '${line.replace(/'/g, "\\'")}')" style="background: #FFFBEB; color: #B45309; border: 1.5px solid #FDE68A; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer;" title="تقليل كمية هذا الصنف بمقدار 1">-1</button>
+                                        <button onclick="openAdjustItemModal(${o.id}, ${lineIdx}, 'delete', '${line.replace(/'/g, "\\'")}')" style="background: #FEF2F2; color: #DC2626; border: 1.5px solid #FECACA; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer;" title="إلغاء وحذف الصنف بالكامل"><i class="fa-solid fa-trash-can"></i> حذف</button>
                                     </div>
                                 </div>
                             `;
@@ -5280,12 +5360,48 @@
             }
         }
 
-        async function adjustOrderItem(orderId, itemIndex, action) {
-            const actionLabel = (action === 'decrease') ? 'تقليل كمية هذا الصنف بمقدار 1' : 'حذف وإلغاء هذا الصنف بالكامل من الفاتورة';
-            const reason = prompt(`يرجى كتابة سبب ${actionLabel} (مثلاً: طلب بالخطأ، استرجاع من العميل، تأخر التحضير):`, 'طلب بالخطأ');
-            if (reason === null) return;
+        function openAdjustItemModal(orderId, itemIndex, action, itemText) {
+            document.getElementById('adjustOrderId').value = orderId;
+            document.getElementById('adjustItemIndex').value = itemIndex;
+            document.getElementById('adjustAction').value = action;
+            document.getElementById('adjustItemText').textContent = itemText || 'الصنف المحدد';
+            document.getElementById('adjustNotesInput').value = '';
+            document.getElementById('adjustPinInput').value = '';
 
-            const pin = prompt('أدخل رمز PIN للمدير للمصادقة على التعديل (أو اضغط موافق):', '');
+            const titleEl = document.getElementById('adjustItemModalTitle');
+            const descEl = document.getElementById('adjustItemActionDesc');
+            const submitBtn = document.getElementById('btnAdjustSubmit');
+            const box = document.getElementById('adjustItemDetailsBox');
+
+            if (action === 'decrease') {
+                titleEl.innerHTML = '<i class="fa-solid fa-minus" style="color: #D97706;"></i> تقليل كمية الصنف بمقدار 1';
+                titleEl.style.color = '#B45309';
+                descEl.innerHTML = '⚡ سيتم إنقاص كمية هذا الصنف بمقدار (1) وتعديل إجمالي الفاتورة والوردية تلقائياً.';
+                box.style.background = '#FFFBEB';
+                box.style.borderColor = '#FDE68A';
+                submitBtn.style.background = '#D97706';
+                submitBtn.innerHTML = '<i class="fa-solid fa-minus"></i> تأكيد تقليل الكمية (-1)';
+            } else {
+                titleEl.innerHTML = '<i class="fa-solid fa-trash-can" style="color: #DC2626;"></i> حذف وإلغاء الصنف من الفاتورة';
+                titleEl.style.color = '#DC2626';
+                descEl.innerHTML = '⚠️ سيتم حذف هذا الصنف بالكامل من الفاتورة وخصم قيمته من إجمالي الحساب والوردية.';
+                box.style.background = '#FEF2F2';
+                box.style.borderColor = '#FECACA';
+                submitBtn.style.background = '#DC2626';
+                submitBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> تأكيد حذف الصنف بالكامل';
+            }
+
+            openModal('adjustItemModal');
+        }
+
+        async function submitAdjustItemForm() {
+            const orderId = document.getElementById('adjustOrderId').value;
+            const itemIndex = parseInt(document.getElementById('adjustItemIndex').value);
+            const action = document.getElementById('adjustAction').value;
+            const reason = (document.getElementById('adjustReasonSelect').value || 'طلب بالخطأ').trim();
+            const notes = (document.getElementById('adjustNotesInput').value || '').trim();
+            const pin = (document.getElementById('adjustPinInput').value || '').trim();
+            const fullReason = notes ? `${reason} - ${notes}` : reason;
 
             try {
                 const res = await fetch(`/api/orders/${orderId}/adjust-item`, {
@@ -5294,26 +5410,31 @@
                     body: JSON.stringify({
                         item_index: itemIndex,
                         action: action,
-                        reason: reason || 'تعديل بالصالة',
-                        manager_pin: pin || '',
-                        manager_name: 'مدير الصالة'
+                        reason: fullReason,
+                        manager_pin: pin,
+                        manager_name: currentCashierName || 'مدير الصالة'
                     })
                 });
                 const data = await res.json();
                 if (res.ok && data.status === 'success') {
-                    alert(data.message || '✅ تم تعديل الصنف في الفاتورة بنجاح!');
-                    if (currentActiveTableNum) {
+                    closeModal('adjustItemModal');
+                    alert(data.message || '✅ تم تعديل الفاتورة بنجاح!');
+                    if (typeof currentActiveTableNum !== 'undefined' && currentActiveTableNum) {
                         openTableDetails(currentActiveTableNum);
                     }
-                    fetchTablesStatus();
-                    fetchOrders();
-                    fetchCurrentShift();
+                    if (typeof fetchTablesStatus === 'function') fetchTablesStatus();
+                    if (typeof fetchOrders === 'function') fetchOrders();
+                    if (typeof fetchCurrentShift === 'function') fetchCurrentShift();
                 } else {
                     alert('⚠️ ' + (data.detail || 'تعذر تعديل الصنف'));
                 }
             } catch(e) {
                 alert('تعذر الاتصال بالسيرفر لتعديل الصنف');
             }
+        }
+
+        function adjustOrderItem(orderId, itemIndex, action) {
+            openAdjustItemModal(orderId, itemIndex, action, '');
         }
 
         function setReceiptWidth(widthMm, btnEl) {
