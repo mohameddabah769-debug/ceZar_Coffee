@@ -1851,13 +1851,19 @@
                 </div>
 
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button class="pin-btn" onclick="openQuickAdvanceModal()" style="margin: 0; width: auto; padding: 8px 16px; background: #D97706; font-size: 12px;">
+                    <button class="pin-btn" onclick="openQuickAdvanceModal()" style="margin: 0; width: auto; padding: 8px 14px; background: #D97706; font-size: 12px;" title="تسجيل سلفة جديدة تخصم من الراتب">
                         <i class="fa-solid fa-hand-holding-dollar"></i> تسجيل سلفة جديدة
                     </button>
-                    <button class="pin-btn" onclick="quickBatchMarkToday()" style="margin: 0; width: auto; padding: 8px 16px; background: #059669; font-size: 12px;">
+                    <button class="pin-btn" onclick="openQuickBonusModal()" style="margin: 0; width: auto; padding: 8px 14px; background: #059669; font-size: 12px;" title="تسجيل مكافأة أو بونص يضاف للراتب">
+                        <i class="fa-solid fa-gift"></i> تسجيل مكافأة / بونص
+                    </button>
+                    <button class="pin-btn" onclick="openQuickDeductionModal()" style="margin: 0; width: auto; padding: 8px 14px; background: #DC2626; font-size: 12px;" title="تسجيل خصم أو جزاء يخصم من الراتب">
+                        <i class="fa-solid fa-gavel"></i> تسجيل خصم / جزاء
+                    </button>
+                    <button class="pin-btn" onclick="quickBatchMarkToday()" style="margin: 0; width: auto; padding: 8px 14px; background: var(--primary-espresso); font-size: 12px;">
                         <i class="fa-solid fa-users-check"></i> تحضير جماعي اليوم
                     </button>
-                    <button class="pin-btn" onclick="printEmployeeLedger()" style="margin: 0; width: auto; padding: 8px 16px; background: var(--primary-espresso); font-size: 12px;">
+                    <button class="pin-btn" onclick="printEmployeeLedger()" style="margin: 0; width: auto; padding: 8px 14px; background: #4B5563; font-size: 12px;">
                         <i class="fa-solid fa-print"></i> طباعة كشكول الشهر
                     </button>
                 </div>
@@ -1929,24 +1935,32 @@
                 </span>
             </div>
 
-            <!-- Section 1: Advances & Transactions Log (استلف يوم كام؟) -->
+            <!-- Section 1: Advances, Bonuses & Deductions Log -->
             <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 14px; padding: 16px; margin-bottom: 18px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                     <div style="font-size: 14px; font-weight: 900; color: var(--primary-espresso);">
-                        <i class="fa-solid fa-receipt" style="color: #D97706;"></i> سجل السلف والمسحوبات المالية للشهر (استلف يوم كام ومبلغ كام)
+                        <i class="fa-solid fa-receipt" style="color: #6366F1;"></i> سجل السلف والمكافآت والخصومات للشهر
                     </div>
-                    <button class="pin-btn" onclick="openQuickAdvanceModal()" style="margin: 0; width: auto; padding: 5px 14px; background: #D97706; font-size: 11px;">
-                        <i class="fa-solid fa-plus"></i> إضافة سلفة
-                    </button>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button class="pin-btn" onclick="openQuickAdvanceModal()" style="margin: 0; width: auto; padding: 5px 12px; background: #D97706; font-size: 11px;">
+                            <i class="fa-solid fa-hand-holding-dollar"></i> + سلفة
+                        </button>
+                        <button class="pin-btn" onclick="openQuickBonusModal()" style="margin: 0; width: auto; padding: 5px 12px; background: #059669; font-size: 11px;">
+                            <i class="fa-solid fa-gift"></i> + مكافأة
+                        </button>
+                        <button class="pin-btn" onclick="openQuickDeductionModal()" style="margin: 0; width: auto; padding: 5px 12px; background: #DC2626; font-size: 11px;">
+                            <i class="fa-solid fa-gavel"></i> + خصم
+                        </button>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th>تاريخ السلفة (اليوم)</th>
+                                <th>تاريخ الحركة</th>
                                 <th>الوقت</th>
                                 <th>نوع الحركة</th>
-                                <th>المبلغ المستقطع</th>
+                                <th>المبلغ</th>
                                 <th>السبب / البيان</th>
                                 <th>إجراء</th>
                             </tr>
@@ -2969,41 +2983,56 @@
         </div>
     </div>
 
-    <!-- Quick Advance Modal (تسجيل سلفة سريعة للموظف) -->
+    <!-- Quick Advance / Adjustment Modal (تسجيل سلفة / مكافأة / خصم للموظف) -->
     <div class="pin-modal-overlay" id="quickAdvanceModal" style="display: none;">
-        <div class="pin-card" style="max-width: 420px;">
+        <div class="pin-card" style="max-width: 440px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="font-size: 16px; font-weight: 900; color: var(--primary-espresso);">
-                    <i class="fa-solid fa-hand-holding-dollar" style="color: #D97706;"></i> تسجيل سلفة للموظف
+                <h3 style="font-size: 16px; font-weight: 900; color: var(--primary-espresso);" id="quickAdvModalHeader">
+                    <i class="fa-solid fa-hand-holding-dollar" id="quickAdvModalIcon" style="color: #D97706;"></i> <span id="quickAdvModalTitle">تسجيل سلفة للموظف</span>
                 </h3>
                 <button onclick="closeModal('quickAdvanceModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
             </div>
             <form onsubmit="event.preventDefault(); submitQuickAdvanceForm();">
                 <div style="margin-bottom: 10px;">
-                    <label style="font-size: 12px; font-weight: 800;">الموظف المستلف:</label>
+                    <label style="font-size: 12px; font-weight: 800;">نوع الحركة المالية:</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 4px;">
+                        <button type="button" id="btnTypeAdvance" onclick="setQuickAdvType('سلفة')" style="border: 2px solid #D97706; background: #FFFBEB; color: #B45309; padding: 6px 4px; border-radius: 8px; font-weight: 900; font-size: 12px; cursor: pointer;">
+                            <i class="fa-solid fa-hand-holding-dollar"></i> سلفة
+                        </button>
+                        <button type="button" id="btnTypeBonus" onclick="setQuickAdvType('مكافأة')" style="border: 1px solid #D1D5DB; background: #F9FAFB; color: #4B5563; padding: 6px 4px; border-radius: 8px; font-weight: 900; font-size: 12px; cursor: pointer;">
+                            <i class="fa-solid fa-gift"></i> مكافأة
+                        </button>
+                        <button type="button" id="btnTypeDeduction" onclick="setQuickAdvType('خصم')" style="border: 1px solid #D1D5DB; background: #F9FAFB; color: #4B5563; padding: 6px 4px; border-radius: 8px; font-weight: 900; font-size: 12px; cursor: pointer;">
+                            <i class="fa-solid fa-gavel"></i> خصم
+                        </button>
+                    </div>
+                    <input type="hidden" id="quickAdvType" value="سلفة">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 800;">الموظف المعني:</label>
                     <select id="quickAdvEmpSelect" class="form-control" required style="font-weight: 800;">
                         <!-- loaded by JS -->
                     </select>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
                     <div>
-                        <label style="font-size: 12px; font-weight: 800;">المبلغ (ج):</label>
+                        <label style="font-size: 12px; font-weight: 800;" id="quickAdvAmountLabel">مبلغ السلفة (ج):</label>
                         <input type="number" id="quickAdvAmount" class="form-control" placeholder="مثلاً: 500" min="0" step="any" required>
                     </div>
                     <div>
-                        <label style="font-size: 12px; font-weight: 800;">تاريخ الاستلاف:</label>
+                        <label style="font-size: 12px; font-weight: 800;">تاريخ الحركة:</label>
                         <input type="date" id="quickAdvDate" class="form-control" required>
                     </div>
                 </div>
                 <div style="margin-bottom: 14px;">
-                    <label style="font-size: 12px; font-weight: 800;">سبب السلفة / بيان:</label>
+                    <label style="font-size: 12px; font-weight: 800;" id="quickAdvNotesLabel">سبب السلفة / بيان:</label>
                     <input type="text" id="quickAdvNotes" class="form-control" placeholder="مثلاً: سلفة مصاريف شخصية / طارئة">
                 </div>
-                <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 11px; color: #92400E; font-weight: 700;">
+                <div id="quickAdvNotice" style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 11px; color: #92400E; font-weight: 700;">
                     <i class="fa-solid fa-triangle-exclamation"></i> سيتم خصم هذا المبلغ تلقائياً من راتب الشهر وحسابه في الكشكول.
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <button type="submit" class="pin-btn" style="flex: 1; background: #D97706; margin: 0; font-size: 13px;">
+                    <button type="submit" id="btnQuickAdvSubmit" class="pin-btn" style="flex: 1; background: #D97706; margin: 0; font-size: 13px;">
                         <i class="fa-solid fa-check"></i> تأكيد وحفظ السلفة
                     </button>
                     <button type="button" class="pin-btn" onclick="closeModal('quickAdvanceModal')" style="flex: 1; background: #666; margin: 0; font-size: 13px;">
@@ -7793,7 +7822,8 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                     document.getElementById('ledgerCardBaseSalary').textContent = `${fin.base_salary} ج`;
                 }
                 if (document.getElementById('ledgerCardAdvances')) {
-                    document.getElementById('ledgerCardAdvances').textContent = `${fin.total_advances} ج (${(data.advances_list || []).length} سلفة)`;
+                    const advCount = (data.advances_list || []).filter(a => a.payment_type === 'سلفة' || a.payment_type === 'سلفة على الراتب').length;
+                    document.getElementById('ledgerCardAdvances').textContent = `${fin.total_advances} ج (${advCount} سلفة)`;
                 }
                 if (document.getElementById('ledgerCardAdjustments')) {
                     document.getElementById('ledgerCardAdjustments').textContent = `خصم: ${fin.total_deductions} ج | بونص: ${fin.total_bonuses} ج`;
@@ -7814,26 +7844,36 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                 if (document.getElementById('ledgerBadgeAbsent')) document.getElementById('ledgerBadgeAbsent').textContent = att.absent_days;
                 if (document.getElementById('ledgerBadgeHalfDay')) document.getElementById('ledgerBadgeHalfDay').textContent = att.half_days;
 
-                // Section 1: Advances Table
+                // Section 1: Advances, Bonuses & Deductions Table
                 const advTbody = document.getElementById('ledgerAdvancesTableBody');
                 if (advTbody) {
                     if (!data.advances_list || data.advances_list.length === 0) {
-                        advTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #16A34A; padding: 14px; font-weight: 800;"><i class="fa-solid fa-circle-check"></i> لا توجد أي سلف مسحوبة لهذا الموظف خلال هذا الشهر</td></tr>';
+                        advTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #16A34A; padding: 14px; font-weight: 800;"><i class="fa-solid fa-circle-check"></i> لا توجد أي سلف أو مكافآت أو خصومات مسجلة لهذا الموظف خلال هذا الشهر</td></tr>';
                     } else {
-                        advTbody.innerHTML = data.advances_list.map(adv => `
-                            <tr>
-                                <td style="font-weight: 900; color: #B45309;"><i class="fa-regular fa-calendar"></i> ${adv.date_str}</td>
-                                <td style="font-size: 11px; color: #666;">${adv.datetime_str || '-'}</td>
-                                <td><span style="background: #FFFBEB; color: #B45309; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 11px;">سلفة على الراتب</span></td>
-                                <td style="font-weight: 900; color: #DC2626; font-size: 15px;">- ${adv.amount} ج</td>
-                                <td style="color: #444; font-size: 12px;">${adv.notes || 'سلفة مصاريف'}</td>
-                                <td>
-                                    <button onclick="deleteAdvanceItem(${adv.id})" style="background: #FEE2E2; color: #DC2626; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="إلغاء السلفة">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        `).join('');
+                        advTbody.innerHTML = data.advances_list.map(adv => {
+                            const isBonus = adv.payment_type === 'مكافأة' || adv.payment_type === 'مكافأة وبونص';
+                            const isDeduction = adv.payment_type === 'خصم' || adv.payment_type === 'خصم أو جزاء';
+                            const badgeBg = isBonus ? '#DCFCE7' : (isDeduction ? '#FEE2E2' : '#FFFBEB');
+                            const badgeColor = isBonus ? '#15803D' : (isDeduction ? '#DC2626' : '#B45309');
+                            const amountColor = isBonus ? '#16A34A' : '#DC2626';
+                            const amountPrefix = isBonus ? '+ ' : '- ';
+                            const typeLabel = isBonus ? 'مكافأة / بونص' : (isDeduction ? 'خصم / جزاء' : 'سلفة على الراتب');
+
+                            return `
+                                <tr>
+                                    <td style="font-weight: 900; color: #4B5563;"><i class="fa-regular fa-calendar"></i> ${adv.date_str}</td>
+                                    <td style="font-size: 11px; color: #666;">${adv.datetime_str || '-'}</td>
+                                    <td><span style="background: ${badgeBg}; color: ${badgeColor}; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 11px;">${typeLabel}</span></td>
+                                    <td style="font-weight: 900; color: ${amountColor}; font-size: 15px;">${amountPrefix}${adv.amount} ج</td>
+                                    <td style="color: #444; font-size: 12px;">${adv.notes || typeLabel}</td>
+                                    <td>
+                                        <button onclick="deleteAdvanceItem(${adv.id}, '${typeLabel}')" style="background: #FEE2E2; color: #DC2626; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="إلغاء وحذف الحركة">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
                     }
                 }
 
@@ -7927,7 +7967,77 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
             }
         }
 
-        function openQuickAdvanceModal(empId = null) {
+        function setQuickAdvType(type) {
+            const hiddenType = document.getElementById('quickAdvType');
+            if (hiddenType) hiddenType.value = type;
+
+            const btnAdv = document.getElementById('btnTypeAdvance');
+            const btnBon = document.getElementById('btnTypeBonus');
+            const btnDed = document.getElementById('btnTypeDeduction');
+            const titleEl = document.getElementById('modalQuickAdvTitle');
+            const amountLabel = document.getElementById('quickAdvAmountLabel');
+            const notesLabel = document.getElementById('quickAdvNotesLabel');
+            const notesInput = document.getElementById('quickAdvNotes');
+            const noticeEl = document.getElementById('quickAdvNotice');
+            const submitBtn = document.getElementById('btnQuickAdvSubmit');
+
+            // Reset buttons style
+            if (btnAdv) { btnAdv.style.border = '1px solid #D1D5DB'; btnAdv.style.background = '#F9FAFB'; btnAdv.style.color = '#4B5563'; }
+            if (btnBon) { btnBon.style.border = '1px solid #D1D5DB'; btnBon.style.background = '#F9FAFB'; btnBon.style.color = '#4B5563'; }
+            if (btnDed) { btnDed.style.border = '1px solid #D1D5DB'; btnDed.style.background = '#F9FAFB'; btnDed.style.color = '#4B5563'; }
+
+            if (type === 'مكافأة') {
+                if (btnBon) { btnBon.style.border = '2px solid #059669'; btnBon.style.background = '#ECFDF5'; btnBon.style.color = '#047857'; }
+                if (titleEl) titleEl.innerHTML = '<i class="fa-solid fa-gift" style="color: #059669;"></i> تسجيل مكافأة / بونص للموظف';
+                if (amountLabel) amountLabel.textContent = 'مبلغ المكافأة (ج):';
+                if (notesLabel) notesLabel.textContent = 'سبب المكافأة / التميز:';
+                if (notesInput) notesInput.placeholder = 'مثلاً: إجادة وتميز في العمل / تارجت شفت';
+                if (noticeEl) {
+                    noticeEl.style.background = '#ECFDF5';
+                    noticeEl.style.borderColor = '#A7F3D0';
+                    noticeEl.style.color = '#065F46';
+                    noticeEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> سيتم إضافة هذا المبلغ تلقائياً كبونص على صافي راتب الشهر في الكشكول.';
+                }
+                if (submitBtn) {
+                    submitBtn.style.background = '#059669';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-gift"></i> تأكيد وحفظ المكافأة';
+                }
+            } else if (type === 'خصم') {
+                if (btnDed) { btnDed.style.border = '2px solid #DC2626'; btnDed.style.background = '#FEF2F2'; btnDed.style.color = '#B91C1C'; }
+                if (titleEl) titleEl.innerHTML = '<i class="fa-solid fa-gavel" style="color: #DC2626;"></i> تسجيل خصم / جزاء على الموظف';
+                if (amountLabel) amountLabel.textContent = 'مبلغ الخصم (ج):';
+                if (notesLabel) notesLabel.textContent = 'سبب الخصم / المخالفة:';
+                if (notesInput) notesInput.placeholder = 'مثلاً: تأخير غير مبرر / كسر خامات';
+                if (noticeEl) {
+                    noticeEl.style.background = '#FEF2F2';
+                    noticeEl.style.borderColor = '#FECACA';
+                    noticeEl.style.color = '#991B1B';
+                    noticeEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> سيتم خصم هذا المبلغ تلقائياً من راتب الشهر وحسابه كجزاء في الكشكول.';
+                }
+                if (submitBtn) {
+                    submitBtn.style.background = '#DC2626';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-gavel"></i> تأكيد وحفظ الخصم';
+                }
+            } else { // 'سلفة'
+                if (btnAdv) { btnAdv.style.border = '2px solid #D97706'; btnAdv.style.background = '#FFFBEB'; btnAdv.style.color = '#B45309'; }
+                if (titleEl) titleEl.innerHTML = '<i class="fa-solid fa-hand-holding-dollar" style="color: #D97706;"></i> تسجيل سلفة للموظف';
+                if (amountLabel) amountLabel.textContent = 'مبلغ السلفة (ج):';
+                if (notesLabel) notesLabel.textContent = 'سبب السلفة / بيان:';
+                if (notesInput) notesInput.placeholder = 'مثلاً: سلفة مصاريف شخصية / طارئة';
+                if (noticeEl) {
+                    noticeEl.style.background = '#FFFBEB';
+                    noticeEl.style.borderColor = '#FDE68A';
+                    noticeEl.style.color = '#92400E';
+                    noticeEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> سيتم خصم هذا المبلغ تلقائياً من راتب الشهر وحسابه في الكشكول.';
+                }
+                if (submitBtn) {
+                    submitBtn.style.background = '#D97706';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> تأكيد وحفظ السلفة';
+                }
+            }
+        }
+
+        function openQuickAdvanceModal(empId = null, initialType = 'سلفة') {
             if (!allEmployees || allEmployees.length === 0) fetchEmployees();
             const selectEl = document.getElementById('quickAdvEmpSelect');
             if (selectEl) {
@@ -7948,17 +8058,30 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
             if (document.getElementById('quickAdvNotes')) {
                 document.getElementById('quickAdvNotes').value = '';
             }
+            setQuickAdvType(initialType);
             openModal('quickAdvanceModal');
+        }
+
+        function openQuickBonusModal(empId = null) {
+            openQuickAdvanceModal(empId, 'مكافأة');
+        }
+
+        function openQuickDeductionModal(empId = null) {
+            openQuickAdvanceModal(empId, 'خصم');
         }
 
         async function submitQuickAdvanceForm() {
             const empId = parseInt(document.getElementById('quickAdvEmpSelect').value);
             const amount = parseFloat(document.getElementById('quickAdvAmount').value || 0);
             const advDate = document.getElementById('quickAdvDate').value;
-            const notes = document.getElementById('quickAdvNotes').value.trim() || 'سلفة نقدية';
+            const pType = document.getElementById('quickAdvType') ? document.getElementById('quickAdvType').value : 'سلفة';
+            let defaultNotes = 'سلفة نقدية';
+            if (pType === 'مكافأة') defaultNotes = 'مكافأة وبونص تشجيعي';
+            else if (pType === 'خصم') defaultNotes = 'خصم وجزاء';
+            const notes = (document.getElementById('quickAdvNotes').value || '').trim() || defaultNotes;
 
             if (!empId || amount <= 0 || !advDate) {
-                alert('يرجى اختيار الموظف وتحديد مبلغ السلفة وتاريخ الاستلاف!');
+                alert('يرجى اختيار الموظف وتحديد المبلغ والتاريخ بشكل صحيح!');
                 return;
             }
 
@@ -7970,7 +8093,7 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         employee_id: empId,
-                        payment_type: 'سلفة',
+                        payment_type: pType,
                         month: monthVal,
                         payment_date: advDate,
                         amount: amount,
@@ -7980,19 +8103,19 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                 const data = await res.json();
                 if (res.ok && data.status === 'success') {
                     closeModal('quickAdvanceModal');
-                    alert(data.message || '✅ تم تسجيل السلفة بنجاح وخصمها في كشكول الموظف!');
+                    alert(data.message || `✅ تم تسجيل ${pType} بنجاح وتحديث كشكول الموظف!`);
                     loadEmployeeLedger();
                     fetchSalaries();
                 } else {
-                    alert('خطأ: ' + (data.detail || 'تعذر تسجيل السلفة'));
+                    alert('خطأ: ' + (data.detail || `تعذر تسجيل ${pType}`));
                 }
             } catch(e) {
                 alert('تعذر الاتصال بالسيرفر');
             }
         }
 
-        async function deleteAdvanceItem(id) {
-            if (!confirm('هل أنت متأكد من حذف هذه السلفة وإلغاء خصمها من الراتب؟')) return;
+        async function deleteAdvanceItem(id, itemType = 'الحركة') {
+            if (!confirm(`هل أنت متأكد من حذف ${itemType} وإلغاء تأثيرها المالي على الراتب؟`)) return;
             try {
                 await fetch(`/api/salaries/${id}`, { method: 'DELETE' });
                 loadEmployeeLedger();
@@ -8019,15 +8142,23 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
             }
 
             const advancesRows = (d.advances_list && d.advances_list.length > 0)
-                ? d.advances_list.map((a, i) => `
+                ? d.advances_list.map((a, i) => {
+                    const isBonus = a.payment_type === 'مكافأة' || a.payment_type === 'مكافأة وبونص';
+                    const isDeduction = a.payment_type === 'خصم' || a.payment_type === 'خصم أو جزاء';
+                    const amountColor = isBonus ? '#15803d' : '#b91c1c';
+                    const amountPrefix = isBonus ? '+ ' : '- ';
+                    const typeLabel = isBonus ? 'مكافأة / بونص (+)' : (isDeduction ? 'خصم / جزاء (-)' : 'سلفة على الراتب (-)');
+                    return `
                     <tr>
                         <td style="text-align: center;">${i + 1}</td>
                         <td>${a.date_str} (${a.datetime_str || ''})</td>
-                        <td style="font-weight: bold; color: #b91c1c;">- ${a.amount} ج</td>
-                        <td>${a.notes || 'سلفة نقدية'}</td>
+                        <td style="font-weight: bold;">${typeLabel}</td>
+                        <td style="font-weight: bold; color: ${amountColor};">${amountPrefix}${a.amount} ج</td>
+                        <td>${a.notes || typeLabel}</td>
                     </tr>
-                `).join('')
-                : '<tr><td colspan="4" style="text-align: center; color: #15803d; font-weight: bold;">لا توجد أي سلف مسحوبة خلال هذا الشهر</td></tr>';
+                `;
+                }).join('')
+                : '<tr><td colspan="5" style="text-align: center; color: #15803d; font-weight: bold;">لا توجد أي سلف أو مكافآت أو خصومات مسجلة خلال هذا الشهر</td></tr>';
 
             const attRows = (d.attendance_days || []).map(day => `
                 <tr style="${day.status === 'غياب' ? 'background: #fee2e2;' : (day.status === 'إجازة' ? 'background: #e0f2fe;' : '')}">
@@ -8051,7 +8182,7 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                     .logo-text { font-size: 24px; font-weight: 900; color: #2B1810; letter-spacing: 1px; }
                     .title { font-size: 18px; font-weight: 800; color: #D97706; margin-top: 4px; }
                     .meta-box { display: flex; justify-content: space-between; background: #f9f6f0; border: 1px solid #e5dec9; padding: 12px 18px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
-                    .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+                    .summary-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
                     .card { border: 1px solid #ccc; padding: 10px; border-radius: 6px; text-align: center; }
                     .card-title { font-size: 11px; color: #666; font-weight: bold; margin-bottom: 5px; }
                     .card-val { font-size: 16px; font-weight: 900; }
@@ -8087,12 +8218,16 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                         <div class="card-val" style="color: #4338ca;">${fin.base_salary} ج</div>
                     </div>
                     <div class="card" style="background: #fffbeb;">
-                        <div class="card-title">إجمالي السلف المسحوبة</div>
-                        <div class="card-val" style="color: #b45309;">${fin.total_advances} ج</div>
+                        <div class="card-title">إجمالي السلف (-)</div>
+                        <div class="card-val" style="color: #b45309;">${fin.total_advances || 0} ج</div>
+                    </div>
+                    <div class="card" style="background: #ecfdf5;">
+                        <div class="card-title">إجمالي المكافآت (+)</div>
+                        <div class="card-val" style="color: #047857;">${fin.total_bonuses || 0} ج</div>
                     </div>
                     <div class="card" style="background: #fef2f2;">
-                        <div class="card-title">الخصومات والغياب</div>
-                        <div class="card-val" style="color: #b91c1c;">${fin.total_deductions} ج</div>
+                        <div class="card-title">الخصومات والجزاءات (-)</div>
+                        <div class="card-val" style="color: #b91c1c;">${fin.total_deductions || 0} ج</div>
                     </div>
                     <div class="card" style="background: #ecfdf5; border: 2px solid #059669;">
                         <div class="card-title" style="color: #065f46;">صافي المستحق النهائي</div>
@@ -8107,13 +8242,14 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                     <div style="color: #b45309;">⏳ نصف يوم: ${att.half_days} يوم</div>
                 </div>
 
-                <div class="section-title">سجل السلف والمسحوبات المالية للشهر (استلف يوم كام ومبلغ كام)</div>
+                <div class="section-title">سجل السلف والمكافآت والخصومات للشهر</div>
                 <table>
                     <thead>
                         <tr>
                             <th style="width: 40px; text-align: center;">#</th>
-                            <th>تاريخ ووقت الاستلاف</th>
-                            <th>المبلغ المستقطع</th>
+                            <th>تاريخ ووقت الحركة</th>
+                            <th>نوع الحركة</th>
+                            <th>المبلغ</th>
                             <th>السبب / البيان</th>
                         </tr>
                     </thead>
@@ -8212,14 +8348,20 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                             <td style="color: #666; font-size: 12px;">${emp.hire_date || '-'}</td>
                             <td>${statusBadge}</td>
                             <td>
-                                <div style="display: flex; gap: 4px;">
+                                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                                     <button onclick="openEmployeeNotebook(${emp.id})" title="عرض كشكول الشهر وكشف الحساب" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
                                         <i class="fa-solid fa-book-open"></i> الكشكول
                                     </button>
                                     <button onclick="openQuickAdvanceModal(${emp.id})" title="تسجيل سلفة سريعة" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
                                         <i class="fa-solid fa-hand-holding-dollar"></i> سلفة
                                     </button>
-                                    <button onclick="openPayForEmployee(${emp.id})" title="صرف راتب أو سلفة" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
+                                    <button onclick="openQuickBonusModal(${emp.id})" title="تسجيل مكافأة / بونص" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
+                                        <i class="fa-solid fa-gift"></i> مكافأة
+                                    </button>
+                                    <button onclick="openQuickDeductionModal(${emp.id})" title="تسجيل خصم / جزاء" style="background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
+                                        <i class="fa-solid fa-gavel"></i> خصم
+                                    </button>
+                                    <button onclick="openPayForEmployee(${emp.id})" title="صرف راتب أو تسوية" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
                                         <i class="fa-solid fa-money-bill"></i> صرف
                                     </button>
                                     <button onclick="openEditEmployee(${emp.id})" title="تعديل البيانات" style="background: #F0F9FF; color: #0284C7; border: 1px solid #BAE6FD; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;">
@@ -8293,7 +8435,7 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                             </div>
                         </div>
 
-                        <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                             <div style="text-align: left; margin-left: 6px;">
                                 <div style="font-size: 11px; color: #888; font-weight: 800;">الراتب الأساسي</div>
                                 <div style="font-size: 15px; font-weight: 900; color: #2E7D32;">${emp.salary} ج</div>
@@ -8303,6 +8445,12 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                             </button>
                             <button onclick="closeModal('staffTeamOverviewModal'); openQuickAdvanceModal(${emp.id})" title="تسجيل سلفة" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; border-radius: 8px; padding: 6px 10px; font-weight: 800; font-size: 11px; cursor: pointer;">
                                 <i class="fa-solid fa-hand-holding-dollar"></i> سلفة
+                            </button>
+                            <button onclick="closeModal('staffTeamOverviewModal'); openQuickBonusModal(${emp.id})" title="تسجيل مكافأة" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; border-radius: 8px; padding: 6px 10px; font-weight: 800; font-size: 11px; cursor: pointer;">
+                                <i class="fa-solid fa-gift"></i> مكافأة
+                            </button>
+                            <button onclick="closeModal('staffTeamOverviewModal'); openQuickDeductionModal(${emp.id})" title="تسجيل خصم" style="background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; border-radius: 8px; padding: 6px 10px; font-weight: 800; font-size: 11px; cursor: pointer;">
+                                <i class="fa-solid fa-gavel"></i> خصم
                             </button>
                         </div>
                     </div>

@@ -1990,19 +1990,23 @@ def get_employee_monthly_ledger(emp_id):
             SalaryPayment.month == month
         ).order_by(SalaryPayment.payment_date.desc(), SalaryPayment.id.desc()).all()
 
-        total_advances = sum(p.amount for p in payments if p.payment_type == "سلفة")
-        total_deductions = sum(p.amount for p in payments if p.payment_type == "خصم")
-        total_bonuses = sum(p.amount for p in payments if p.payment_type == "مكافأة")
-        total_salary_paid = sum(p.amount for p in payments if p.payment_type == "راتب شهري")
+        total_advances = sum(p.amount for p in payments if p.payment_type in ["سلفة", "سلفة على الراتب"])
+        total_deductions = sum(p.amount for p in payments if p.payment_type in ["خصم", "خصم أو جزاء"])
+        total_bonuses = sum(p.amount for p in payments if p.payment_type in ["مكافأة", "مكافأة وبونص"])
+        total_salary_paid = sum(p.amount for p in payments if p.payment_type in ["راتب شهري", "راتب"])
         base_salary = float(emp.salary or 0.0)
         net_remaining = base_salary - total_advances - total_deductions + total_bonuses - total_salary_paid
 
-        advances_list = [{
-            "id": p.id, "amount": p.amount,
+        adjustments_list = [{
+            "id": p.id,
+            "payment_type": p.payment_type,
+            "amount": p.amount,
             "date_str": p.payment_date.strftime("%Y-%m-%d") if p.payment_date else month,
             "datetime_str": p.payment_date.strftime("%Y-%m-%d %I:%M %p") if p.payment_date else "",
             "notes": p.notes or ""
-        } for p in payments if p.payment_type == "سلفة"]
+        } for p in payments if p.payment_type in ["سلفة", "خصم", "مكافأة", "سلفة على الراتب", "خصم أو جزاء", "مكافأة وبونص"]]
+
+        advances_list = adjustments_list
 
         all_transactions = [{
             "id": p.id, "payment_type": p.payment_type, "amount": p.amount,
