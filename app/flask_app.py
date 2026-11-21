@@ -595,11 +595,11 @@ def create_pos_direct_order():
         )
         db.add(order)
         if current_shift:
-            current_shift.total_sales += grand_total
+            current_shift.total_sales = (current_shift.total_sales or 0.0) + grand_total
             if payment_method == "فيزا":
-                current_shift.visa_sales += grand_total
+                current_shift.visa_sales = (current_shift.visa_sales or 0.0) + grand_total
             else:
-                current_shift.cash_sales += grand_total
+                current_shift.cash_sales = (current_shift.cash_sales or 0.0) + grand_total
         deduct_inventory_for_order(items, db, order_type=order_type)
         db.commit()
         db.refresh(order)

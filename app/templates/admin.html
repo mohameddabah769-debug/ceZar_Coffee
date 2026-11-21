@@ -842,6 +842,9 @@
                 <button class="filter-pill" id="pill-hall" onclick="setOrderFilter('hall')" style="color: var(--cezar-orange);">
                     <i class="fa-solid fa-chair"></i> صالة (<span id="pillCountHall">0</span>)
                 </button>
+                <button class="filter-pill" id="pill-takeaway" onclick="setOrderFilter('takeaway')" style="color: #B45309;">
+                    <i class="fa-solid fa-bag-shopping"></i> تيك أواي (<span id="pillCountTakeaway">0</span>)
+                </button>
 
             </div>
 
@@ -4540,8 +4543,11 @@
                 document.getElementById('ordersCountBadge').textContent = data.stats.pending_orders || 0;
 
                 // Pill Counts
+                const hallOrders = allOrders.filter(o => (o.order_type === 'صالة' || !o.order_type) && o.table_number > 0);
+                const twOrders = allOrders.filter(o => o.order_type === 'تيك أواي' || o.table_number === 0);
                 if (document.getElementById('pillCountAll')) document.getElementById('pillCountAll').textContent = allOrders.length;
-                if (document.getElementById('pillCountHall')) document.getElementById('pillCountHall').textContent = allOrders.length;
+                if (document.getElementById('pillCountHall')) document.getElementById('pillCountHall').textContent = hallOrders.length;
+                if (document.getElementById('pillCountTakeaway')) document.getElementById('pillCountTakeaway').textContent = twOrders.length;
 
                 // Check for new incoming orders to trigger alarm
                 let hasNewUrgent = false;
@@ -4579,7 +4585,8 @@
             container.innerHTML = '';
 
             let list = allOrders;
-            if (activeFilter === 'hall') list = list.filter(o => o.order_type === 'صالة');
+            if (activeFilter === 'hall') list = list.filter(o => (o.order_type === 'صالة' || !o.order_type) && o.table_number > 0);
+            else if (activeFilter === 'takeaway') list = list.filter(o => o.order_type === 'تيك أواي' || o.table_number === 0);
             else if (activeFilter === 'new') list = list.filter(o => o.status === 'جديد' || o.status === 'نداء ويتر' || (o.status && o.status.startsWith('طلب حساب')));
             else if (activeFilter === 'sales') list = list.filter(o => o.total_price > 0 && o.status !== 'ملغي');
 
@@ -4595,8 +4602,15 @@
                 card.id = `orderCard_${o.id}`;
                 const isUrgent = (o.status === 'جديد' || o.status === 'نداء ويتر' || (o.status && o.status.startsWith('طلب حساب')));
                 card.className = `order-card hall ${isUrgent ? 'urgent' : ''}`;
-                let typeBadge = `<span style="background: #FFF3E0; color: #E65100; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 900;"><i class="fa-solid fa-chair"></i> صالة ترابيزة ${o.table_number}</span>`;
-                // tables only
+                
+                let typeBadge = '';
+                if (o.order_type === 'تيك أواي' || o.table_number === 0) {
+                    typeBadge = `<span style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 900;"><i class="fa-solid fa-bag-shopping"></i> تيك أواي سفري</span>`;
+                } else if (o.order_type === 'دليفري') {
+                    typeBadge = `<span style="background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 900;"><i class="fa-solid fa-motorcycle"></i> دليفري</span>`;
+                } else {
+                    typeBadge = `<span style="background: #FFF3E0; color: #E65100; border: 1px solid #FFEDD5; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 900;"><i class="fa-solid fa-chair"></i> صالة ترابيزة ${o.table_number}</span>`;
+                }
 
                 const orderLines = (o.items_summary || '').split('\n').filter(l => l.trim());
                 let itemsListHtml = '';
@@ -4672,6 +4686,11 @@
                         ${(o.table_number && o.table_number > 0 && o.status !== 'تمت التسوية' && o.status !== 'ملغي') ? `
                             <button onclick="settleTableDirectly(${o.table_number})" style="width: 100%; margin-top: 6px; background: linear-gradient(135deg, #2E7D32, #1B5E20); color: white; border: none; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(46,125,50,0.25);" title="حاسب وسوّي حساب الترابيزة بالكامل وأفرغها فوراً لزبون جديد">
                                 <i class="fa-solid fa-cash-register"></i> محاسبة وتصفية ترابيزة ${o.table_number}
+                            </button>
+                        ` : ''}
+                        ${((!o.table_number || o.table_number === 0) && o.status !== 'تمت التسوية' && o.status !== 'ملغي') ? `
+                            <button onclick="updateOrderStatus(${o.id}, 'تمت التسوية')" style="width: 100%; margin-top: 6px; background: linear-gradient(135deg, #D97706, #B45309); color: white; border: none; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(217,119,6,0.25);" title="تسليم الأوردر ومحاسبة التيك أواي">
+                                <i class="fa-solid fa-bag-shopping"></i> تسليم ومحاسبة التيك أواي (#${o.id})
                             </button>
                         ` : ''}
                     </div>
