@@ -8,7 +8,7 @@ try:
     import qrcode
 except ImportError:
     qrcode = None
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, request, jsonify, redirect, Response
 from sqlalchemy.orm import Session
