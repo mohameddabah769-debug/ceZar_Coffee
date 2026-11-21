@@ -1882,35 +1882,46 @@
                     </div>
                 </div>
 
-                <!-- Total Advances (السلف المسحوبة) -->
+                <!-- Total Advances (السلف المستقطعة) -->
                 <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
                     <div style="width: 40px; height: 40px; border-radius: 10px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                         <i class="fa-solid fa-hand-holding-dollar"></i>
                     </div>
                     <div>
-                        <div style="font-size: 11px; color: #92400E; font-weight: 800;">إجمالي السلف المستقطعة</div>
+                        <div style="font-size: 11px; color: #92400E; font-weight: 800;">إجمالي السلف (-)</div>
                         <div style="font-size: 17px; font-weight: 900; color: #B45309;" id="ledgerCardAdvances">0 ج</div>
                     </div>
                 </div>
 
-                <!-- Deductions & Bonuses -->
-                <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                        <i class="fa-solid fa-scale-unbalanced"></i>
+                <!-- Total Bonuses (المكافآت والبونص) -->
+                <div style="background: #ECFDF5; border: 1.5px solid #A7F3D0; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                        <i class="fa-solid fa-gift"></i>
                     </div>
                     <div>
-                        <div style="font-size: 11px; color: #777; font-weight: 800;">خصومات / مكافآت</div>
-                        <div style="font-size: 13px; font-weight: 900;" id="ledgerCardAdjustments">0 ج / 0 ج</div>
+                        <div style="font-size: 11px; color: #065F46; font-weight: 800;">إجمالي المكافآت (+)</div>
+                        <div style="font-size: 17px; font-weight: 900; color: #059669;" id="ledgerCardBonuses">0 ج</div>
+                    </div>
+                </div>
+
+                <!-- Total Deductions (الخصومات والجزاءات) -->
+                <div style="background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                        <i class="fa-solid fa-gavel"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #991B1B; font-weight: 800;">إجمالي الخصومات (-)</div>
+                        <div style="font-size: 17px; font-weight: 900; color: #DC2626;" id="ledgerCardDeductions">0 ج</div>
                     </div>
                 </div>
 
                 <!-- Net Remaining (صافي المتبقي للصرف) -->
-                <div style="background: #ECFDF5; border: 2px solid #10B981; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                <div style="background: #ECFDF5; border: 2.5px solid #10B981; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.12);">
+                    <div style="width: 42px; height: 42px; border-radius: 10px; background: #D1FAE5; color: #047857; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                         <i class="fa-solid fa-wallet"></i>
                     </div>
                     <div>
-                        <div style="font-size: 11px; color: #065F46; font-weight: 800;">صافي المتبقي للصرف</div>
+                        <div style="font-size: 11px; color: #065F46; font-weight: 900;">إجمالي المبلغ المستحق النهائي</div>
                         <div style="font-size: 20px; font-weight: 900; color: #047857;" id="ledgerCardNetRemaining">0 ج</div>
                     </div>
                 </div>
@@ -1968,6 +1979,9 @@
                         <tbody id="ledgerAdvancesTableBody">
                             <!-- Loaded dynamically -->
                         </tbody>
+                        <tfoot id="ledgerAdvancesTableFoot" style="background: #F9FAFB; font-weight: 800; border-top: 2px solid #E5E7EB;">
+                            <!-- Filled dynamically by JS -->
+                        </tfoot>
                     </table>
                 </div>
             </div>
@@ -2956,28 +2970,32 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
                     <div>
                         <label style="font-size: 12px; font-weight: 800;">نوع الصرف:</label>
-                        <select id="salPaymentType" class="form-control" required>
-                            <option value="راتب شهري">راتب شهري كامل</option>
+                        <select id="salPaymentType" class="form-control" required onchange="autoFillSalaryAmount()">
+                            <option value="راتب شهري">صرف صافي الراتب المستحق</option>
                             <option value="سلفة">سلفة على الراتب</option>
                             <option value="مكافأة">مكافأة وبونص</option>
                             <option value="خصم">خصم أو جزاء</option>
                         </select>
                     </div>
                     <div>
-                        <label style="font-size: 12px; font-weight: 800;">المبلغ (ج):</label>
-                        <input type="number" id="salAmount" class="form-control" placeholder="المبلغ" min="0" step="any" required>
+                        <label style="font-size: 12px; font-weight: 800;">عن شهر:</label>
+                        <input type="month" id="salMonth" class="form-control" required onchange="autoFillSalaryAmount()">
                     </div>
                 </div>
+                <!-- Dynamic Ledger Breakdown Box -->
+                <div id="salCalcBreakdown" style="display: none; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 11px;">
+                    <!-- Filled by autoFillSalaryAmount -->
+                </div>
                 <div style="margin-bottom: 10px;">
-                    <label style="font-size: 12px; font-weight: 800;">عن شهر:</label>
-                    <input type="month" id="salMonth" class="form-control" required>
+                    <label style="font-size: 12px; font-weight: 800;" id="salAmountLabel">المبلغ المصروف (ج):</label>
+                    <input type="number" id="salAmount" class="form-control" placeholder="المبلغ" min="0" step="any" required>
                 </div>
                 <div style="margin-bottom: 14px;">
                     <label style="font-size: 12px; font-weight: 800;">ملاحظات:</label>
                     <input type="text" id="salNotes" class="form-control" placeholder="ملاحظات الصرف">
                 </div>
                 <button type="submit" class="pin-btn" style="background: #059669;">
-                    <i class="fa-solid fa-check"></i> تأكيد وحفظ الصرف
+                    <i class="fa-solid fa-check"></i> تأكيد وحفظ السند
                 </button>
             </form>
         </div>
@@ -7823,10 +7841,15 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                 }
                 if (document.getElementById('ledgerCardAdvances')) {
                     const advCount = (data.advances_list || []).filter(a => a.payment_type === 'سلفة' || a.payment_type === 'سلفة على الراتب').length;
-                    document.getElementById('ledgerCardAdvances').textContent = `${fin.total_advances} ج (${advCount} سلفة)`;
+                    document.getElementById('ledgerCardAdvances').textContent = `-${fin.total_advances} ج (${advCount} سلفة)`;
                 }
-                if (document.getElementById('ledgerCardAdjustments')) {
-                    document.getElementById('ledgerCardAdjustments').textContent = `خصم: ${fin.total_deductions} ج | بونص: ${fin.total_bonuses} ج`;
+                if (document.getElementById('ledgerCardBonuses')) {
+                    const bonCount = (data.advances_list || []).filter(a => a.payment_type === 'مكافأة' || a.payment_type === 'مكافأة وبونص').length;
+                    document.getElementById('ledgerCardBonuses').textContent = `+${fin.total_bonuses || 0} ج (${bonCount} مكافأة)`;
+                }
+                if (document.getElementById('ledgerCardDeductions')) {
+                    const dedCount = (data.advances_list || []).filter(a => a.payment_type === 'خصم' || a.payment_type === 'خصم أو جزاء').length;
+                    document.getElementById('ledgerCardDeductions').textContent = `-${fin.total_deductions || 0} ج (${dedCount} جزاء)`;
                 }
                 if (document.getElementById('ledgerCardNetRemaining')) {
                     const el = document.getElementById('ledgerCardNetRemaining');
@@ -7846,9 +7869,11 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
 
                 // Section 1: Advances, Bonuses & Deductions Table
                 const advTbody = document.getElementById('ledgerAdvancesTableBody');
+                const advTfoot = document.getElementById('ledgerAdvancesTableFoot');
                 if (advTbody) {
                     if (!data.advances_list || data.advances_list.length === 0) {
                         advTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #16A34A; padding: 14px; font-weight: 800;"><i class="fa-solid fa-circle-check"></i> لا توجد أي سلف أو مكافآت أو خصومات مسجلة لهذا الموظف خلال هذا الشهر</td></tr>';
+                        if (advTfoot) advTfoot.innerHTML = '';
                     } else {
                         advTbody.innerHTML = data.advances_list.map(adv => {
                             const isBonus = adv.payment_type === 'مكافأة' || adv.payment_type === 'مكافأة وبونص';
@@ -7874,6 +7899,28 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                                 </tr>
                             `;
                         }).join('');
+
+                        if (advTfoot) {
+                            const netAdj = (fin.total_bonuses || 0) - (fin.total_advances || 0) - (fin.total_deductions || 0);
+                            const netAdjPrefix = netAdj >= 0 ? '+' : '';
+                            const netAdjColor = netAdj >= 0 ? '#16A34A' : '#DC2626';
+                            advTfoot.innerHTML = `
+                                <tr>
+                                    <td colspan="3" style="padding: 10px 14px; font-weight: 900; color: var(--primary-espresso);">
+                                        <i class="fa-solid fa-calculator"></i> إجمالي تأثير حركات الشهر على الراتب:
+                                        <span style="color: #B45309; margin-right: 8px;">سلف: -${fin.total_advances} ج</span> |
+                                        <span style="color: #16A34A; margin-right: 8px;">مكافآت: +${fin.total_bonuses || 0} ج</span> |
+                                        <span style="color: #DC2626;">خصومات: -${fin.total_deductions || 0} ج</span>
+                                    </td>
+                                    <td style="font-weight: 900; color: ${netAdjColor}; font-size: 15px; padding: 10px 14px;">
+                                        ${netAdjPrefix}${netAdj} ج
+                                    </td>
+                                    <td colspan="2" style="font-size: 11px; color: #666; font-weight: 800; padding: 10px 14px;">
+                                        صافي المستحق النهائي في الكشكول: <strong style="color: #047857; font-size: 13px;">${fin.net_remaining} ج</strong>
+                                    </td>
+                                </tr>
+                            `;
+                        }
                     }
                 }
 
@@ -8549,19 +8596,37 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #888;">لا توجد سندات صرف رواتب مسجلة حتى الآن</td></tr>';
                 } else {
                     tbody.innerHTML = allSalaries.map(pay => {
-                        const typeBadge = pay.payment_type.includes('سلفة') 
-                            ? '<span style="background: #FFF7ED; color: #C2410C; padding: 4px 8px; border-radius: 8px; font-weight: 800; font-size: 11px;">سلفة</span>'
-                            : '<span style="background: #F0FDF4; color: #16A34A; padding: 4px 8px; border-radius: 8px; font-weight: 800; font-size: 11px;">راتب شهري</span>';
+                        let typeBadge = '';
+                        let amountColor = '#28a745';
+                        let amountPrefix = '';
+
+                        if (pay.payment_type.includes('سلفة')) {
+                            typeBadge = '<span style="background: #FFF7ED; color: #C2410C; padding: 4px 8px; border-radius: 8px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-hand-holding-dollar"></i> سلفة على الراتب</span>';
+                            amountColor = '#C2410C';
+                            amountPrefix = '- ';
+                        } else if (pay.payment_type.includes('مكافأة')) {
+                            typeBadge = '<span style="background: #ECFDF5; color: #047857; padding: 4px 8px; border-radius: 8px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-gift"></i> مكافأة / بونص</span>';
+                            amountColor = '#059669';
+                            amountPrefix = '+ ';
+                        } else if (pay.payment_type.includes('خصم')) {
+                            typeBadge = '<span style="background: #FEF2F2; color: #DC2626; padding: 4px 8px; border-radius: 8px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-gavel"></i> خصم / جزاء</span>';
+                            amountColor = '#DC2626';
+                            amountPrefix = '- ';
+                        } else {
+                            typeBadge = '<span style="background: #F0FDF4; color: #16A34A; padding: 4px 8px; border-radius: 8px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-money-bill-wave"></i> صرف راتب شهري</span>';
+                            amountColor = '#28a745';
+                            amountPrefix = '';
+                        }
 
                         return `<tr>
                             <td style="font-weight: 900; color: var(--primary-espresso);">${pay.employee_name}</td>
                             <td>${typeBadge}</td>
                             <td style="font-weight: 800;">${pay.month}</td>
-                            <td style="font-size: 15px; font-weight: 900; color: #28a745;">${pay.amount} ج</td>
+                            <td style="font-size: 15px; font-weight: 900; color: ${amountColor};">${amountPrefix}${pay.amount} ج</td>
                             <td style="color: #666; font-size: 11px;">${pay.payment_date}</td>
                             <td style="color: #555; font-size: 12px;">${pay.notes || '-'}</td>
                             <td>
-                                <button onclick="deleteSalarySlip(${pay.id})" style="background: #FFEBEE; color: #DC2626; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer;">
+                                <button onclick="deleteSalarySlip(${pay.id})" style="background: #FFEBEE; color: #DC2626; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="إلغاء وحذف السند">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </td>
@@ -8577,9 +8642,8 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
             if (!allEmployees || allEmployees.length === 0) await fetchEmployees();
             const selectEl = document.getElementById('salEmpSelect') || document.getElementById('salaryEmpSelect');
             if (selectEl) {
-                selectEl.innerHTML = (allEmployees || []).map(e => `<option value="${e.id}" data-salary="${e.salary}">${e.name} (${e.role}) - ${e.salary} ج</option>`).join('');
+                selectEl.innerHTML = (allEmployees || []).map(e => `<option value="${e.id}" data-salary="${e.salary}">${e.name} (${e.role}) - الراتب: ${e.salary} ج</option>`).join('');
             }
-            autoFillSalaryAmount();
             const monthEl = document.getElementById('salMonth') || document.getElementById('salaryMonth');
             if (monthEl && !monthEl.value) {
                 const now = new Date();
@@ -8588,24 +8652,67 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                 monthEl.value = `${yr}-${mo}`;
             }
             openModal('recordSalaryModal');
+            autoFillSalaryAmount();
         }
 
         function openPayForEmployee(empId) {
             openRecordSalaryModal();
             setTimeout(() => {
-                document.getElementById('salEmpSelect').value = empId;
+                const sel = document.getElementById('salEmpSelect');
+                if (sel) sel.value = empId;
                 autoFillSalaryAmount();
             }, 100);
         }
 
-        function autoFillSalaryAmount() {
+        async function autoFillSalaryAmount() {
             const selectEl = document.getElementById('salEmpSelect') || document.getElementById('salaryEmpSelect');
             if (!selectEl || selectEl.selectedIndex < 0) return;
+            const empId = selectEl.value;
+            const monthEl = document.getElementById('salMonth') || document.getElementById('salaryMonth');
+            const month = monthEl ? monthEl.value : '';
+            const pTypeEl = document.getElementById('salPaymentType');
+            const pType = pTypeEl ? pTypeEl.value : 'راتب شهري';
+            const amtEl = document.getElementById('salAmount') || document.getElementById('salaryAmount');
+            const breakdownEl = document.getElementById('salCalcBreakdown');
+
             const selectedOpt = selectEl.options[selectEl.selectedIndex];
-            if (selectedOpt) {
-                const s = selectedOpt.getAttribute('data-salary');
-                const amtEl = document.getElementById('salAmount') || document.getElementById('salaryAmount');
-                if (amtEl) amtEl.value = s || 4000;
+            const baseSalary = parseFloat(selectedOpt ? selectedOpt.getAttribute('data-salary') : 0) || 0;
+
+            if (!empId) return;
+
+            if (breakdownEl) {
+                breakdownEl.style.display = 'block';
+                breakdownEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري احتساب صافي المستحق المالي...';
+            }
+
+            try {
+                const url = month ? `/api/employees/${empId}/monthly-ledger?month=${month}` : `/api/employees/${empId}/monthly-ledger`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.status === 'success' && data.financial_summary) {
+                    const fin = data.financial_summary;
+                    if (breakdownEl) {
+                        breakdownEl.style.display = 'block';
+                        breakdownEl.innerHTML = `
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; flex-wrap: wrap; gap: 4px;">
+                                <span>الأساسي: <strong>${fin.base_salary} ج</strong></span>
+                                <span style="color: #B45309;">سلف: <strong>-${fin.total_advances} ج</strong></span>
+                                <span style="color: #16A34A;">بونص: <strong>+${fin.total_bonuses || 0} ج</strong></span>
+                                <span style="color: #DC2626;">خصم: <strong>-${fin.total_deductions || 0} ج</strong></span>
+                            </div>
+                            <div style="font-weight: 900; color: ${fin.net_remaining >= 0 ? '#047857' : '#DC2626'}; border-top: 1px dashed #CBD5E1; padding-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="fa-solid fa-calculator"></i> صافي المبلغ المستحق النهائي:</span>
+                                <span style="font-size: 14px;">${fin.net_remaining} ج</span>
+                            </div>
+                        `;
+                    }
+                    if (pType === 'راتب شهري') {
+                        if (amtEl) amtEl.value = Math.max(0, fin.net_remaining);
+                    }
+                }
+            } catch(e) {
+                if (breakdownEl) breakdownEl.style.display = 'none';
+                if (pType === 'راتب شهري' && amtEl) amtEl.value = baseSalary;
             }
         }
 

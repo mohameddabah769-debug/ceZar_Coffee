@@ -1556,7 +1556,11 @@ def get_analytics():
 
         total_cogs = round(calc_cogs if calc_cogs > 0 else (gross_sales * 0.32), 2)
         total_expenses = round(float(db.query(func.sum(Expense.amount)).scalar() or 0.0), 2)
-        total_salaries = round(float(db.query(func.sum(SalaryPayment.amount)).scalar() or 0.0), 2)
+        sal_records = db.query(SalaryPayment).all()
+        total_salaries = round(sum(
+            -p.amount if p.payment_type in ["خصم", "خصم أو جزاء"] else p.amount
+            for p in sal_records
+        ), 2)
         total_waste = round(float(db.query(func.sum(InventoryWaste.cost_loss)).scalar() or 0.0), 2)
         net_profit = round(gross_sales - total_cogs - total_expenses - total_salaries - total_waste, 2)
         profit_margin_pct = round((net_profit / gross_sales) * 100, 1) if gross_sales > 0 else 0.0
@@ -1878,8 +1882,15 @@ def delete_employee(emp_id):
 @app.route("/api/cezar/salaries", methods=["GET"])
 def get_salary_payments():
     with SessionLocal() as db:
-        payments = db.query(SalaryPayment).order_by(SalaryPayment.id.desc()).all()
+        payments = db.query(SalaryPayment).order_by(SalaryPayment.payment_date.desc(), SalaryPayment.id.desc()).all()
         emps = {e.id: e.name for e in db.query(Employee).all()}
+        
+        total_salaries_paid = sum(p.amount for p in payments if p.payment_type in ["راتب شهري", "راتب"])
+        total_advances_paid = sum(p.amount for p in payments if p.payment_type in ["سلفة", "سلفة على الراتب"])
+        total_bonuses_paid = sum(p.amount for p in payments if p.payment_type in ["مكافأة", "مكافأة وبونص"])
+        total_deductions_applied = sum(p.amount for p in payments if p.payment_type in ["خصم", "خصم أو جزاء"])
+        net_paid = total_salaries_paid + total_advances_paid + total_bonuses_paid - total_deductions_applied
+
         return jsonify({
             "status": "success",
             "payments": [{
@@ -1892,7 +1903,14 @@ def get_salary_payments():
                 "payment_date": p.payment_date.strftime("%Y-%m-%d %I:%M %p") if p.payment_date else "",
                 "notes": p.notes or ""
             } for p in payments],
-            "total_paid": sum(p.amount for p in payments)
+            "total_paid": round(net_paid, 2),
+            "summary": {
+                "salaries": round(total_salaries_paid, 2),
+                "advances": round(total_advances_paid, 2),
+                "bonuses": round(total_bonuses_paid, 2),
+                "deductions": round(total_deductions_applied, 2),
+                "net_total": round(net_paid, 2)
+            }
         })
 
 @app.route("/api/salaries", methods=["POST"])
