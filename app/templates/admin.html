@@ -883,10 +883,19 @@
             <!-- Right: Order Cart -->
             <div class="pos-cart">
                 <div>
-                    <!-- Order Type: Hall Tables Only -->
-                    <div style="background: #FDFBF7; padding: 10px 14px; border-radius: 12px; border: 1.5px solid #E2D9CF; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="font-weight: 800; font-size: 13px; color: var(--primary-espresso);"><i class="fa-solid fa-chair" style="color: var(--cezar-orange); margin-left: 6px;"></i> نظام صالة وطاولات فقط</span>
-                        <span style="background: #DCFCE7; color: #15803D; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 800;"><i class="fa-solid fa-check"></i> نشط</span>
+                    <!-- Order Type: Hall vs Takeaway -->
+                    <div style="background: #FDFBF7; padding: 10px 12px; border-radius: 12px; border: 1.5px solid #E2D9CF; margin-bottom: 12px;">
+                        <label style="font-size: 12px; font-weight: 800; margin-bottom: 6px; display: block; color: var(--primary-espresso);">
+                            <i class="fa-solid fa-list-check" style="color: var(--cezar-orange);"></i> نوع الطلب:
+                        </label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                            <button type="button" id="posBtnHall" onclick="setPosOrderType('صالة')" style="padding: 7px 10px; border-radius: 8px; font-weight: 900; font-size: 12px; cursor: pointer; border: 2px solid var(--cezar-orange); background: #FFF7ED; color: var(--cezar-orange); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="fa-solid fa-chair"></i> صالة (طاولة)
+                            </button>
+                            <button type="button" id="posBtnTakeaway" onclick="setPosOrderType('تيك أواي')" style="padding: 7px 10px; border-radius: 8px; font-weight: 900; font-size: 12px; cursor: pointer; border: 1px solid #D1D5DB; background: #F9FAFB; color: #4B5563; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="fa-solid fa-bag-shopping"></i> تيك أواي (سفري)
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Fields depending on type -->
@@ -895,6 +904,11 @@
                         <select id="posTableSelect" class="form-control">
                             <!-- Tables 1 to 25 -->
                         </select>
+                    </div>
+
+                    <div id="posTakeawayFields" style="margin-bottom: 10px; display: none;">
+                        <label style="font-size: 12px; font-weight: 800;">اسم العميل / رقم البون (سفري):</label>
+                        <input type="text" id="posTakeawayCustomerInput" placeholder="مثال: محمد / بون 15" class="form-control">
                     </div>
 
                     <!-- Items Cart Table -->
@@ -1089,6 +1103,30 @@
     <!-- TAB 6: Menu Items & Pricing Control                  -->
     <!-- ==================================================== -->
     <main class="tab-content" id="tabMenu">
+        <!-- Takeaway Fast Bar & Pricing Manager -->
+        <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">🛍️</span>
+                <div>
+                    <div style="font-weight: 900; color: #92400E; font-size: 14px;">قسم التيك أواي والأسعار المستقلة (Takeaway)</div>
+                    <div style="font-size: 11px; color: #B45309; font-weight: 700;">تم إدراج كل الأصناف بدون أسعار (0 ج) لتتمكن من تسعيرها براحتك. يمكنك كتابة السعر مباشرة داخل الخانة في الجدول أدناه والتعديل فوري!</div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="pin-btn" onclick="filterAdminMenuByCategory('تيك أواي')" style="margin: 0; width: auto; padding: 6px 14px; background: #D97706; font-size: 12px; font-weight: 800;">
+                    <i class="fa-solid fa-filter"></i> قسم التيك أواي فقط (<span id="takeawayCountText">0</span>)
+                </button>
+                <button type="button" class="pin-btn" onclick="syncTakeawayCatalog()" style="margin: 0; width: auto; padding: 6px 14px; background: #4B5563; font-size: 12px; font-weight: 800;" title="مزامنة كافة الأصناف الجديدة للتيك أواي">
+                    <i class="fa-solid fa-arrows-rotate"></i> تحديث مزامنة التيك أواي
+                </button>
+            </div>
+        </div>
+
+        <!-- Category Filter Pills -->
+        <div id="adminMenuCategoryPills" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none;">
+            <!-- Rendered by JS -->
+        </div>
+
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 8px; background: white; padding: 6px 14px; border-radius: 12px; border: 1px solid var(--border-color); flex: 1; max-width: 360px;">
                 <i class="fa-solid fa-magnifying-glass" style="color: #888;"></i>
@@ -4607,9 +4645,31 @@
         // ====================================================
         var posCatalogItems = [];
         var posSelectedCategory = 'الكل';
+        var posCurrentType = 'صالة';
 
         function setPosOrderType(type) {
-            posCurrentType = 'صالة';
+            posCurrentType = type;
+            const btnHall = document.getElementById('posBtnHall');
+            const btnTw = document.getElementById('posBtnTakeaway');
+            const hallFields = document.getElementById('posHallFields');
+            const twFields = document.getElementById('posTakeawayFields');
+
+            if (type === 'تيك أواي') {
+                if (btnTw) { btnTw.style.border = '2px solid #D97706'; btnTw.style.background = '#FFFBEB'; btnTw.style.color = '#B45309'; }
+                if (btnHall) { btnHall.style.border = '1px solid #D1D5DB'; btnHall.style.background = '#F9FAFB'; btnHall.style.color = '#4B5563'; }
+                if (hallFields) hallFields.style.display = 'none';
+                if (twFields) twFields.style.display = 'block';
+                // Switch POS category pills to 'تيك أواي' automatically if present
+                const twBtn = Array.from(document.querySelectorAll('#posCategoryPills .filter-pill')).find(b => b.textContent.includes('تيك أواي'));
+                if (twBtn) filterPosByCategory('تيك أواي', twBtn);
+            } else {
+                if (btnHall) { btnHall.style.border = '2px solid var(--cezar-orange)'; btnHall.style.background = '#FFF7ED'; btnHall.style.color = var(--cezar-orange); }
+                if (btnTw) { btnTw.style.border = '1px solid #D1D5DB'; btnTw.style.background = '#F9FAFB'; btnTw.style.color = '#4B5563'; }
+                if (hallFields) hallFields.style.display = 'block';
+                if (twFields) twFields.style.display = 'none';
+                const allBtn = document.querySelector('#posCategoryPills .filter-pill');
+                if (allBtn) filterPosByCategory('الكل', allBtn);
+            }
             renderPosCart();
         }
 
@@ -4622,7 +4682,9 @@
                 pillsContainer.innerHTML = `<button class="filter-pill active" onclick="filterPosByCategory('الكل', this)">الكل</button>`;
 
                 for (let cat in data.categories) {
-                    pillsContainer.innerHTML += `<button class="filter-pill" onclick="filterPosByCategory('${cat}', this)">${cat}</button>`;
+                    const isTw = (cat === 'تيك أواي');
+                    const badgeStyle = isTw ? 'style="border-color: #D97706; color: #B45309; font-weight: 900;"' : '';
+                    pillsContainer.innerHTML += `<button class="filter-pill" ${badgeStyle} onclick="filterPosByCategory('${cat}', this)">${isTw ? '🛍️ ' + cat : cat}</button>`;
                     data.categories[cat].forEach(item => posCatalogItems.push(item));
                 }
 
@@ -4658,20 +4720,28 @@
                 const div = document.createElement('div');
                 div.className = 'pos-item-card';
                 div.onclick = () => addPosItemToCart(item);
+                const priceDisplay = item.price === 0 ? '<span style="color: #DC2626; font-size: 11px; font-weight: 900;">غير مسعر (0 ج)</span>' : `${item.price} ج`;
                 div.innerHTML = `
                     <div class="pos-item-name">${item.name}</div>
-                    <div class="pos-item-price">${item.price} ج</div>
+                    <div class="pos-item-price">${priceDisplay}</div>
                 `;
                 grid.appendChild(div);
             });
         }
 
         function addPosItemToCart(item) {
+            let itemPrice = item.price;
+            if (itemPrice === 0) {
+                const entered = prompt(`الصنف (${item.name}) غير مسعر بالتيك أواي حالياً.\nأدخل سعر البيع الآن بالجنيه (أو اتركه 0):`, '0');
+                if (entered !== null && !isNaN(parseFloat(entered))) {
+                    itemPrice = parseFloat(entered);
+                }
+            }
             const existing = posCartItems.find(i => i.id === item.id);
             if (existing) {
                 existing.quantity += 1;
             } else {
-                posCartItems.push({ id: item.id, name: item.name, price: item.price, quantity: 1 });
+                posCartItems.push({ id: item.id, name: item.name, price: itemPrice, quantity: 1 });
             }
             renderPosCart();
         }
@@ -4997,11 +5067,13 @@
             }
 
             const paymentMethod = document.querySelector('input[name="posPaymentMethod"]:checked').value;
-            const tableNum = parseInt(document.getElementById('posTableSelect').value || 1);
-            const custName = `ترابيزة ${tableNum}`;
+            const isTakeaway = (posCurrentType === 'تيك أواي');
+            const tableNum = isTakeaway ? 0 : parseInt(document.getElementById('posTableSelect').value || 1);
+            const custInput = document.getElementById('posTakeawayCustomerInput') ? document.getElementById('posTakeawayCustomerInput').value.trim() : '';
+            const custName = isTakeaway ? (custInput || 'عميل تيك أواي') : `ترابيزة ${tableNum}`;
 
             const payload = {
-                order_type: 'صالة',
+                order_type: posCurrentType,
                 table_number: tableNum,
                 customer_name: custName,
                 items: posCartItems,
@@ -5737,7 +5809,7 @@
                 renderReceiptSlip({
                     orderId: data.id,
                     type: data.order_type,
-                    headerInfo: `ترابيزة رقم ${data.table_number}`,
+                    headerInfo: data.order_type === 'صالة' ? `ترابيزة رقم ${data.table_number}` : (data.customer_name || 'تيك أواي (سفري)'),
                     items: data.items_summary,
                     total: data.total_price,
                     paymentMethod: data.payment_method,
@@ -5810,6 +5882,8 @@
         // ====================================================
         // MENU ITEMS ADMIN
         // ====================================================
+        var adminMenuSelectedCategory = 'الكل';
+
         async function fetchAdminMenu() {
             try {
                 const res = await fetch('/api/menu-items?all_items=true');
@@ -5818,7 +5892,108 @@
                 for (let cat in data.categories) {
                     data.categories[cat].forEach(i => adminMenuItems.push(i));
                 }
+
+                // Update takeaway count badge
+                const twItems = adminMenuItems.filter(i => i.category === 'تيك أواي');
+                const unpriced = twItems.filter(i => i.price === 0).length;
+                const twCountEl = document.getElementById('takeawayCountText');
+                if (twCountEl) {
+                    twCountEl.textContent = `${twItems.length} صنف ${unpriced > 0 ? `(منها ${unpriced} بدون سعر)` : ''}`;
+                }
+
+                renderAdminCategoryPills(data.categories);
                 renderAdminMenu();
+            } catch(e) {}
+        }
+
+        function renderAdminCategoryPills(categoriesMap) {
+            const container = document.getElementById('adminMenuCategoryPills');
+            if (!container) return;
+            const cats = Object.keys(categoriesMap || {});
+            const sortedCats = ['الكل'];
+            if (cats.includes('تيك أواي')) sortedCats.push('تيك أواي');
+            cats.forEach(c => { if (c !== 'تيك أواي') sortedCats.push(c); });
+
+            container.innerHTML = sortedCats.map(cat => {
+                const isTw = (cat === 'تيك أواي');
+                const isActive = (adminMenuSelectedCategory === cat);
+                let btnStyle = isActive
+                    ? 'background: var(--primary-espresso); color: white; border-color: var(--primary-espresso);'
+                    : 'background: white; color: #4B5563; border-color: #D1D5DB;';
+                if (isTw && !isActive) {
+                    btnStyle = 'background: #FEF3C7; color: #92400E; border-color: #FDE68A; font-weight: 900;';
+                }
+                const label = isTw ? '🛍️ قسم التيك أواي' : cat;
+                return `<button type="button" class="filter-pill ${isActive ? 'active' : ''}" style="${btnStyle} font-size: 12px; padding: 6px 14px; border-radius: 8px; font-weight: 800; cursor: pointer; white-space: nowrap; border: 1.5px solid;" onclick="filterAdminMenuByCategory('${cat}')">${label}</button>`;
+            }).join('');
+        }
+
+        function filterAdminMenuByCategory(cat) {
+            adminMenuSelectedCategory = cat;
+            renderAdminMenu();
+            // Re-render pills visual active state
+            document.querySelectorAll('#adminMenuCategoryPills .filter-pill').forEach(b => {
+                if (b.textContent.includes(cat) || (cat === 'الكل' && b.textContent === 'الكل')) {
+                    b.classList.add('active');
+                    b.style.background = 'var(--primary-espresso)';
+                    b.style.color = 'white';
+                    b.style.borderColor = 'var(--primary-espresso)';
+                } else {
+                    b.classList.remove('active');
+                    if (b.textContent.includes('التيك أواي')) {
+                        b.style.background = '#FEF3C7';
+                        b.style.color = '#92400E';
+                        b.style.borderColor = '#FDE68A';
+                    } else {
+                        b.style.background = 'white';
+                        b.style.color = '#4B5563';
+                        b.style.borderColor = '#D1D5DB';
+                    }
+                }
+            });
+        }
+
+        async function syncTakeawayCatalog() {
+            try {
+                const res = await fetch('/api/menu-items/sync-takeaway', { method: 'POST' });
+                const data = await res.json();
+                alert(data.message || 'تمت مزامنة قسم التيك أواي بنجاح!');
+                fetchAdminMenu();
+            } catch(e) {
+                alert('حدث خطأ أثناء المزامنة');
+            }
+        }
+
+        async function quickSaveItemPrice(id, newPrice, inputEl = null) {
+            const p = parseFloat(newPrice);
+            if (isNaN(p) || p < 0) {
+                alert('يرجى كتابة رقم سعر صحيح!');
+                return;
+            }
+            try {
+                const res = await fetch(`/api/menu-items/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ price: p })
+                });
+                if (res.ok) {
+                    const item = adminMenuItems.find(i => i.id === id);
+                    if (item) item.price = p;
+                    if (inputEl) {
+                        inputEl.style.borderColor = '#10B981';
+                        inputEl.style.background = '#F0FDF4';
+                        inputEl.style.color = '#047857';
+                    }
+                    const badge = document.getElementById(`unpricedBadge_${id}`);
+                    if (badge) badge.style.display = p === 0 ? 'inline-block' : 'none';
+                    // Update count
+                    const twItems = adminMenuItems.filter(i => i.category === 'تيك أواي');
+                    const unpriced = twItems.filter(i => i.price === 0).length;
+                    const twCountEl = document.getElementById('takeawayCountText');
+                    if (twCountEl) {
+                        twCountEl.textContent = `${twItems.length} صنف ${unpriced > 0 ? `(منها ${unpriced} بدون سعر)` : ''}`;
+                    }
+                }
             } catch(e) {}
         }
 
@@ -5832,24 +6007,49 @@
             tbody.innerHTML = '';
 
             let list = adminMenuItems;
+            if (adminMenuSelectedCategory !== 'الكل') {
+                list = list.filter(i => i.category === adminMenuSelectedCategory);
+            }
             if (query) {
-                list = list.filter(i => i.name.toLowerCase().includes(query) || i.category.toLowerCase().includes(query));
+                list = list.filter(i => i.name.toLowerCase().includes(query) || (i.category && i.category.toLowerCase().includes(query)));
             }
 
             list.forEach(item => {
                 const tr = document.createElement('tr');
+                const isTw = (item.category === 'تيك أواي');
+                const isZero = (item.price === 0 || !item.price);
+                const catBadge = isTw
+                    ? `<span style="background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 11px; border: 1px solid #FDE68A;"><i class="fa-solid fa-bag-shopping"></i> تيك أواي</span>`
+                    : `<span style="background: #FDFBF7; padding: 2px 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 11px;">${item.category}</span>`;
+
                 tr.innerHTML = `
-                    <td><strong>${item.name}</strong></td>
-                    <td><span style="background: #FDFBF7; padding: 2px 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 11px;">${item.category}</span></td>
-                    <td><strong style="color: var(--cezar-orange);">${item.price} ج</strong></td>
+                    <td>
+                        <strong>${item.name}</strong>
+                        ${isTw ? '<div style="font-size: 10px; color: #78350F; font-weight: 700;">سعر سفري خاص</div>' : ''}
+                    </td>
+                    <td>${catBadge}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <input type="number" step="any" min="0" value="${item.price}" 
+                                id="priceInput_${item.id}"
+                                onchange="quickSaveItemPrice(${item.id}, this.value, this)" 
+                                onkeydown="if(event.key==='Enter') quickSaveItemPrice(${item.id}, this.value, this)"
+                                style="width: 75px; text-align: center; padding: 5px; border: 1.5px solid ${isZero ? '#EF4444' : '#10B981'}; border-radius: 6px; font-weight: 900; font-size: 13px; background: ${isZero ? '#FEF2F2' : '#F0FDF4'}; color: ${isZero ? '#DC2626' : '#047857'};"
+                                title="اكتب السعر واضغط Enter أو اخرج من الخانة للحفظ التلقائي">
+                            <span style="font-weight: 800; font-size: 12px;">ج</span>
+                            <span id="unpricedBadge_${item.id}" style="color: #DC2626; font-size: 10px; font-weight: 800; ${isZero ? '' : 'display: none;'}">
+                                ⚠️ لم يسعر
+                            </span>
+                        </div>
+                    </td>
                     <td>
                         <button onclick="toggleItemAvailability(${item.id}, ${!item.is_available})" style="background: ${item.is_available ? '#d4edda' : '#f8d7da'}; color: ${item.is_available ? '#155724' : '#721c24'}; border: none; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 11px; cursor: pointer;">
                             ${item.is_available ? 'متاح للطلب' : 'غير متوفر'}
                         </button>
                     </td>
                     <td>
-                        <button onclick="promptEditItemPrice(${item.id}, ${item.price})" style="border: none; background: #eee; padding: 4px 10px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 11px;">
-                            <i class="fa-solid fa-pen"></i> تعديل السعر
+                        <button onclick="quickSaveItemPrice(${item.id}, document.getElementById('priceInput_${item.id}').value, document.getElementById('priceInput_${item.id}'))" style="border: none; background: #059669; color: white; padding: 5px 12px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 11px;">
+                            <i class="fa-solid fa-floppy-disk"></i> حفظ السعر
                         </button>
                     </td>
                 `;

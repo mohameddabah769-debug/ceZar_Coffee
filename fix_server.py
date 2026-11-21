@@ -131,6 +131,34 @@ with SessionLocal() as db:
             print(f"Error seeding default inventory: {e}")
 
     seed_recipes(db)
+
+    # Seed all menu items into category 'تيك أواي' with price = 0.0
+    try:
+        existing_tw = {m.name: m for m in db.query(MenuItem).filter(MenuItem.category == "تيك أواي").all()}
+        base_items = db.query(MenuItem).filter(MenuItem.category != "تيك أواي").all()
+        seen = set()
+        tw_added = 0
+        for b in base_items:
+            if b.name in seen:
+                continue
+            seen.add(b.name)
+            if b.name not in existing_tw:
+                tw_item = MenuItem(
+                    name=b.name,
+                    category="تيك أواي",
+                    price=0.0,
+                    cost_price=b.cost_price or 0.0,
+                    description=f"سفري / تيك أواي - {b.description or ''}".strip(),
+                    is_available=True
+                )
+                db.add(tw_item)
+                tw_added += 1
+        if tw_added > 0:
+            db.commit()
+            print(f"Auto-seeded {tw_added} items into category 'تيك أواي' with price 0.0 for custom pricing!")
+    except Exception as e:
+        print(f"Error seeding takeaway items: {e}")
+
     try:
         db.execute(text("UPDATE table_orders SET total_price = 0.0 WHERE items_summary LIKE '%طلب الحساب%' OR status LIKE 'طلب حساب%' OR items_summary LIKE '%نداء الويتر%' OR status = 'نداء ويتر'"))
         db.commit()

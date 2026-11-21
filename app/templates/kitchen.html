@@ -521,7 +521,10 @@
                 const isNew = (order.status === 'جديد');
                 card.className = `ticket-card ${isNew ? 'new' : 'in-prep'}`;
 
-                let channelTitle = `<i class="fa-solid fa-chair" style="color: var(--cezar-orange);"></i> ترابيزة ${order.table_number}`;
+                const isTakeaway = (order.order_type === 'تيك أواي');
+                let channelTitle = isTakeaway
+                    ? `<span style="background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 6px; font-size: 13px; font-weight: 900;"><i class="fa-solid fa-bag-shopping"></i> تيك أواي: ${order.customer_name || 'سفري'}</span>`
+                    : `<i class="fa-solid fa-chair" style="color: var(--cezar-orange);"></i> ترابيزة ${order.table_number}`;
 
                 // Parse items lines
                 const lines = (order.items_summary || '').split('\n').filter(l => l.trim());

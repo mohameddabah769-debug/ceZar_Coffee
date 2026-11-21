@@ -101,9 +101,39 @@ try:
 except Exception as e:
     print(f"[STARTUP] auto_migrate warning: {e}")
 
+def sync_takeaway_items(db):
+    """مزامنة كافة أصناف المنيو مع قسم التيك أواي بأسعار 0 ج ليحددها صاحب الكافيه براحته."""
+    try:
+        existing_tw = {m.name: m for m in db.query(MenuItem).filter(MenuItem.category == "تيك أواي").all()}
+        base_items = db.query(MenuItem).filter(MenuItem.category != "تيك أواي").all()
+        seen = set()
+        added = 0
+        for b in base_items:
+            if b.name in seen:
+                continue
+            seen.add(b.name)
+            if b.name not in existing_tw:
+                tw_item = MenuItem(
+                    name=b.name,
+                    category="تيك أواي",
+                    price=0.0,
+                    cost_price=b.cost_price or 0.0,
+                    description=f"سفري / تيك أواي - {b.description or ''}".strip(),
+                    is_available=True
+                )
+                db.add(tw_item)
+                added += 1
+        if added > 0:
+            db.commit()
+        return added
+    except Exception as e:
+        print(f"[SYNC TAKEAWAY] warning: {e}")
+        return 0
+
 try:
     with SessionLocal() as db:
         seed_menu(db)
+        sync_takeaway_items(db)
         if db.query(ManagerAccount).filter(ManagerAccount.username == "admin").count() == 0:
             db.add(ManagerAccount(username="admin", password="123", manager_name="مدير سيزر كوفي"))
         if db.query(ManagerAccount).filter(ManagerAccount.username == "cezar").count() == 0:
@@ -278,9 +308,62 @@ def add_menu_item():
             is_available=data.get("is_available", True)
         )
         db.add(new_item)
+        if category != "تيك أواي":
+            try:
+                existing_tw = db.query(MenuItem).filter(MenuItem.name == name, MenuItem.category == "تيك أواي").first()
+                if not existing_tw:
+                    db.add(MenuItem(
+                        name=name,
+                        category="تيك أواي",
+                        price=0.0,
+                        cost_price=new_item.cost_price or 0.0,
+                        description=f"سفري / تيك أواي - {new_item.description or ''}".strip(),
+                        is_available=True
+                    ))
+            except Exception:
+                pass
         db.commit()
         db.refresh(new_item)
         return jsonify({"status": "success", "item": {"id": new_item.id, "name": new_item.name}})
+
+
+@app.route("/api/menu-items/sync-takeaway", methods=["POST"])
+@app.route("/api/cezar/menu-items/sync-takeaway", methods=["POST"])
+def api_sync_takeaway_items():
+    with SessionLocal() as db:
+        added = sync_takeaway_items(db)
+        total = db.query(MenuItem).filter(MenuItem.category == "تيك أواي").count()
+        unpriced = db.query(MenuItem).filter(MenuItem.category == "تيك أواي", MenuItem.price == 0.0).count()
+        return jsonify({
+            "status": "success",
+            "message": f"تمت مزامنة قسم التيك أواي بنجاح! ({added} صنف جديد تم إضافته)",
+            "added_count": added,
+            "total_takeaway": total,
+            "unpriced_count": unpriced
+        })
+
+
+@app.route("/api/menu-items/batch-prices", methods=["POST"])
+@app.route("/api/cezar/menu-items/batch-prices", methods=["POST"])
+def batch_update_menu_prices():
+    data = request.json or {}
+    items_data = data.get("items") or []
+    updated_count = 0
+    with SessionLocal() as db:
+        for it in items_data:
+            item_id = it.get("id")
+            new_price = it.get("price")
+            if item_id is not None and new_price is not None:
+                try:
+                    p = float(new_price)
+                    db_item = db.query(MenuItem).filter(MenuItem.id == int(item_id)).first()
+                    if db_item:
+                        db_item.price = max(0.0, p)
+                        updated_count += 1
+                except Exception:
+                    pass
+        db.commit()
+    return jsonify({"status": "success", "message": f"تم تحديث أسعار {updated_count} صنف بنجاح!", "updated_count": updated_count})
 
 
 @app.route("/api/menu-items/<int:item_id>", methods=["PUT", "POST"])
