@@ -628,22 +628,53 @@ def get_orders():
             TableOrder.status.in_(["جديد", "جاري التحضير", "قيد التحضير", "نداء ويتر"]) | TableOrder.status.like("طلب حساب%")
         ).count()
 
-        total_sales = db.query(func.sum(TableOrder.total_price)).filter(
+        # Calculate Today's Sales (Cairo UTC+2)
+        cairo_now = datetime.utcnow() + timedelta(hours=2)
+        today_start_cairo = cairo_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start_utc = today_start_cairo - timedelta(hours=2)
+
+        today_orders_query = db.query(TableOrder).filter(
+            TableOrder.created_at >= today_start_utc,
+            TableOrder.status != "ملغي",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر"
+        )
+        today_orders_count = today_orders_query.count()
+        today_orders_sales = db.query(func.sum(TableOrder.total_price)).filter(
+            TableOrder.created_at >= today_start_utc,
             TableOrder.status != "ملغي",
             ~TableOrder.status.like("طلب حساب%"),
             TableOrder.status != "نداء ويتر"
         ).scalar() or 0.0
 
-        total_deposits = db.query(func.sum(Reservation.deposit)).filter(
+        today_deposits = db.query(func.sum(Reservation.deposit)).filter(
+            Reservation.created_at >= today_start_utc,
             Reservation.status != "ملغي"
         ).scalar() or 0.0
 
-        total_sales += total_deposits
+        current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
+        shift_sales = float(current_shift.total_sales or 0.0) if current_shift else 0.0
+
+        today_sales = max(today_orders_sales + today_deposits, shift_sales)
+
+        all_time_sales = db.query(func.sum(TableOrder.total_price)).filter(
+            TableOrder.status != "ملغي",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر"
+        ).scalar() or 0.0
+        all_time_deposits = db.query(func.sum(Reservation.deposit)).filter(
+            Reservation.status != "ملغي"
+        ).scalar() or 0.0
+        all_time_sales += all_time_deposits
 
         return jsonify({
             "stats": {
                 "total_orders": total_orders,
-                "total_sales": round(total_sales, 2),
+                "today_orders": today_orders_count,
+                "total_sales": round(today_sales, 2),  # Linked directly to "مبيعات اليوم" stat card!
+                "today_sales": round(today_sales, 2),
+                "all_time_sales": round(all_time_sales, 2),
+                "shift_sales": round(shift_sales, 2),
                 "pending_orders": pending_count,
                 "delivered_orders": delivered_count,
                 "active_orders": pending_count
@@ -779,8 +810,16 @@ def settle_table_bill(table_number):
             TableOrder.status != "تمت التسوية"
         ).all()
         total_bill = sum(o.total_price for o in orders)
+        current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
         for o in orders:
             o.status = "تمت التسوية"
+            if current_shift and not o.shift_id:
+                o.shift_id = current_shift.id
+                current_shift.total_sales = (current_shift.total_sales or 0.0) + o.total_price
+                if (o.payment_method or "كاش") == "فيزا":
+                    current_shift.visa_sales = (current_shift.visa_sales or 0.0) + o.total_price
+                else:
+                    current_shift.cash_sales = (current_shift.cash_sales or 0.0) + o.total_price
 
         # Check and complete table reservation if present
         active_res = db.query(Reservation).filter(
@@ -1161,9 +1200,44 @@ def clear_all_orders():
 @app.route("/api/cezar/shifts/current", methods=["GET"])
 def get_current_shift():
     with SessionLocal() as db:
+        # Calculate Today's Overall Performance (Cairo UTC+2)
+        cairo_now = datetime.utcnow() + timedelta(hours=2)
+        today_start_cairo = cairo_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start_utc = today_start_cairo - timedelta(hours=2)
+
+        today_orders = db.query(TableOrder).filter(
+            TableOrder.created_at >= today_start_utc,
+            TableOrder.status != "ملغي",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر"
+        ).all()
+        today_sales_from_orders = sum(o.total_price for o in today_orders)
+        today_cash_from_orders = sum(o.total_price for o in today_orders if (o.payment_method or "كاش") == "كاش")
+        today_visa_from_orders = sum(o.total_price for o in today_orders if (o.payment_method or "") == "فيزا")
+
+        today_deposits = db.query(func.sum(Reservation.deposit)).filter(
+            Reservation.created_at >= today_start_utc,
+            Reservation.status != "ملغي"
+        ).scalar() or 0.0
+
+        today_expenses_records = db.query(Expense).filter(
+            Expense.created_at >= today_start_utc
+        ).all()
+        today_total_expenses = sum(e.amount for e in today_expenses_records)
+
+        today_overall_sales = today_sales_from_orders + today_deposits
+
         shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
         if not shift:
-            return jsonify({"status": "no_active_shift", "message": "لا يوجد وردية مفتوحة حالياً"})
+            return jsonify({
+                "status": "no_active_shift",
+                "message": "لا يوجد وردية مفتوحة حالياً",
+                "today_total_sales": round(today_overall_sales, 2),
+                "today_cash_sales": round(today_cash_from_orders, 2),
+                "today_visa_sales": round(today_visa_from_orders, 2),
+                "today_expenses": round(today_total_expenses, 2),
+                "today_orders_count": len(today_orders)
+            })
 
         orders = db.query(TableOrder).filter(
             TableOrder.shift_id == shift.id,
@@ -1175,9 +1249,15 @@ def get_current_shift():
         cash_sales = sum(o.total_price for o in orders if (o.payment_method or "كاش") == "كاش")
         visa_sales = sum(o.total_price for o in orders if (o.payment_method or "") == "فيزا")
 
+        final_shift_sales = max(total_sales, float(shift.total_sales or 0.0))
+        final_shift_cash = max(cash_sales, float(shift.cash_sales or 0.0))
+        final_shift_visa = max(visa_sales, float(shift.visa_sales or 0.0))
+
         expenses = db.query(Expense).filter(Expense.shift_id == shift.id).all()
         total_expenses = sum(e.amount for e in expenses)
-        expected_cash = (shift.starting_cash or 0.0) + cash_sales - total_expenses
+        expected_cash = (shift.starting_cash or 0.0) + final_shift_cash - total_expenses
+
+        today_overall_sales = max(today_overall_sales, final_shift_sales)
 
         return jsonify({
             "status": "active",
@@ -1186,13 +1266,18 @@ def get_current_shift():
                 "cashier_name": shift.cashier_name,
                 "start_time": shift.start_time.strftime("%Y-%m-%d %I:%M %p") if shift.start_time else "",
                 "starting_cash": shift.starting_cash,
-                "total_sales": round(total_sales, 2),
-                "cash_sales": round(cash_sales, 2),
-                "visa_sales": round(visa_sales, 2),
+                "total_sales": round(final_shift_sales, 2),
+                "cash_sales": round(final_shift_cash, 2),
+                "visa_sales": round(final_shift_visa, 2),
                 "total_expenses": round(total_expenses, 2),
                 "expected_cash": round(expected_cash, 2),
-                "orders_count": len(orders),
-                "notes": shift.notes or ""
+                "orders_count": max(len(orders), len(today_orders)),
+                "notes": shift.notes or "",
+                "today_total_sales": round(today_overall_sales, 2),
+                "today_cash_sales": round(today_cash_from_orders, 2),
+                "today_visa_sales": round(today_visa_from_orders, 2),
+                "today_expenses": round(today_total_expenses, 2),
+                "today_orders_count": len(today_orders)
             }
         })
 
@@ -1228,6 +1313,19 @@ def close_shift():
         if not shift:
             return jsonify({"detail": "لا توجد وردية مفتوحة لإغلاقها!"}), 400
 
+        # Calculate today sales
+        cairo_now = datetime.utcnow() + timedelta(hours=2)
+        today_start_cairo = cairo_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start_utc = today_start_cairo - timedelta(hours=2)
+
+        today_orders = db.query(TableOrder).filter(
+            TableOrder.created_at >= today_start_utc,
+            TableOrder.status != "ملغي",
+            ~TableOrder.status.like("طلب حساب%"),
+            TableOrder.status != "نداء ويتر"
+        ).all()
+        today_orders_sales = sum(o.total_price for o in today_orders)
+
         orders = db.query(TableOrder).filter(
             TableOrder.shift_id == shift.id,
             TableOrder.status != "ملغي",
@@ -1237,18 +1335,23 @@ def close_shift():
         total_sales = sum(o.total_price for o in orders)
         cash_sales = sum(o.total_price for o in orders if (o.payment_method or "كاش") == "كاش")
         visa_sales = sum(o.total_price for o in orders if (o.payment_method or "") == "فيزا")
+
+        final_shift_sales = max(total_sales, float(shift.total_sales or 0.0))
+        final_shift_cash = max(cash_sales, float(shift.cash_sales or 0.0))
+        final_shift_visa = max(visa_sales, float(shift.visa_sales or 0.0))
+
         expenses = db.query(Expense).filter(Expense.shift_id == shift.id).all()
         total_expenses = sum(e.amount for e in expenses)
-        expected_cash = (shift.starting_cash or 0.0) + cash_sales - total_expenses
+        expected_cash = (shift.starting_cash or 0.0) + final_shift_cash - total_expenses
         difference = actual_cash - expected_cash
 
         shift.end_time = datetime.utcnow()
         shift.status = "مغلق"
-        shift.total_sales = total_sales
-        shift.cash_sales = cash_sales
-        shift.visa_sales = visa_sales
-        shift.total_expenses = total_expenses
-        shift.actual_cash = actual_cash
+        shift.total_sales = round(final_shift_sales, 2)
+        shift.cash_sales = round(final_shift_cash, 2)
+        shift.visa_sales = round(final_shift_visa, 2)
+        shift.total_expenses = round(total_expenses, 2)
+        shift.actual_cash = round(actual_cash, 2)
         shift.difference = round(difference, 2)
         if data.get("notes"):
             shift.notes = (shift.notes or "") + "\n" + data.get("notes")
@@ -1261,13 +1364,14 @@ def close_shift():
                 "shift_id": shift.id,
                 "cashier_name": shift.cashier_name,
                 "starting_cash": shift.starting_cash,
-                "total_sales": total_sales,
-                "cash_sales": cash_sales,
-                "visa_sales": visa_sales,
-                "total_expenses": total_expenses,
+                "total_sales": round(final_shift_sales, 2),
+                "cash_sales": round(final_shift_cash, 2),
+                "visa_sales": round(final_shift_visa, 2),
+                "total_expenses": round(total_expenses, 2),
                 "expected_cash": round(expected_cash, 2),
-                "actual_cash": actual_cash,
-                "difference": round(difference, 2)
+                "actual_cash": round(actual_cash, 2),
+                "difference": round(difference, 2),
+                "today_total_sales": round(max(today_orders_sales, final_shift_sales), 2)
             }
         })
 

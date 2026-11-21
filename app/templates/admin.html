@@ -4623,6 +4623,7 @@
                     alert(`✅ تمت تسوية وتصفية ترابيزة ${tableNum} بنجاح!\nالترابيزة الآن متاحة ومصفية 100% لزبون جديد دون ظهور طلبات الزبون السابق.`);
                     fetchTablesStatus();
                     fetchOrders();
+                    fetchCurrentShift();
                 } else {
                     alert('حدث خطأ أثناء التسوية: ' + (data.detail || ''));
                 }
@@ -5306,6 +5307,7 @@
                     }
                     fetchTablesStatus();
                     fetchOrders();
+                    fetchCurrentShift();
                 } else {
                     alert('⚠️ ' + (data.detail || 'تعذر تعديل الصنف'));
                 }
@@ -5343,13 +5345,21 @@
                         badge.style.background = 'rgba(40, 167, 69, 0.2)';
                     }
 
+                    const todaySalesVal = currentShiftData.today_total_sales !== undefined ? currentShiftData.today_total_sales : currentShiftData.total_sales;
                     box.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 12px;">
                             <div>
-                                <h2 style="font-size: 20px; font-weight: 900;"><i class="fa-solid fa-circle-check" style="color: #28a745;"></i> وردية نشطة: ${currentShiftData.cashier_name}</h2>
-                                <p style="font-size: 12px; color: var(--cezar-gold);">بدأت في: ${currentShiftData.start_time}</p>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <h2 style="font-size: 20px; font-weight: 900; margin: 0;"><i class="fa-solid fa-circle-check" style="color: #4ADE80;"></i> وردية نشطة: ${currentShiftData.cashier_name}</h2>
+                                    <span style="background: rgba(34, 197, 94, 0.2); color: #4ADE80; border: 1px solid #4ADE80; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 800;">شيفت جاري</span>
+                                </div>
+                                <p style="font-size: 12px; color: #E5D5C5; margin: 4px 0 0 0;">بدأت في: ${currentShiftData.start_time} • ${currentShiftData.orders_count || 0} طلب</p>
                             </div>
-                            <div style="display: flex; gap: 8px;">
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                <div style="background: rgba(232, 93, 4, 0.25); border: 1.5px solid var(--cezar-orange); padding: 6px 14px; border-radius: 10px; text-align: center;">
+                                    <div style="font-size: 10.5px; color: #FFAA5A; font-weight: 800;">إجمالي مبيعات اليوم بالكامل</div>
+                                    <div style="font-size: 18px; font-weight: 900; color: #FFF;">${todaySalesVal} ج</div>
+                                </div>
                                 <button onclick="openModal('addExpenseModal')" style="background: rgba(220, 53, 69, 0.9); color: white; border: none; padding: 8px 14px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer;">
                                     <i class="fa-solid fa-hand-holding-dollar"></i> تسجيل مصروف
                                 </button>
@@ -5359,26 +5369,30 @@
                             </div>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; text-align: center;">
-                            <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 12px;">
-                                <div style="font-size: 11px; color: #ddd;">كاش البداية</div>
-                                <div style="font-size: 16px; font-weight: 900;">${currentShiftData.starting_cash} ج</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; text-align: center;">
+                            <div style="background: rgba(255,255,255,0.08); padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                <div style="font-size: 11px; color: #CBD5E1;">مبيعات الوردية الحالية</div>
+                                <div style="font-size: 17px; font-weight: 900; color: #38BDF8;">${currentShiftData.total_sales} ج</div>
                             </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 12px;">
-                                <div style="font-size: 11px; color: #ddd;">مبيعات الكاش</div>
-                                <div style="font-size: 16px; font-weight: 900; color: #4ade80;">+${currentShiftData.cash_sales} ج</div>
+                            <div style="background: rgba(255,255,255,0.08); padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                <div style="font-size: 11px; color: #CBD5E1;">كاش البداية</div>
+                                <div style="font-size: 16px; font-weight: 900; color: #FFF;">${currentShiftData.starting_cash} ج</div>
                             </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 12px;">
-                                <div style="font-size: 11px; color: #ddd;">مبيعات الفيزا</div>
-                                <div style="font-size: 16px; font-weight: 900; color: #60a5fa;">${currentShiftData.visa_sales} ج</div>
+                            <div style="background: rgba(255,255,255,0.08); padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                <div style="font-size: 11px; color: #CBD5E1;">مبيعات الكاش بالدرج (+)</div>
+                                <div style="font-size: 16px; font-weight: 900; color: #4ADE80;">+${currentShiftData.cash_sales} ج</div>
                             </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 12px;">
-                                <div style="font-size: 11px; color: #ddd;">المصروفات الخارجه</div>
-                                <div style="font-size: 16px; font-weight: 900; color: #f87171;">-${currentShiftData.total_expenses} ج</div>
+                            <div style="background: rgba(255,255,255,0.08); padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                <div style="font-size: 11px; color: #CBD5E1;">مبيعات الفيزا (إلكتروني)</div>
+                                <div style="font-size: 16px; font-weight: 900; color: #818CF8;">${currentShiftData.visa_sales} ج</div>
                             </div>
-                            <div style="background: rgba(232, 93, 4, 0.4); padding: 10px; border-radius: 12px; border: 1px solid var(--cezar-orange);">
-                                <div style="font-size: 11px; color: #FFF;">الكاش المفترض في الدرج</div>
-                                <div style="font-size: 18px; font-weight: 900; color: #FFD166;">${currentShiftData.expected_cash} ج</div>
+                            <div style="background: rgba(255,255,255,0.08); padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                <div style="font-size: 11px; color: #CBD5E1;">المصروفات الخارجة (-)</div>
+                                <div style="font-size: 16px; font-weight: 900; color: #F87171;">-${currentShiftData.total_expenses} ج</div>
+                            </div>
+                            <div style="background: rgba(232, 93, 4, 0.45); padding: 10px 8px; border-radius: 12px; border: 1.5px solid #FF8800;">
+                                <div style="font-size: 11px; color: #FFE8D6; font-weight: 800;">الكاش المطلوب بالدرج (=)</div>
+                                <div style="font-size: 19px; font-weight: 900; color: #FFD166;">${currentShiftData.expected_cash} ج</div>
                             </div>
                         </div>
                     `;
@@ -5392,15 +5406,22 @@
                         badge.style.background = 'rgba(220, 53, 69, 0.2)';
                     }
 
+                    const todaySalesVal = (data && data.today_total_sales !== undefined) ? data.today_total_sales : 0;
                     box.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
                             <div>
-                                <h2 style="font-size: 18px; font-weight: 900;"><i class="fa-solid fa-lock" style="color: #ffc107;"></i> لا توجد وردية مفتوحة حالياً</h2>
-                                <p style="font-size: 12px; color: var(--cezar-gold);">يجب فتح وردية جديدة لبدء تسجيل المبيعات وحسابات الدرج</p>
+                                <h2 style="font-size: 18px; font-weight: 900; margin: 0 0 6px 0;"><i class="fa-solid fa-lock" style="color: #FBBF24;"></i> لا توجد وردية مفتوحة حالياً</h2>
+                                <p style="font-size: 12px; color: #E5D5C5; margin: 0;">يجب فتح وردية جديدة لبدء تسجيل المبيعات وحسابات الدرج.</p>
                             </div>
-                            <button onclick="openModal('openShiftModal')" class="pin-btn" style="margin: 0; width: auto; background: #28a745;">
-                                <i class="fa-solid fa-lock-open"></i> فتح وردية جديدة
-                            </button>
+                            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                                <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 10px; text-align: center;">
+                                    <div style="font-size: 10.5px; color: #DDD;">مبيعات اليوم حتى الآن:</div>
+                                    <div style="font-size: 18px; font-weight: 900; color: #4ADE80;">${todaySalesVal} ج</div>
+                                </div>
+                                <button onclick="openModal('openShiftModal')" class="pin-btn" style="margin: 0; width: auto; background: #28a745; font-size: 13px; padding: 8px 16px;">
+                                    <i class="fa-solid fa-lock-open"></i> فتح وردية جديدة
+                                </button>
+                            </div>
                         </div>
                     `;
                 }
@@ -5439,9 +5460,22 @@
 
         function openCloseShiftModal() {
             if (!currentShiftData) return;
+            const todaySalesVal = currentShiftData.today_total_sales !== undefined ? currentShiftData.today_total_sales : currentShiftData.total_sales;
             document.getElementById('closeShiftExpectedBox').innerHTML = `
-                💰 <strong>الكاش المفترض وجوده في الدرج:</strong> ${currentShiftData.expected_cash} جنيه<br>
-                (كاش البداية: ${currentShiftData.starting_cash} ج + مبيعات كاش: ${currentShiftData.cash_sales} ج - مصروفات: ${currentShiftData.total_expenses} ج)
+                <div style="background: #FEF3C7; border: 1.5px solid #FDE68A; padding: 12px; border-radius: 10px; margin-bottom: 12px; text-align: right;">
+                    <div style="font-size: 14px; font-weight: 900; color: #92400E; margin-bottom: 6px;">
+                        💰 الكاش المطلوب توريده من الدرج: <span style="font-size: 17px; color: #B45309;">${currentShiftData.expected_cash} جنيه</span>
+                    </div>
+                    <div style="font-size: 11.5px; color: #78350F; line-height: 1.6; font-weight: 700;">
+                        معادلة الدرج = كاش البداية (${currentShiftData.starting_cash} ج) + مبيعات كاش بالوردية (${currentShiftData.cash_sales} ج) - المصروفات (${currentShiftData.total_expenses} ج)
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11.5px; font-weight: 800; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px; border-radius: 8px;">
+                    <div>مبيعات الوردية: <span style="color: #0284C7;">${currentShiftData.total_sales} ج</span></div>
+                    <div>إجمالي مبيعات اليوم: <span style="color: #059669;">${todaySalesVal} ج</span></div>
+                    <div>مبيعات الفيزا: <span style="color: #4F46E5;">${currentShiftData.visa_sales} ج</span></div>
+                    <div>المصروفات والسلف: <span style="color: #DC2626;">-${currentShiftData.total_expenses} ج</span></div>
+                </div>
             `;
             document.getElementById('closeShiftModal').style.display = 'flex';
         }
@@ -5487,6 +5521,8 @@
                 </div>
                 <div class="divider"></div>
                 <div style="font-size: 12px; line-height: 1.8;">
+                    <div style="display: flex; justify-content: space-between; font-weight: 800; color: #0284C7;"><span>مبيعات الوردية:</span> <strong>${s.total_sales} ج</strong></div>
+                    ${s.today_total_sales ? `<div style="display: flex; justify-content: space-between; font-weight: 800; color: #059669;"><span>إجمالي مبيعات اليوم:</span> <strong>${s.today_total_sales} ج</strong></div>` : ''}
                     <div style="display: flex; justify-content: space-between;"><span>كاش البداية:</span> <strong>${s.starting_cash} ج</strong></div>
                     <div style="display: flex; justify-content: space-between;"><span>مبيعات الكاش (+):</span> <strong>${s.cash_sales} ج</strong></div>
                     <div style="display: flex; justify-content: space-between;"><span>مبيعات الفيزا:</span> <strong>${s.visa_sales} ج</strong></div>
