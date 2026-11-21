@@ -50,6 +50,44 @@ def auto_migrate_columns():
             conn.commit()
         except Exception:
             pass
+
+        # Migrate inventory_items columns
+        try:
+            conn.execute(text("ALTER TABLE inventory_items ADD COLUMN cost_per_unit FLOAT DEFAULT 0.0"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE inventory_items ADD COLUMN min_alert_stock FLOAT DEFAULT 5.0"))
+            conn.commit()
+        except Exception:
+            pass
+
+        # Migrate suppliers columns
+        try:
+            conn.execute(text("ALTER TABLE suppliers ADD COLUMN current_balance FLOAT DEFAULT 0.0"))
+            conn.commit()
+        except Exception:
+            pass
+
+        # Migrate purchase_invoices columns
+        try:
+            conn.execute(text("ALTER TABLE purchase_invoices ADD COLUMN remaining_amount FLOAT DEFAULT 0.0"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE purchase_invoices ADD COLUMN payment_status VARCHAR(50) DEFAULT 'مدفوع بالكامل'"))
+            conn.commit()
+        except Exception:
+            pass
+
+        # Migrate reservations columns
+        try:
+            conn.execute(text("ALTER TABLE reservations ADD COLUMN deposit FLOAT DEFAULT 0.0"))
+            conn.commit()
+        except Exception:
+            pass
         
         for col_name, col_type in columns_to_add:
             try:
@@ -513,6 +551,12 @@ def get_orders():
             TableOrder.status != "نداء ويتر"
         ).scalar() or 0.0
 
+        total_deposits = db.query(func.sum(Reservation.deposit)).filter(
+            Reservation.status != "ملغي"
+        ).scalar() or 0.0
+
+        total_sales += total_deposits
+
         return jsonify({
             "stats": {
                 "total_orders": total_orders,
@@ -539,7 +583,7 @@ def get_orders():
                     "delivery_fee": o.delivery_fee or 0.0,
                     "delivery_driver": o.delivery_driver,
                     "delivery_status": o.delivery_status,
-                    "created_at": o.created_at.strftime("%I:%M %p") if o.created_at else ""
+                    "created_at": o.created_at.strftime("%Y-%m-%d %I:%M %p") if o.created_at else ""
                 }
                 for o in orders
             ]
@@ -610,9 +654,23 @@ def get_table_bill(table_number):
             TableOrder.total_price > 0
         ).all()
         total_bill = sum(o.total_price for o in active_orders)
+        
+        # Check active reservation deposit for this table
+        active_res = db.query(Reservation).filter(
+            Reservation.table_number == table_number,
+            Reservation.status.in_(["مؤكد", "حاضر", "نشط"]),
+            Reservation.deposit > 0
+        ).order_by(desc(Reservation.id)).first()
+        deposit_amount = float(active_res.deposit) if active_res else 0.0
+        cust_name = active_res.customer_name if active_res else (active_orders[0].customer_name if active_orders else f"ترابيزة {table_number}")
+        net_bill = max(0.0, round(total_bill - deposit_amount, 2))
+
         return jsonify({
             "table_number": table_number,
             "total_bill": round(total_bill, 2),
+            "deposit_amount": round(deposit_amount, 2),
+            "net_bill": round(net_bill, 2),
+            "customer_name": cust_name,
             "orders_count": len(active_orders),
             "orders": [
                 {
@@ -621,7 +679,7 @@ def get_table_bill(table_number):
                     "total_price": o.total_price,
                     "status": o.status,
                     "notes": o.notes or "",
-                    "created_at": o.created_at.strftime("%I:%M %p") if o.created_at else ""
+                    "created_at": o.created_at.strftime("%Y-%m-%d %I:%M %p") if o.created_at else ""
                 }
                 for o in active_orders
             ]
@@ -637,10 +695,123 @@ def settle_table_bill(table_number):
             TableOrder.status != "ملغي",
             TableOrder.status != "تمت التسوية"
         ).all()
+        total_bill = sum(o.total_price for o in orders)
         for o in orders:
             o.status = "تمت التسوية"
+
+        # Check and complete table reservation if present
+        active_res = db.query(Reservation).filter(
+            Reservation.table_number == table_number,
+            Reservation.status.in_(["مؤكد", "حاضر", "نشط"])
+        ).order_by(desc(Reservation.id)).first()
+        deposit_amount = float(active_res.deposit) if (active_res and active_res.deposit) else 0.0
+        if active_res:
+            active_res.status = "مكتمل"
+
         db.commit()
-        return jsonify({"status": "success", "message": f"تمت تسوية حساب ترابيزة {table_number} وإفراغها بنجاح!", "table_number": table_number})
+        return jsonify({
+            "status": "success",
+            "message": f"تمت تسوية حساب ترابيزة {table_number} وإفراغها بنجاح!",
+            "table_number": table_number,
+            "total_bill": round(total_bill, 2),
+            "deposit_amount": round(deposit_amount, 2),
+            "net_bill": max(0.0, round(total_bill - deposit_amount, 2)),
+            "orders_count": len(orders)
+        })
+
+
+@app.route("/api/orders/<int:order_id>/adjust-item", methods=["POST"])
+@app.route("/api/cezar/orders/<int:order_id>/adjust-item", methods=["POST"])
+def adjust_order_item(order_id):
+    import re
+    data = request.get_json(silent=True) or {}
+    item_index = data.get("item_index")
+    action = data.get("action", "decrease")  # "decrease" or "delete"
+    reason = (data.get("reason") or "تعديل بالصالة").strip()
+    manager_pin = (data.get("manager_pin") or "").strip()
+    manager_name = (data.get("manager_name") or "مدير الصالة").strip()
+
+    with SessionLocal() as db:
+        order = db.query(TableOrder).filter(TableOrder.id == order_id).first()
+        if not order:
+            return jsonify({"detail": "الطلب غير موجود", "status": "error"}), 404
+
+        if order.status in ["تمت التسوية", "ملغي"]:
+            return jsonify({"detail": "لا يمكن تعديل طلب تمت تسويته أو ملغي", "status": "error"}), 400
+
+        lines = [l.strip() for l in (order.items_summary or "").split("\n") if l.strip()]
+        if item_index is None or item_index < 0 or item_index >= len(lines):
+            return jsonify({"detail": "رقم الصنف غير صحيح في الفاتورة", "status": "error"}), 400
+
+        target_line = lines[item_index]
+        m = re.match(r'^(?:-\s*)?(\d+)x\s+([^:\[]+)(?:\[(.*?)\])?\s*:\s*([\d.]+)\s*ج?', target_line)
+        if m:
+            qty = int(m.group(1))
+            item_name = m.group(2).strip()
+            cust = (m.group(3) or "").strip()
+            cust_str = f" [{cust}]" if cust else ""
+            line_total = float(m.group(4))
+            unit_price = round(line_total / max(1, qty), 2)
+        else:
+            qty = 1
+            item_name = target_line.split(":")[0].replace("-", "").strip()
+            cust_str = ""
+            line_total = order.total_price / max(1, len(lines))
+            unit_price = line_total
+
+        deduct_price = 0.0
+        void_qty = 0
+
+        if action == "decrease" and qty > 1:
+            new_qty = qty - 1
+            new_line_total = round(unit_price * new_qty, 2)
+            deduct_price = unit_price
+            void_qty = 1
+            lines[item_index] = f"- {new_qty}x {item_name}{cust_str}: {new_line_total:g} ج"
+        else:
+            deduct_price = line_total
+            void_qty = qty
+            lines.pop(item_index)
+
+        order.total_price = max(0.0, round(order.total_price - deduct_price, 2))
+        order.items_summary = "\n".join(lines)
+        if not lines or order.total_price <= 0:
+            order.status = "ملغي"
+
+        current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
+        if current_shift and deduct_price > 0:
+            current_shift.total_sales = max(0.0, round(current_shift.total_sales - deduct_price, 2))
+            if order.payment_method == "فيزا":
+                current_shift.visa_sales = max(0.0, round(current_shift.visa_sales - deduct_price, 2))
+            else:
+                current_shift.cash_sales = max(0.0, round(current_shift.cash_sales - deduct_price, 2))
+
+        action_title = "تقليل كمية صنف" if (action == "decrease" and void_qty == 1 and qty > 1) else "إلغاء وحذف صنف"
+        db.add(VoidAuditLog(
+            order_id=order.id,
+            table_number=order.table_number,
+            items_summary=f"{void_qty}x {item_name}{cust_str} (-{deduct_price} ج)",
+            total_amount=deduct_price,
+            reason=reason,
+            notes=f"تم التعديل بواسطة: {manager_name}",
+            manager_name=manager_name,
+            manager_pin_used=manager_pin,
+            cashier_name="كاشير سيزر",
+            action_type=action_title,
+            created_at=datetime.utcnow()
+        ))
+
+        db.commit()
+        return jsonify({
+            "status": "success",
+            "message": f"✅ تم {action_title} ({item_name}) وتحديث الفاتورة بنجاح!",
+            "order": {
+                "id": order.id,
+                "items_summary": order.items_summary,
+                "total_price": order.total_price,
+                "status": order.status
+            }
+        })
 
 
 
@@ -1088,7 +1259,7 @@ def get_expenses():
                     "amount": e.amount,
                     "category": e.category,
                     "notes": e.notes or "",
-                    "created_at": e.created_at.strftime("%I:%M %p") if e.created_at else ""
+                    "created_at": e.created_at.strftime("%Y-%m-%d %I:%M %p") if e.created_at else ""
                 }
                 for e in expenses
             ]
@@ -1149,19 +1320,25 @@ def create_reservation():
         return jsonify({"detail": "اسم العميل والتليفون وموعد الحجز مطلوبين"}), 400
 
     with SessionLocal() as db:
+        dep_val = float(data.get("deposit") or 0.0)
         res = Reservation(
             customer_name=name,
             customer_phone=phone,
             table_number=int(data.get("table_number") or 0) if data.get("table_number") else None,
             guests_count=int(data.get("guests_count") or 2),
             reservation_time=res_time,
-            deposit=float(data.get("deposit") or 0.0),
+            deposit=dep_val,
             notes=data.get("notes") or "",
             status="مؤكد"
         )
         db.add(res)
+        if dep_val > 0:
+            current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
+            if current_shift:
+                current_shift.total_sales = round((current_shift.total_sales or 0.0) + dep_val, 2)
+                current_shift.cash_sales = round((current_shift.cash_sales or 0.0) + dep_val, 2)
         db.commit()
-        return jsonify({"status": "success", "message": f"تم تسجيل حجز {res.customer_name} بنجاح!", "id": res.id})
+        return jsonify({"status": "success", "message": f"تم تسجيل حجز {res.customer_name} بنجاح وإضافة العربون ({dep_val} ج) لرصيد اليوم!", "id": res.id})
 
 
 @app.route("/api/reservations/<int:res_id>/status", methods=["PUT"])
@@ -1204,7 +1381,7 @@ def get_waiting_list():
                     "status": w.status,
                     "assigned_table": w.assigned_table,
                     "notes": w.notes or "",
-                    "created_at": w.created_at.strftime("%I:%M %p") if w.created_at else ""
+                    "created_at": w.created_at.strftime("%Y-%m-%d %I:%M %p") if w.created_at else ""
                 }
                 for w in waiters
             ]
@@ -1373,6 +1550,25 @@ def delete_promo_code(code_id):
 def get_inventory():
     with SessionLocal() as db:
         items = db.query(InventoryItem).order_by(InventoryItem.name).all()
+        if not items:
+            try:
+                try:
+                    from .seed import DEFAULT_INVENTORY
+                except ImportError:
+                    from seed import DEFAULT_INVENTORY
+                for inv in DEFAULT_INVENTORY:
+                    db.add(InventoryItem(
+                        name=inv["name"],
+                        unit=inv["unit"],
+                        current_stock=inv["current_stock"],
+                        min_alert_stock=inv["min_alert_stock"],
+                        cost_per_unit=inv["cost_per_unit"]
+                    ))
+                db.commit()
+                items = db.query(InventoryItem).order_by(InventoryItem.name).all()
+            except Exception as e:
+                print(f"Auto-seed inventory warning: {e}")
+
         alerts = []
         inv_list = []
         for i in items:
@@ -1406,15 +1602,15 @@ def get_inventory():
 @app.route("/api/inventory", methods=["POST"])
 @app.route("/api/cezar/inventory", methods=["POST"])
 def add_inventory_item():
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     name_str = (data.get("name") or "").strip()
     if not name_str:
-        return jsonify({"detail": "يرجى كتابة اسم المادة الخام"}), 400
+        return jsonify({"detail": "يرجى كتابة اسم المادة الخام", "status": "error"}), 400
 
     with SessionLocal() as db:
         existing = db.query(InventoryItem).filter(InventoryItem.name == name_str).first()
         if existing:
-            return jsonify({"detail": f"المادة الخام '{name_str}' مسجلة بالفعل في المخزن برصيد ({existing.current_stock} {existing.unit})! يمكنك تعديل رصيدها مباشرة من الجدول."}), 400
+            return jsonify({"detail": f"المادة الخام '{name_str}' مسجلة بالفعل في المخزن برصيد ({existing.current_stock} {existing.unit})! يمكنك تعديل رصيدها مباشرة من الجدول.", "status": "error"}), 400
 
         stock_val = data.get("current_stock") if data.get("current_stock") is not None else data.get("quantity")
         min_val = data.get("min_alert_stock") if data.get("min_alert_stock") is not None else data.get("min_quantity")
@@ -1943,6 +2139,21 @@ def record_salary_payment():
             notes=data.get("notes", "")
         )
         db.add(pay)
+        if pay.payment_type in ["سلفة", "سلفة على الراتب", "راتب شهري", "مكافأة"]:
+            try:
+                current_shift = db.query(Shift).filter(Shift.is_closed == False).order_by(Shift.id.desc()).first()
+                exp = Expense(
+                    category="رواتب وسلف موظفين",
+                    amount=pay.amount,
+                    notes=f"{pay.payment_type}: {emp.name} - {pay.notes or ''}".strip(),
+                    shift_id=current_shift.id if current_shift else None,
+                    created_at=p_date
+                )
+                db.add(exp)
+                if current_shift:
+                    current_shift.total_expenses = (current_shift.total_expenses or 0.0) + pay.amount
+            except Exception as e:
+                print(f"Shift expense record warning: {e}")
         db.commit()
         return jsonify({"status": "success", "message": f"تم تسجيل صرف {pay.payment_type} للموظف ({emp.name}) بنجاح!"})
 
@@ -2202,7 +2413,7 @@ def get_inventory_waste():
                     "waste_type": r.waste_type,
                     "cost_loss": r.cost_loss,
                     "reason": r.reason,
-                    "date": r.date,
+                    "date": f"{r.date} {r.time}" if (r.date and r.time) else (r.date or ""),
                     "time": r.time,
                     "responsible_name": r.responsible_name,
                     "notes": r.notes
@@ -2311,7 +2522,7 @@ def get_purchases():
                 "supplier_id": inv.supplier_id,
                 "supplier_name": supp.name if supp else "مورد عام / نقدي",
                 "supplier_phone": supp.phone if supp else "",
-                "date": inv.date,
+                "date": inv.created_at.strftime("%Y-%m-%d %I:%M %p") if inv.created_at else inv.date,
                 "total_amount": inv.total_amount,
                 "paid_amount": inv.paid_amount,
                 "remaining_amount": inv.remaining_amount,
@@ -2401,29 +2612,131 @@ def record_purchase_invoice():
             if raw_item:
                 raw_item.current_stock = round((raw_item.current_stock or 0.0) + p["qty"], 3)
                 if p["uprice"] > 0:
-                    raw_item.cost_price = p["uprice"]
+                    raw_item.cost_per_unit = p["uprice"]
             else:
                 db.add(InventoryItem(
                     name=p["name"],
-                    category="مواد خام",
                     unit=p["unit"],
                     current_stock=p["qty"],
-                    min_limit=5.0,
-                    cost_price=p["uprice"]
+                    min_alert_stock=5.0,
+                    cost_per_unit=p["uprice"]
                 ))
 
         if supplier_id and remaining > 0:
             supp = db.query(Supplier).filter(Supplier.id == supplier_id).first()
             if supp:
-                supp.total_debt = round((supp.total_debt or 0.0) + remaining, 2)
+                supp.current_balance = round((supp.current_balance or 0.0) + remaining, 2)
 
         db.commit()
         return jsonify({
             "status": "success",
-            "message": f"تم حفظ فاتورة التوريد بنجاح! الإجمالي: {total_amount:g} ج وتحديث أرصدة المخزن فوراً.",
+            "message": f"تم حفظ فاتورة التوريد بنجاح! الإجمالي: {total_amount:g} ج وزيادة أرصدة الخامات بالمخزن فوراً.",
             "invoice_id": inv.id,
             "total_amount": total_amount,
             "remaining_amount": remaining
+        })
+
+
+@app.route("/api/suppliers/<int:supplier_id>/pay", methods=["POST"])
+@app.route("/api/cezar/suppliers/<int:supplier_id>/pay", methods=["POST"])
+def pay_supplier_debt(supplier_id):
+    data = request.get_json(silent=True) or {}
+    amount = float(data.get("amount") or 0.0)
+    notes = (data.get("notes") or "سداد دفعة للمورد").strip()
+    pay_method = (data.get("payment_method") or "كاش").strip()
+
+    if amount <= 0:
+        return jsonify({"detail": "المبلغ المسدد يجب أن يكون أكبر من الصفر", "status": "error"}), 400
+
+    with SessionLocal() as db:
+        supp = db.query(Supplier).filter(Supplier.id == supplier_id).first()
+        if not supp:
+            return jsonify({"detail": "المورد غير موجود", "status": "error"}), 404
+
+        old_bal = supp.current_balance or 0.0
+        new_bal = max(0.0, round(old_bal - amount, 2))
+        supp.current_balance = new_bal
+
+        # Record cash outflow in expenses
+        db.add(Expense(
+            title=f"سداد للمورد: {supp.name}",
+            category="مشتريات خامات وموردين",
+            amount=amount,
+            notes=f"{notes} - الرصيد السابق: {old_bal:g} ج | الرصيد الحالي: {new_bal:g} ج",
+            expense_date=datetime.utcnow()
+        ))
+
+        # Also update any open purchase invoice for this supplier if applicable
+        open_invs = db.query(PurchaseInvoice).filter(
+            PurchaseInvoice.supplier_id == supplier_id,
+            PurchaseInvoice.remaining_amount > 0
+        ).order_by(PurchaseInvoice.id.asc()).all()
+        rem_pay = amount
+        for inv in open_invs:
+            if rem_pay <= 0:
+                break
+            can_pay = min(inv.remaining_amount, rem_pay)
+            inv.paid_amount = round((inv.paid_amount or 0.0) + can_pay, 2)
+            inv.remaining_amount = max(0.0, round(inv.remaining_amount - can_pay, 2))
+            inv.payment_status = "مدفوع بالكامل" if inv.remaining_amount == 0 else "مدفوع جزئياً"
+            rem_pay -= can_pay
+
+        db.commit()
+        return jsonify({
+            "status": "success",
+            "message": f"✅ تم تسجيل سداد {amount:g} ج للمورد ({supp.name}) بنجاح! الرصيد المتبقي: {new_bal:g} ج",
+            "new_balance": new_bal
+        })
+
+
+@app.route("/api/suppliers/<int:supplier_id>/statement", methods=["GET"])
+@app.route("/api/cezar/suppliers/<int:supplier_id>/statement", methods=["GET"])
+def get_supplier_statement(supplier_id):
+    with SessionLocal() as db:
+        supp = db.query(Supplier).filter(Supplier.id == supplier_id).first()
+        if not supp:
+            return jsonify({"detail": "المورد غير موجود", "status": "error"}), 404
+
+        invoices = db.query(PurchaseInvoice).filter(PurchaseInvoice.supplier_id == supplier_id).order_by(desc(PurchaseInvoice.id)).all()
+        inv_list = []
+        total_invoiced = 0.0
+        total_paid = 0.0
+        total_remaining = 0.0
+
+        for inv in invoices:
+            total_invoiced += (inv.total_amount or 0.0)
+            total_paid += (inv.paid_amount or 0.0)
+            total_remaining += (inv.remaining_amount or 0.0)
+            items = db.query(PurchaseInvoiceItem).filter(PurchaseInvoiceItem.invoice_id == inv.id).all()
+            inv_list.append({
+                "id": inv.id,
+                "invoice_number": inv.invoice_number,
+                "date": inv.date,
+                "total_amount": inv.total_amount,
+                "paid_amount": inv.paid_amount,
+                "remaining_amount": inv.remaining_amount,
+                "payment_status": inv.payment_status,
+                "notes": inv.notes or "",
+                "items": [{"name": it.item_name, "quantity": it.quantity, "unit": it.unit, "unit_price": it.unit_price, "total": it.total_price} for it in items]
+            })
+
+        return jsonify({
+            "status": "success",
+            "supplier": {
+                "id": supp.id,
+                "name": supp.name,
+                "company_name": supp.company_name or "-",
+                "phone": supp.phone or "-",
+                "current_balance": supp.current_balance or 0.0,
+                "notes": supp.notes or ""
+            },
+            "summary": {
+                "total_invoiced": round(total_invoiced, 2),
+                "total_paid": round(total_paid, 2),
+                "total_remaining_debt": round(supp.current_balance or 0.0, 2),
+                "invoices_count": len(invoices)
+            },
+            "invoices": inv_list
         })
 
 

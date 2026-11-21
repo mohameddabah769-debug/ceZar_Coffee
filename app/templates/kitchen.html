@@ -331,10 +331,16 @@
         </div>
     </header>
 
-    <!-- Filter Bar: Hall Tables Only -->
-    <nav class="filter-bar">
-        <button class="filter-btn active" style="cursor: default;">
-            <i class="fa-solid fa-chair" style="color: var(--cezar-orange);"></i> طلبات صالة الكافيه قيد التحضير (<span id="countAll">0</span>)
+    <!-- Filter Bar: Separation of Bar and Station -->
+    <nav class="filter-bar" style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="filter-btn active" onclick="setKdsFilter('all', this)">
+            <i class="fa-solid fa-layer-group"></i> جميع الطلبات (<span id="countAll">0</span>)
+        </button>
+        <button class="filter-btn" onclick="setKdsFilter('bar', this)" style="background: rgba(217, 119, 6, 0.15); border-color: #D97706; color: #F59E0B;">
+            <i class="fa-solid fa-mug-saucer"></i> ☕ قسم البار (مشروبات: <span id="countBar">0</span>)
+        </button>
+        <button class="filter-btn" onclick="setKdsFilter('station', this)" style="background: rgba(139, 92, 246, 0.15); border-color: #8B5CF6; color: #A78BFA;">
+            <i class="fa-solid fa-stroopwafel"></i> 🧇 قسم الستيشن (حلويات ومطبخ: <span id="countStation">0</span>)
         </button>
     </nav>
 
@@ -456,17 +462,43 @@
             renderKdsGrid();
         }
 
+        const stationKeywords = ["وافل", "كريب", "بان كيك", "سينابون", "دونات", "كيك", "تشيز كيك", "براونيز", "ساندوتش", "سندوتش", "برجر", "فطير", "مولتن", "ايس كريم", "آيس كريم", "توست", "بطاطس", "مخبوزات", "حلويات", "ديزرت"];
+        function checkIsStationItem(title) {
+            const t = (title || '').toLowerCase();
+            return stationKeywords.some(k => t.includes(k));
+        }
+
         function renderKdsGrid() {
             const grid = document.getElementById('kdsGrid');
             grid.innerHTML = '';
 
-            let list = kdsOrders;
-            if (activeFilter === 'hall') list = list.filter(o => o.order_type === 'صالة');
-            
-            
+            // Compute counts
+            let barOrdersCount = 0;
+            let stationOrdersCount = 0;
+            kdsOrders.forEach(o => {
+                const lines = (o.items_summary || '').split('\n').filter(l => l.trim());
+                const hasBar = lines.some(l => !checkIsStationItem(l));
+                const hasStation = lines.some(l => checkIsStationItem(l));
+                if (hasBar) barOrdersCount++;
+                if (hasStation) stationOrdersCount++;
+            });
 
-            // Counts
             if (document.getElementById('countAll')) document.getElementById('countAll').textContent = kdsOrders.length;
+            if (document.getElementById('countBar')) document.getElementById('countBar').textContent = barOrdersCount;
+            if (document.getElementById('countStation')) document.getElementById('countStation').textContent = stationOrdersCount;
+
+            let list = kdsOrders;
+            if (activeFilter === 'bar') {
+                list = list.filter(o => {
+                    const lines = (o.items_summary || '').split('\n').filter(l => l.trim());
+                    return lines.some(l => !checkIsStationItem(l));
+                });
+            } else if (activeFilter === 'station') {
+                list = list.filter(o => {
+                    const lines = (o.items_summary || '').split('\n').filter(l => l.trim());
+                    return lines.some(l => checkIsStationItem(l));
+                });
+            }
 
             const newCount = kdsOrders.filter(o => o.status === 'جديد').length;
             const prepCount = kdsOrders.filter(o => o.status === 'جاري التحضير' || o.status === 'قيد التحضير').length;
@@ -474,10 +506,11 @@
             document.getElementById('kdsPrepCount').textContent = prepCount;
 
             if (list.length === 0) {
+                const emptyMsg = activeFilter === 'station' ? 'الستيشن هادئ! لا توجد طلبات حلويات أو مطبخ معلقة 🧇✨' : (activeFilter === 'bar' ? 'البار هادئ! لا توجد مشروبات معلقة قيد التحضير ☕✨' : 'لا توجد طلبات معلقة قيد التحضير حالياً ✨');
                 grid.innerHTML = `
                     <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #665; font-size: 16px; font-weight: 800;">
                         <i class="fa-solid fa-mug-saucer" style="font-size: 48px; color: var(--cezar-gold); margin-bottom: 14px;"></i><br>
-                        البار هادئ! لا توجد طلبات معلقة قيد التحضير حالياً ☕✨
+                        ${emptyMsg}
                     </div>
                 `;
                 return;
@@ -494,6 +527,11 @@
                 const lines = (order.items_summary || '').split('\n').filter(l => l.trim());
                 let itemsHtml = '';
                 lines.forEach(line => {
+                    const isStation = checkIsStationItem(line);
+                    // Filter line if specific view
+                    if (activeFilter === 'bar' && isStation) return;
+                    if (activeFilter === 'station' && !isStation) return;
+
                     let mainTitle = line;
                     let customTag = '';
                     if (line.includes('[') && line.includes(']')) {
@@ -505,12 +543,18 @@
                             <i class="fa-solid fa-wand-magic-sparkles"></i> <span>${customVal}</span>
                         </div>`;
                     }
+
+                    const badge = isStation 
+                        ? `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid #8B5CF6; color: #C4B5FD; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 900; margin-left: 6px;"><i class="fa-solid fa-stroopwafel"></i> ستيشن</span>`
+                        : `<span style="background: rgba(217, 119, 6, 0.2); border: 1px solid #D97706; color: #FCD34D; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 900; margin-left: 6px;"><i class="fa-solid fa-mug-saucer"></i> بار</span>`;
+
                     itemsHtml += `
-                        <div class="ticket-item">
+                        <div class="ticket-item" style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <div class="item-title">${mainTitle}</div>
                                 ${customTag}
                             </div>
+                            <div>${badge}</div>
                         </div>
                     `;
                 });

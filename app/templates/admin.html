@@ -1310,6 +1310,34 @@
                 </div>
             </div>
 
+            <!-- Suppliers Directory Table (دليل حسابات الموردين كاش وآجل) -->
+            <div style="background: white; border-radius: 14px; border: 1.5px solid #E5E7EB; overflow-x: auto; margin-bottom: 20px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-size: 15px; font-weight: 900; color: var(--primary-espresso);">
+                        <i class="fa-solid fa-truck-ramp-box" style="color: #2563EB;"></i> دليل حسابات الموردين (كاش / آجل)
+                    </div>
+                    <span style="font-size: 11px; color: #64748B; font-weight: 800;">
+                        متابعة مديونيات الموردين وكشوف الحسابات وسداد الدفعات
+                    </span>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: right;">
+                    <thead>
+                        <tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; color: #475569; font-weight: 900;">
+                            <th style="padding: 10px 12px;">اسم المورد / المندوب</th>
+                            <th style="padding: 10px 12px;">الشركة / المطحنة</th>
+                            <th style="padding: 10px 12px;">رقم الهاتف</th>
+                            <th style="padding: 10px 12px;">نوع الحساب</th>
+                            <th style="padding: 10px 12px;">الرصيد المستحق (آجل)</th>
+                            <th style="padding: 10px 12px;">ملاحظات</th>
+                            <th style="padding: 10px 12px;">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suppliersTableBody">
+                        <tr><td colspan="7" style="text-align: center; padding: 20px; color: #9CA3AF;">جاري تحميل دليل الموردين...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
             <!-- Invoices Table -->
             <div style="background: white; border-radius: 14px; border: 1.5px solid #E5E7EB; overflow-x: auto; margin-bottom: 24px;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: right;">
@@ -3044,7 +3072,20 @@
                 </div>
                 <div style="margin-bottom: 14px;">
                     <label style="font-size: 12px; font-weight: 800;" id="quickAdvNotesLabel">سبب السلفة / بيان:</label>
-                    <input type="text" id="quickAdvNotes" class="form-control" placeholder="مثلاً: سلفة مصاريف شخصية / طارئة">
+                    <input type="text" id="quickAdvNotes" list="presetReasonsList" class="form-control" placeholder="مثلاً: سلفة مصاريف شخصية / طارئة">
+                    <datalist id="presetReasonsList">
+                        <option value="تأخير عن موعد بداية الشيفت">
+                        <option value="غياب بدون إذن مسبق">
+                        <option value="كسر أدوات أو كاسات">
+                        <option value="إهدار خامات في البار">
+                        <option value="شكوى عميل / سوء خدمة">
+                        <option value="خصم إداري وجزاء">
+                        <option value="مكافأة تميز وإنتاجية">
+                        <option value="بونص تارجت مبيعات">
+                        <option value="سلفة نقدية شخصية">
+                        <option value="سلفة مصاريف طارئة">
+                    </datalist>
+                    <div id="quickReasonBadges" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;"></div>
                 </div>
                 <div id="quickAdvNotice" style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 11px; color: #92400E; font-weight: 700;">
                     <i class="fa-solid fa-triangle-exclamation"></i> سيتم خصم هذا المبلغ تلقائياً من راتب الشهر وحسابه في الكشكول.
@@ -3680,6 +3721,54 @@
             <button class="pin-btn" onclick="submitNewSupplier()" style="background: #4B5563; font-weight: 900;">
                 <i class="fa-solid fa-check"></i> حفظ المورد
             </button>
+        </div>
+    </div>
+
+    <!-- Pay Supplier Debt Modal -->
+    <div class="pin-modal-overlay" id="paySupplierModal" style="display: none;">
+        <div class="pin-card" style="max-width: 420px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 900; color: #047857;">
+                    <i class="fa-solid fa-money-bill-wave"></i> سداد دفعة نقدية لمورد
+                </h3>
+                <button onclick="closeModal('paySupplierModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+            </div>
+            <input type="hidden" id="paySuppId">
+            <div style="background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 12px;">
+                <div style="font-weight: 900; color: var(--primary-espresso); margin-bottom: 4px;" id="paySuppName">المورد: -</div>
+                <div style="color: #DC2626; font-weight: 800;" id="paySuppDebt">المديونية المستحقة الحالية: 0 ج</div>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: 800;">المبلغ المسدد الآن (ج):</label>
+                <input type="number" step="any" id="paySuppAmount" placeholder="المبلغ المسدد" min="0" class="form-control" style="font-size: 15px; font-weight: 900;">
+            </div>
+            <div style="margin-bottom: 14px;">
+                <label style="font-size: 12px; font-weight: 800;">ملاحظات السداد / رقم الإيصال:</label>
+                <input type="text" id="paySuppNotes" placeholder="مثلاً: دفعة نقدية من حساب توريد البن" class="form-control">
+            </div>
+            <button class="pin-btn" onclick="submitSupplierPayment()" style="background: #047857; font-weight: 900;">
+                <i class="fa-solid fa-check"></i> تأكيد السداد وخصم المديونية
+            </button>
+        </div>
+    </div>
+
+    <!-- Supplier Statement Modal -->
+    <div class="pin-modal-overlay" id="supplierStatementModal" style="display: none;">
+        <div class="pin-card" style="max-width: 650px; max-height: 85vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #E2D9CF; padding-bottom: 8px;">
+                <h3 style="font-size: 16px; font-weight: 900; color: var(--primary-espresso);">
+                    <i class="fa-solid fa-file-invoice-dollar" style="color: #2563EB;"></i> كشف حساب مورد تفصيلي
+                </h3>
+                <div style="display: flex; gap: 6px;">
+                    <button class="pin-btn" onclick="printSupplierStatement()" style="margin: 0; padding: 5px 12px; background: #2563EB; font-size: 11px;">
+                        <i class="fa-solid fa-print"></i> طباعة كشف الحساب
+                    </button>
+                    <button onclick="closeModal('supplierStatementModal')" style="border: none; background: #eee; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; cursor: pointer;">&times;</button>
+                </div>
+            </div>
+            <div id="supplierStatementContent">
+                <!-- Loaded dynamically -->
+            </div>
         </div>
     </div>
 
@@ -5021,36 +5110,88 @@
                     : `<span style="background: #28a745; color: white; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 12px;">🟢 متاحة وفارغة</span>`;
 
                 if (hasOrders) {
-                    let text = data.orders.map(o => `${o.items_summary} (${o.total_price} ج)`).join('\n---\n');
-                    document.getElementById('modalTableOrdersList').textContent = text;
+                    let ordersHtml = '';
+                    data.orders.forEach((o) => {
+                        const lines = (o.items_summary || '').split('\n').filter(l => l.trim());
+                        ordersHtml += `
+                            <div style="background: white; border: 1.5px solid #E2D9CF; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #888; font-weight: 800; border-bottom: 1px solid #F3F4F6; padding-bottom: 4px; margin-bottom: 6px;">
+                                    <span><i class="fa-solid fa-receipt"></i> طلب #${o.id} • ${o.created_at || ''}</span>
+                                    <span style="color: var(--primary-espresso); font-weight: 900;">${o.total_price} ج</span>
+                                </div>
+                        `;
+                        lines.forEach((line, lineIdx) => {
+                            ordersHtml += `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed #F3F4F6; gap: 6px;">
+                                    <span style="font-weight: 800; color: #2B1810; font-size: 12px; flex: 1;">${line}</span>
+                                    <div style="display: flex; gap: 4px;">
+                                        <button onclick="adjustOrderItem(${o.id}, ${lineIdx}, 'decrease')" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer;" title="تقليل كمية هذا الصنف بمقدار 1">-1</button>
+                                        <button onclick="adjustOrderItem(${o.id}, ${lineIdx}, 'delete')" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer;" title="إلغاء وحذف الصنف بالكامل"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        ordersHtml += `</div>`;
+                    });
+
+                    if (data.deposit_amount > 0) {
+                        ordersHtml += `
+                            <div style="background: #ECFDF5; border: 1.5px solid #A7F3D0; border-radius: 8px; padding: 8px 10px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 900; color: #047857;">
+                                <span><i class="fa-solid fa-hand-holding-dollar"></i> عربون حجز مدفوع مسبقاً (${data.customer_name}):</span>
+                                <span>-${data.deposit_amount} ج</span>
+                            </div>
+                        `;
+                    }
+
+                    document.getElementById('modalTableOrdersList').innerHTML = ordersHtml;
                 } else {
-                    document.getElementById('modalTableOrdersList').textContent = 'لا توجد طلبات نشطة لهذه الترابيزة حالياً.';
+                    document.getElementById('modalTableOrdersList').innerHTML = '<div style="text-align: center; color: #888; padding: 14px;">لا توجد طلبات نشطة لهذه الترابيزة حالياً.</div>';
                 }
 
-                document.getElementById('modalTableTotal').textContent = `${data.total_bill} ج`;
+                const netDisplay = (data.deposit_amount > 0) 
+                    ? `${data.net_bill} ج (بعد خصم العربون: ${data.deposit_amount} ج)` 
+                    : `${data.total_bill} ج`;
+                document.getElementById('modalTableTotal').textContent = netDisplay;
 
                 // Set button actions
                 document.getElementById('btnModalPrintBill').onclick = () => {
                     if (!hasOrders) { alert('الترابيزة فارغة ولا توجد طلبات لطباعتها!'); return; }
+                    let depositNote = data.deposit_amount > 0 ? `\nعربون مدفوع مسبقاً: -${data.deposit_amount} ج\nصافي الحساب: ${data.net_bill} ج` : '';
                     renderReceiptSlip({
                         title: `فاتورة ترابيزة ${tableNum}`,
                         type: 'صالة',
                         headerInfo: `ترابيزة رقم ${tableNum}`,
-                        items: data.orders.map(o => o.items_summary).join('\n'),
-                        total: data.total_bill,
-                        date: new Date().toLocaleTimeString('ar-EG')
+                        items: data.orders.map(o => o.items_summary).join('\n') + depositNote,
+                        total: data.net_bill !== undefined ? data.net_bill : data.total_bill,
+                        date: new Date().toLocaleString('ar-EG')
                     });
                     document.getElementById('thermalReceiptModal').style.display = 'flex';
                 };
 
                 document.getElementById('btnModalSettleTable').onclick = async () => {
                     if (!hasOrders) { alert('الترابيزة فارغة بالفعل!'); return; }
-                    if (confirm(`هل تريد بالتأكيد تسوية حساب ترابيزة رقم ${tableNum} بقيمة ${data.total_bill} ج وإفراغها؟`)) {
+                    const confirmMsg = (data.deposit_amount > 0)
+                        ? `هل تريد بالتأكيد تسوية حساب ترابيزة رقم ${tableNum} وإفراغها؟\nإجمالي الطلبات: ${data.total_bill} ج\nخصم العربون: -${data.deposit_amount} ج\nصافي المحصل: ${data.net_bill} ج`
+                        : `هل تريد بالتأكيد تسوية حساب ترابيزة رقم ${tableNum} بقيمة ${data.total_bill} ج وإفراغها؟`;
+
+                    if (confirm(confirmMsg)) {
                         await fetch(`/api/tables/${tableNum}/settle`, { method: 'POST' });
-                        alert(`✅ تمت تسوية حساب ترابيزة ${tableNum} وإفراغها بنجاح!`);
                         closeModal('tableActionModal');
                         fetchTablesStatus();
                         fetchOrders();
+
+                        // Auto-print receipt on table settle and clear (شرط المستخدم: مع تسوية وإفراغ الطاولة تتم الطباعة)
+                        let depositLine = data.deposit_amount > 0 ? `\nعربون مدفوع مسبقاً: -${data.deposit_amount} ج\nصافي الحساب: ${data.net_bill} ج` : '';
+                        renderReceiptSlip({
+                            title: `فاتورة نهائية - ترابيزة ${tableNum}`,
+                            type: 'صالة - تسوية نهائية',
+                            headerInfo: `ترابيزة رقم ${tableNum} (${new Date().toLocaleTimeString('ar-EG')})`,
+                            items: data.orders.map(o => o.items_summary).join('\n') + depositLine,
+                            total: data.net_bill !== undefined ? data.net_bill : data.total_bill,
+                            date: new Date().toLocaleString('ar-EG')
+                        });
+                        document.getElementById('thermalReceiptModal').style.display = 'flex';
+                        setTimeout(() => { window.print(); }, 400);
                     }
                 };
 
@@ -5063,6 +5204,41 @@
 
             } catch(e) {
                 document.getElementById('modalTableOrdersList').textContent = 'تعذر تحميل بيانات الترابيزة.';
+            }
+        }
+
+        async function adjustOrderItem(orderId, itemIndex, action) {
+            const actionLabel = (action === 'decrease') ? 'تقليل كمية هذا الصنف بمقدار 1' : 'حذف وإلغاء هذا الصنف بالكامل من الفاتورة';
+            const reason = prompt(`يرجى كتابة سبب ${actionLabel} (مثلاً: طلب بالخطأ، استرجاع من العميل، تأخر التحضير):`, 'طلب بالخطأ');
+            if (reason === null) return;
+
+            const pin = prompt('أدخل رمز PIN للمدير للمصادقة على التعديل (أو اضغط موافق):', '');
+
+            try {
+                const res = await fetch(`/api/orders/${orderId}/adjust-item`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        item_index: itemIndex,
+                        action: action,
+                        reason: reason || 'تعديل بالصالة',
+                        manager_pin: pin || '',
+                        manager_name: 'مدير الصالة'
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert(data.message || '✅ تم تعديل الصنف في الفاتورة بنجاح!');
+                    if (currentActiveTableNum) {
+                        openTableDetails(currentActiveTableNum);
+                    }
+                    fetchTablesStatus();
+                    fetchOrders();
+                } else {
+                    alert('⚠️ ' + (data.detail || 'تعذر تعديل الصنف'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر لتعديل الصنف');
             }
         }
 
@@ -7350,25 +7526,261 @@
                 const tbody = document.getElementById('suppliersTableBody');
                 if (tbody) {
                     if (allSuppliers.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #888;">لا يوجد موردين مسجلين حالياً</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #888; padding: 20px;">لا يوجد موردين مسجلين حالياً</td></tr>';
                     } else {
-                        tbody.innerHTML = allSuppliers.map(s => `
-                            <tr>
-                                <td style="font-weight: 900; color: var(--primary-espresso);">${s.name}</td>
-                                <td>${s.company_name}</td>
-                                <td>${s.phone}</td>
-                                <td style="font-weight: 900; color: ${s.current_balance > 0 ? '#b91c1c' : '#15803d'};">${s.current_balance} ج</td>
-                                <td style="font-size: 12px; color: #666;">${s.notes || '-'}</td>
-                                <td>
-                                    <button onclick="deleteSupplier(${s.id})" style="border: none; background: #fee2e2; color: #dc2626; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        `).join('');
+                        tbody.innerHTML = allSuppliers.map(s => {
+                            const isDebt = (s.current_balance || 0) > 0;
+                            const typeBadge = isDebt 
+                                ? `<span style="background: #FEE2E2; color: #DC2626; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-clock"></i> آجل (مديونية)</span>`
+                                : `<span style="background: #DCFCE7; color: #16A34A; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 11px;"><i class="fa-solid fa-circle-check"></i> كاش (خالص)</span>`;
+                            const balanceColor = isDebt ? '#DC2626' : '#16A34A';
+
+                            return `
+                                <tr>
+                                    <td style="font-weight: 900; color: var(--primary-espresso);">${s.name}</td>
+                                    <td>${s.company_name || '-'}</td>
+                                    <td style="direction: ltr; text-align: right;">${s.phone || '-'}</td>
+                                    <td>${typeBadge}</td>
+                                    <td style="font-weight: 900; font-size: 14px; color: ${balanceColor};">${s.current_balance || 0} ج</td>
+                                    <td style="font-size: 12px; color: #666;">${s.notes || '-'}</td>
+                                    <td>
+                                        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                            <button onclick="openSupplierStatement(${s.id})" style="border: 1px solid #C7D2FE; background: #EEF2FF; color: #4F46E5; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 800;" title="عرض كشف حساب المورد وفواتيره">
+                                                <i class="fa-solid fa-file-invoice"></i> كشف حساب
+                                            </button>
+                                            <button onclick="openPaySupplierModal(${s.id}, '${s.name}', ${s.current_balance || 0})" style="border: 1px solid #A7F3D0; background: #ECFDF5; color: #047857; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 800;" title="تسجيل سداد دفعة نقدية للمورد">
+                                                <i class="fa-solid fa-money-bill-wave"></i> سداد دفعة
+                                            </button>
+                                            <button onclick="deleteSupplier(${s.id})" style="border: 1px solid #FECACA; background: #FEE2E2; color: #DC2626; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;" title="حذف المورد">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
                     }
                 }
             } catch(e) {}
+        }
+
+        var currentStatementSupplierData = null;
+
+        function openPaySupplierModal(suppId, suppName, debtBalance) {
+            document.getElementById('paySuppId').value = suppId;
+            document.getElementById('paySuppName').textContent = `المورد: ${suppName}`;
+            document.getElementById('paySuppDebt').textContent = `المديونية المستحقة الحالية: ${debtBalance} ج`;
+            document.getElementById('paySuppAmount').value = debtBalance > 0 ? debtBalance : '';
+            document.getElementById('paySuppNotes').value = '';
+            openModal('paySupplierModal');
+        }
+
+        async function submitSupplierPayment() {
+            const suppId = document.getElementById('paySuppId').value;
+            const amount = parseFloat(document.getElementById('paySuppAmount').value || 0);
+            const notes = document.getElementById('paySuppNotes').value.trim();
+
+            if (!suppId || amount <= 0) {
+                alert('يرجى تحديد المبلغ المسدد بشكل صحيح');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/suppliers/${suppId}/pay`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: amount, notes: notes })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    closeModal('paySupplierModal');
+                    alert(data.message || '✅ تم تسجيل سداد الدفعة بنجاح!');
+                    fetchSuppliers();
+                    fetchPurchases();
+                } else {
+                    alert('⚠️ ' + (data.detail || 'تعذر سداد الدفعة'));
+                }
+            } catch(e) {
+                alert('تعذر الاتصال بالسيرفر');
+            }
+        }
+
+        async function openSupplierStatement(suppId) {
+            const container = document.getElementById('supplierStatementContent');
+            if (container) {
+                container.innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br>جاري تحميل كشف الحساب...</div>';
+            }
+            openModal('supplierStatementModal');
+
+            try {
+                const res = await fetch(`/api/suppliers/${suppId}/statement`);
+                const data = await res.json();
+                if (!res.ok || data.status !== 'success') {
+                    if (container) container.innerHTML = '<div style="color: red; text-align: center;">تعذر تحميل كشف الحساب</div>';
+                    return;
+                }
+
+                currentStatementSupplierData = data;
+                const supp = data.supplier;
+                const sm = data.summary;
+
+                let html = `
+                    <div style="background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 15px; font-weight: 900; color: var(--primary-espresso);">${supp.name} (${supp.company_name})</span>
+                            <span style="font-size: 12px; color: #555;"><i class="fa-solid fa-phone"></i> ${supp.phone}</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; border-top: 1px dashed #CBD5E1; padding-top: 8px;">
+                            <div>
+                                <div style="font-size: 11px; color: #64748B; font-weight: 800;">إجمالي فواتير التوريد</div>
+                                <div style="font-size: 15px; font-weight: 900; color: #2563EB;">${sm.total_invoiced} ج</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 11px; color: #64748B; font-weight: 800;">إجمالي المسدد</div>
+                                <div style="font-size: 15px; font-weight: 900; color: #16A34A;">${sm.total_paid} ج</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 11px; color: #64748B; font-weight: 800;">الرصيد المتبقي (آجل)</div>
+                                <div style="font-size: 15px; font-weight: 900; color: ${sm.total_remaining_debt > 0 ? '#DC2626' : '#16A34A'};">${sm.total_remaining_debt} ج</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 13px; font-weight: 900; color: var(--primary-espresso); margin-bottom: 8px;">
+                        سجل فواتير التوريد (${data.invoices.length} فاتورة):
+                    </div>
+                `;
+
+                if (data.invoices.length === 0) {
+                    html += '<div style="text-align: center; color: #888; padding: 16px;">لا توجد فواتير توريد مسجلة لهذا المورد حتى الآن.</div>';
+                } else {
+                    html += `
+                        <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: right;">
+                            <thead>
+                                <tr style="background: #F1F5F9; border-bottom: 2px solid #CBD5E1; font-weight: 900;">
+                                    <th style="padding: 8px;">التاريخ</th>
+                                    <th style="padding: 8px;">رقم الفاتورة</th>
+                                    <th style="padding: 8px;">الخامات الموردة</th>
+                                    <th style="padding: 8px;">الإجمالي</th>
+                                    <th style="padding: 8px;">المسدد</th>
+                                    <th style="padding: 8px;">المتبقي آجل</th>
+                                    <th style="padding: 8px;">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.invoices.map(inv => `
+                                    <tr style="border-bottom: 1px solid #E2E8F0;">
+                                        <td style="padding: 8px; font-weight: 800;">${inv.date}</td>
+                                        <td style="padding: 8px; font-weight: 900;">${inv.invoice_number}</td>
+                                        <td style="padding: 8px; color: #475569;">${(inv.items || []).map(i => `${i.name} (${i.quantity} ${i.unit})`).join('، ') || '-'}</td>
+                                        <td style="padding: 8px; font-weight: 900; color: #2563EB;">${inv.total_amount} ج</td>
+                                        <td style="padding: 8px; color: #16A34A; font-weight: 800;">${inv.paid_amount} ج</td>
+                                        <td style="padding: 8px; font-weight: 900; color: ${inv.remaining_amount > 0 ? '#DC2626' : '#64748B'};">${inv.remaining_amount} ج</td>
+                                        <td style="padding: 8px;">
+                                            <span style="background: ${inv.payment_status === 'مدفوع بالكامل' ? '#DCFCE7' : '#FEE2E2'}; color: ${inv.payment_status === 'مدفوع بالكامل' ? '#16A34A' : '#DC2626'}; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 10px;">${inv.payment_status}</span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+
+                if (container) container.innerHTML = html;
+            } catch(e) {
+                if (container) container.innerHTML = '<div style="color: red; text-align: center;">حدث خطأ في تحميل كشف الحساب</div>';
+            }
+        }
+
+        function printSupplierStatement() {
+            if (!currentStatementSupplierData) return;
+            const data = currentStatementSupplierData;
+            const supp = data.supplier;
+            const sm = data.summary;
+
+            const printWin = window.open('', '_blank', 'width=800,height=850');
+            if (!printWin) {
+                alert('يرجى السماح بالنوافذ المنبثقة لطباعة كشف الحساب');
+                return;
+            }
+
+            const rows = data.invoices.map((inv, i) => `
+                <tr>
+                    <td style="text-align: center;">${i + 1}</td>
+                    <td>${inv.date}</td>
+                    <td>${inv.invoice_number}</td>
+                    <td>${(inv.items || []).map(x => `${x.name} (${x.quantity} ${x.unit})`).join('، ')}</td>
+                    <td style="font-weight: bold;">${inv.total_amount} ج</td>
+                    <td style="color: #15803d;">${inv.paid_amount} ج</td>
+                    <td style="color: #b91c1c; font-weight: bold;">${inv.remaining_amount} ج</td>
+                    <td>${inv.payment_status}</td>
+                </tr>
+            `).join('');
+
+            printWin.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>كشف حساب مورد - ${supp.name}</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; color: #111; direction: rtl; }
+                        .header { text-align: center; border-bottom: 2px solid #2B1810; padding-bottom: 10px; margin-bottom: 20px; }
+                        .title { font-size: 18px; font-weight: bold; color: #2B1810; }
+                        .meta { display: flex; justify-content: space-between; background: #f8fafc; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
+                        .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+                        .card { border: 1px solid #ccc; padding: 10px; border-radius: 6px; text-align: center; }
+                        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; }
+                        th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: right; }
+                        th { background: #f1f5f9; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="title">☕ ceZar Coffee - كشف حساب مورد رسمي</div>
+                        <div>تاريخ الاستخراج: ${new Date().toLocaleString('ar-EG')}</div>
+                    </div>
+                    <div class="meta">
+                        <div><strong>اسم المورد:</strong> ${supp.name}</div>
+                        <div><strong>الشركة / المطحنة:</strong> ${supp.company_name}</div>
+                        <div><strong>رقم الهاتف:</strong> ${supp.phone}</div>
+                    </div>
+                    <div class="summary">
+                        <div class="card">
+                            <div>إجمالي التوريدات</div>
+                            <div style="font-size: 16px; font-weight: bold;">${sm.total_invoiced} ج</div>
+                        </div>
+                        <div class="card">
+                            <div>إجمالي المسدد</div>
+                            <div style="font-size: 16px; font-weight: bold; color: #15803d;">${sm.total_paid} ج</div>
+                        </div>
+                        <div class="card" style="border-color: #dc2626;">
+                            <div>الرصيد المتبقي (آجل)</div>
+                            <div style="font-size: 16px; font-weight: bold; color: #dc2626;">${sm.total_remaining_debt} ج</div>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>التاريخ</th>
+                                <th>رقم الفاتورة</th>
+                                <th>الأصناف والخامات</th>
+                                <th>الإجمالي</th>
+                                <th>المسدد</th>
+                                <th>المتبقي آجل</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+            setTimeout(() => { printWin.print(); }, 400);
         }
 
         async function fetchPurchases() {
@@ -8081,6 +8493,35 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                     submitBtn.style.background = '#D97706';
                     submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> تأكيد وحفظ السلفة';
                 }
+            }
+
+            const badgesContainer = document.getElementById('quickReasonBadges');
+            if (badgesContainer) {
+                let reasons = [];
+                let colorBg = '#FFFBEB', colorText = '#92400E', colorBorder = '#FDE68A';
+                if (type === 'خصم') {
+                    reasons = ['تأخير عن موعد الشيفت', 'غياب بدون إذن مسبق', 'كسر أدوات أو كاسات', 'إهدار خامات في البار', 'شكوى عميل / سوء خدمة', 'خصم إداري وجزاء'];
+                    colorBg = '#FEF2F2'; colorText = '#991B1B'; colorBorder = '#FECACA';
+                } else if (type === 'مكافأة') {
+                    reasons = ['مكافأة تميز وإنتاجية', 'بونص تارجت مبيعات', 'مجهود إضافي بشيفت ضاغط', 'انضباط والتزام ممتاز'];
+                    colorBg = '#ECFDF5'; colorText = '#065F46'; colorBorder = '#A7F3D0';
+                } else {
+                    reasons = ['سلفة نقدية شخصية', 'سلفة مصاريف طارئة', 'سلفة إيجار أو مواصلات'];
+                    colorBg = '#FFFBEB'; colorText = '#92400E'; colorBorder = '#FDE68A';
+                }
+                badgesContainer.innerHTML = reasons.map(r => `
+                    <button type="button" onclick="selectQuickReason('${r}')" style="background: ${colorBg}; color: ${colorText}; border: 1px solid ${colorBorder}; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                        ${r}
+                    </button>
+                `).join('');
+            }
+        }
+
+        function selectQuickReason(text) {
+            const input = document.getElementById('quickAdvNotes');
+            if (input) {
+                input.value = text;
+                input.focus();
             }
         }
 
