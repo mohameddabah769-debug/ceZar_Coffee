@@ -3163,6 +3163,7 @@
                 <div style="margin-bottom: 10px;">
                     <label style="font-size: 12px; font-weight: 800;">سبب التعديل أو الحذف (للتوثيق والرقابة):</label>
                     <select id="adjustReasonSelect" class="form-control" required style="font-weight: 800;">
+                        <option value="طلب زيادة من العميل">➕ طلب زيادة من العميل</option>
                         <option value="طلب بالخطأ">❌ طلب بالخطأ من الويتر أو الكاشير</option>
                         <option value="استرجاع من العميل">🔄 استرجاع أو اعتذار من العميل</option>
                         <option value="تأخر في التحضير">⏳ تأخر وقت التحضير في البار</option>
@@ -4608,6 +4609,9 @@
                                 <span style="font-size: 12px; font-weight: 800; color: #1F2937; flex: 1;">${line}</span>
                                 ${canEdit ? `
                                 <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                                    <button type="button" onclick="event.stopPropagation(); openAdjustItemModal(${o.id}, ${lineIdx}, 'increase', '${cleanLine}')" style="background: #ECFDF5; color: #047857; border: 1.5px solid #A7F3D0; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;" title="زيادة كمية هذا الصنف بمقدار 1">
+                                        <i class="fa-solid fa-plus" style="font-size: 9px;"></i> 1
+                                    </button>
                                     <button type="button" onclick="event.stopPropagation(); openAdjustItemModal(${o.id}, ${lineIdx}, 'decrease', '${cleanLine}')" style="background: #FFFBEB; color: #B45309; border: 1.5px solid #FDE68A; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;" title="تقليل كمية هذا الصنف بمقدار 1">
                                         <i class="fa-solid fa-minus" style="font-size: 9px;"></i> 1
                                     </button>
@@ -5278,6 +5282,7 @@
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed #F3F4F6; gap: 6px;">
                                     <span style="font-weight: 800; color: #2B1810; font-size: 12px; flex: 1;">${line}</span>
                                     <div style="display: flex; gap: 4px;">
+                                        <button onclick="openAdjustItemModal(${o.id}, ${lineIdx}, 'increase', '${line.replace(/'/g, "\\'")}')" style="background: #ECFDF5; color: #047857; border: 1.5px solid #A7F3D0; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer;" title="زيادة كمية هذا الصنف بمقدار 1">+1</button>
                                         <button onclick="openAdjustItemModal(${o.id}, ${lineIdx}, 'decrease', '${line.replace(/'/g, "\\'")}')" style="background: #FFFBEB; color: #B45309; border: 1.5px solid #FDE68A; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer;" title="تقليل كمية هذا الصنف بمقدار 1">-1</button>
                                         <button onclick="openAdjustItemModal(${o.id}, ${lineIdx}, 'delete', '${line.replace(/'/g, "\\'")}')" style="background: #FEF2F2; color: #DC2626; border: 1.5px solid #FECACA; border-radius: 6px; padding: 2px 7px; font-weight: 900; font-size: 11px; cursor: pointer;" title="إلغاء وحذف الصنف بالكامل"><i class="fa-solid fa-trash-can"></i> حذف</button>
                                     </div>
@@ -5373,7 +5378,18 @@
             const submitBtn = document.getElementById('btnAdjustSubmit');
             const box = document.getElementById('adjustItemDetailsBox');
 
-            if (action === 'decrease') {
+            if (action === 'increase') {
+                titleEl.innerHTML = '<i class="fa-solid fa-plus" style="color: #059669;"></i> زيادة كمية الصنف بمقدار 1';
+                titleEl.style.color = '#047857';
+                descEl.innerHTML = '⚡ سيتم زيادة كمية هذا الصنف بمقدار (1) وإضافة قيمته لإجمالي الفاتورة والوردية تلقائياً.';
+                box.style.background = '#ECFDF5';
+                box.style.borderColor = '#A7F3D0';
+                submitBtn.style.background = '#059669';
+                submitBtn.innerHTML = '<i class="fa-solid fa-plus"></i> تأكيد زيادة الكمية (+1)';
+                if (document.getElementById('adjustReasonSelect')) {
+                    document.getElementById('adjustReasonSelect').value = 'طلب زيادة من العميل';
+                }
+            } else if (action === 'decrease') {
                 titleEl.innerHTML = '<i class="fa-solid fa-minus" style="color: #D97706;"></i> تقليل كمية الصنف بمقدار 1';
                 titleEl.style.color = '#B45309';
                 descEl.innerHTML = '⚡ سيتم إنقاص كمية هذا الصنف بمقدار (1) وتعديل إجمالي الفاتورة والوردية تلقائياً.';

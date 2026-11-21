@@ -881,6 +881,48 @@ def adjust_order_item(order_id):
             line_total = order.total_price / max(1, len(lines))
             unit_price = line_total
 
+        if action == "increase":
+            new_qty = qty + 1
+            new_line_total = round(unit_price * new_qty, 2)
+            added_price = unit_price
+            lines[item_index] = f"- {new_qty}x {item_name}{cust_str}: {new_line_total:g} ج"
+            order.total_price = round(order.total_price + added_price, 2)
+            order.items_summary = "\n".join(lines)
+
+            current_shift = db.query(Shift).filter(Shift.status == "مفتوح").first()
+            if current_shift and added_price > 0:
+                current_shift.total_sales = round((current_shift.total_sales or 0.0) + added_price, 2)
+                if order.payment_method == "فيزا":
+                    current_shift.visa_sales = round((current_shift.visa_sales or 0.0) + added_price, 2)
+                else:
+                    current_shift.cash_sales = round((current_shift.cash_sales or 0.0) + added_price, 2)
+
+            action_title = "زيادة كمية صنف"
+            db.add(VoidAuditLog(
+                order_id=order.id,
+                table_number=order.table_number,
+                items_summary=f"+1x {item_name}{cust_str} (+{added_price} ج)",
+                total_amount=added_price,
+                reason=reason or "طلب زيادة من العميل",
+                notes=f"تم التعديل بواسطة: {manager_name}",
+                manager_name=manager_name,
+                manager_pin_used=manager_pin,
+                cashier_name="كاشير سيزر",
+                action_type=action_title,
+                created_at=datetime.utcnow()
+            ))
+            db.commit()
+            return jsonify({
+                "status": "success",
+                "message": f"✅ تم زيادة كمية ({item_name}) إلى {new_qty} وتحديث الفاتورة بنجاح!",
+                "order": {
+                    "id": order.id,
+                    "items_summary": order.items_summary,
+                    "total_price": order.total_price,
+                    "status": order.status
+                }
+            })
+
         deduct_price = 0.0
         void_qty = 0
 
