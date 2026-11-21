@@ -2328,8 +2328,9 @@ def record_salary_payment():
         db.add(pay)
         if pay.payment_type in ["سلفة", "سلفة على الراتب", "راتب شهري", "مكافأة"]:
             try:
-                current_shift = db.query(Shift).filter(Shift.is_closed == False).order_by(Shift.id.desc()).first()
+                current_shift = db.query(Shift).filter(Shift.status == "مفتوح").order_by(Shift.id.desc()).first()
                 exp = Expense(
+                    title=f"{pay.payment_type}: {emp.name}",
                     category="رواتب وسلف موظفين",
                     amount=pay.amount,
                     notes=f"{pay.payment_type}: {emp.name} - {pay.notes or ''}".strip(),
@@ -2344,7 +2345,6 @@ def record_salary_payment():
         db.commit()
         return jsonify({"status": "success", "message": f"تم تسجيل صرف {pay.payment_type} للموظف ({emp.name}) بنجاح!"})
 
-@app.route("/api/salaries/<int:pay_id>", methods=["DELETE"])
 @app.route("/api/employees/<int:emp_id>/monthly-ledger", methods=["GET"])
 @app.route("/api/cezar/employees/<int:emp_id>/monthly-ledger", methods=["GET"])
 def get_employee_monthly_ledger(emp_id):
@@ -2484,6 +2484,7 @@ def batch_employee_attendance():
         db.commit()
         return jsonify({"status": "success", "message": f"تم تحضير {len(emps)} موظف بنجاح"})
 
+@app.route("/api/salaries/<int:pay_id>", methods=["DELETE"])
 @app.route("/api/cezar/salaries/<int:pay_id>", methods=["DELETE"])
 def delete_salary_payment(pay_id):
     with SessionLocal() as db:
@@ -2809,10 +2810,23 @@ def record_purchase_invoice():
                     cost_per_unit=p["uprice"]
                 ))
 
-        if supplier_id and remaining > 0:
-            supp = db.query(Supplier).filter(Supplier.id == supplier_id).first()
-            if supp:
-                supp.current_balance = round((supp.current_balance or 0.0) + remaining, 2)
+        supp = db.query(Supplier).filter(Supplier.id == supplier_id).first() if supplier_id else None
+        if supp and remaining > 0:
+            supp.current_balance = round((supp.current_balance or 0.0) + remaining, 2)
+
+        if paid_amount > 0:
+            current_shift = db.query(Shift).filter(Shift.status == "مفتوح").order_by(Shift.id.desc()).first()
+            supp_name = f" - مورد: {supp.name}" if supp else ""
+            db.add(Expense(
+                title=f"مشتريات خامات فاتورة #{inv.invoice_number}{supp_name}",
+                category="مشتريات تشغيل",
+                amount=paid_amount,
+                notes=f"سداد كاش لفاتورة مشتريات خامات رقم {inv.invoice_number}",
+                shift_id=current_shift.id if current_shift else None,
+                created_at=datetime.utcnow()
+            ))
+            if current_shift:
+                current_shift.total_expenses = (current_shift.total_expenses or 0.0) + paid_amount
 
         db.commit()
         return jsonify({
@@ -2844,14 +2858,18 @@ def pay_supplier_debt(supplier_id):
         new_bal = max(0.0, round(old_bal - amount, 2))
         supp.current_balance = new_bal
 
-        # Record cash outflow in expenses
+        # Record cash outflow in expenses & link to active shift
+        current_shift = db.query(Shift).filter(Shift.status == "مفتوح").order_by(Shift.id.desc()).first()
         db.add(Expense(
             title=f"سداد للمورد: {supp.name}",
             category="مشتريات خامات وموردين",
             amount=amount,
             notes=f"{notes} - الرصيد السابق: {old_bal:g} ج | الرصيد الحالي: {new_bal:g} ج",
-            expense_date=datetime.utcnow()
+            shift_id=current_shift.id if current_shift else None,
+            created_at=datetime.utcnow()
         ))
+        if current_shift:
+            current_shift.total_expenses = (current_shift.total_expenses or 0.0) + amount
 
         # Also update any open purchase invoice for this supplier if applicable
         open_invs = db.query(PurchaseInvoice).filter(

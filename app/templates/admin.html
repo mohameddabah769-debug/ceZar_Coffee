@@ -7833,6 +7833,7 @@
                     alert(data.message || '✅ تم تسجيل سداد الدفعة بنجاح!');
                     fetchSuppliers();
                     fetchPurchases();
+                    if (typeof fetchCurrentShift === 'function') fetchCurrentShift();
                 } else {
                     alert('⚠️ ' + (data.detail || 'تعذر سداد الدفعة'));
                 }
@@ -8830,6 +8831,7 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
                     alert(data.message || `✅ تم تسجيل ${pType} بنجاح وتحديث كشكول الموظف!`);
                     loadEmployeeLedger();
                     fetchSalaries();
+                    if (typeof fetchCurrentShift === 'function') fetchCurrentShift();
                 } else {
                     alert('خطأ: ' + (data.detail || `تعذر تسجيل ${pType}`));
                 }
