@@ -2008,6 +2008,27 @@ def get_analytics():
         })
 
 
+@app.route("/api/export/sales-excel", methods=["GET"])
+@app.route("/api/cezar/export/sales-excel", methods=["GET"])
+def export_sales_excel():
+    with SessionLocal() as db:
+        try:
+            from app.excel_exporter import generate_sales_excel
+            buf = generate_sales_excel(db)
+            filename = f"ceZar_Sales_Report_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.xlsx"
+            return Response(
+                buf.getvalue(),
+                mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}"',
+                    "Cache-Control": "no-cache, no-store, must-revalidate"
+                }
+            )
+        except Exception as e:
+            app.logger.error(f"Sales Excel export error: {e}")
+            return redirect("/api/export/sales-csv")
+
+
 @app.route("/api/export/sales-csv", methods=["GET"])
 @app.route("/api/cezar/export/sales-csv", methods=["GET"])
 def export_sales_csv():
@@ -2058,6 +2079,28 @@ def export_sales_csv():
             mimetype="text/csv",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'}
         )
+
+
+@app.route("/api/export/full-data-excel", methods=["GET"])
+@app.route("/api/cezar/export/full-data-excel", methods=["GET"])
+@app.route("/api/export/system-excel", methods=["GET"])
+def export_full_data_excel():
+    with SessionLocal() as db:
+        try:
+            from app.excel_exporter import generate_full_system_excel
+            buf = generate_full_system_excel(db)
+            filename = f"ceZar_Full_System_Report_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.xlsx"
+            return Response(
+                buf.getvalue(),
+                mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}"',
+                    "Cache-Control": "no-cache, no-store, must-revalidate"
+                }
+            )
+        except Exception as e:
+            app.logger.error(f"Excel full system export error: {e}")
+            return redirect("/api/export/full-data-csv")
 
 
 @app.route("/api/export/full-data-csv", methods=["GET"])
@@ -3598,6 +3641,40 @@ def get_advanced_sales_report():
             "by_category": by_category,
             "by_type": by_type
         })
+
+
+@app.route("/api/reports/advanced/export-excel", methods=["GET"])
+@app.route("/api/cezar/reports/advanced/export-excel", methods=["GET"])
+def export_advanced_report_excel():
+    start_date_str = request.args.get("start_date", "").strip()
+    end_date_str = request.args.get("end_date", "").strip()
+    order_type = request.args.get("order_type", "all").strip()
+    payment_method = request.args.get("payment_method", "all").strip()
+    report_type = request.args.get("report_type", "sales").strip()
+
+    with SessionLocal() as db:
+        try:
+            from app.excel_exporter import generate_advanced_report_excel
+            buf = generate_advanced_report_excel(
+                db,
+                report_type=report_type,
+                start_date_str=start_date_str,
+                end_date_str=end_date_str,
+                order_type=order_type,
+                payment_method=payment_method
+            )
+            filename = f"ceZar_Report_{report_type}_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.xlsx"
+            return Response(
+                buf.getvalue(),
+                mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}"',
+                    "Cache-Control": "no-cache, no-store, must-revalidate"
+                }
+            )
+        except Exception as e:
+            app.logger.error(f"Advanced Excel export error: {e}")
+            return redirect(f"/api/reports/advanced/export-csv?{request.query_string.decode('utf-8')}")
 
 
 @app.route("/api/reports/advanced/export-csv", methods=["GET"])

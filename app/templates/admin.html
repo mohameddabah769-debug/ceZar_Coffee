@@ -1469,9 +1469,9 @@
                 <button onclick="resetAnalyticsData()" class="pin-btn" style="margin: 0; width: auto; padding: 8px 18px; background: #DC2626; color: white; display: inline-flex; align-items: center; gap: 8px;" title="تصفير إحصائيات المبيعات والأصناف الأكثر طلباً">
                     <i class="fa-solid fa-rotate-left"></i> تصفير التقارير والمبيعات
                 </button>
-                <a href="/api/export/sales-csv" target="_blank" class="pin-btn" style="margin: 0; width: auto; padding: 8px 18px; background: #28a745; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-file-excel"></i> تصدير المبيعات إلى Excel (CSV)
-            </a>
+                <a href="/api/export/sales-excel" target="_blank" class="pin-btn" style="margin: 0; width: auto; padding: 8px 18px; background: #16A34A; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 800;">
+                    <i class="fa-solid fa-file-excel"></i> تصدير المبيعات إلى Excel (.xlsx)
+                </a>
         </div>
 
         <!-- Net Profit & Cost Summary (Executive Financial KPI) -->
@@ -1554,8 +1554,11 @@
                 </div>
 
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                    <button class="pin-btn" onclick="exportAdvancedReportCsv()" style="margin: 0; width: auto; padding: 7px 16px; background: #16A34A; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-file-excel"></i> تصدير إكسل (CSV)
+                    <button class="pin-btn" onclick="exportAdvancedReportExcel()" style="margin: 0; width: auto; padding: 7px 16px; background: #16A34A; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-file-excel"></i> تصدير إكسل (.xlsx)
+                    </button>
+                    <button class="pin-btn" onclick="exportAdvancedReportCsv()" style="margin: 0; width: auto; padding: 7px 12px; background: #475569; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="تصدير كملف CSV خفيف">
+                        <i class="fa-solid fa-file-csv"></i> CSV
                     </button>
                     <button class="pin-btn" onclick="printAdvancedReport()" style="margin: 0; width: auto; padding: 7px 16px; background: var(--primary-espresso); font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-print"></i> طباعة التقرير
@@ -2613,21 +2616,26 @@
                             </div>
                             <div>
                                 <h3 style="font-size: 15px; font-weight: 900; color: #14532D; margin: 0;">نسخة المالك والمحاسبة (Excel)</h3>
-                                <span style="font-size: 11px; color: #16A34A; font-weight: 800;">تفتح فوراً في برنامج Microsoft Excel</span>
+                                <span style="font-size: 11px; color: #16A34A; font-weight: 800;">شيت إكسل احترافي (.xlsx) منسق بالكامل من اليمين لليسار</span>
                             </div>
                         </div>
-                        <p style="font-size: 12px; color: #374151; line-height: 1.5; margin-bottom: 12px;">
-                            ملف إكسل شامل ومفصّل باللغة العربية (UTF-8)، يحتوي على: <strong>قائمة المنيو والأسعار، أرصدة المخزون، دليل الموظفين، سجل المصروفات، وسجل المبيعات والطلبات</strong>.
-                            <br><span style="color: #15803D; font-weight: 800; font-size: 11px;">📊 هذا هو الملف المخصص لك للمراجعة والطباعة والاحتفاظ بالحسابات دورياً.</span>
+                        <p style="font-size: 12px; color: #374151; line-height: 1.6; margin-bottom: 12px;">
+                            ملف إكسل شامل ومنظم باللغة العربية، يضم النظام كاملاً في <strong>8 صفحات تفاعلية منفصلة (Tabs)</strong>: 
+                            <br>📊 <strong>المؤشرات والملخص المالي</strong> | ☕ <strong>المنيو وقائمة الأسعار</strong> | 📦 <strong>المخزون والخامات</strong> | 🧾 <strong>سجل المبيعات والطلبات</strong> | 💸 <strong>المصروفات</strong> | 👥 <strong>فريق العمل</strong> | ⏱️ <strong>أرشيف الورديات</strong> | 🤝 <strong>الموردين</strong>.
                         </p>
                     </div>
                     <div>
-                        <a href="/api/export/full-data-csv" download="ceZar_Full_Backup_Excel.csv" class="pin-btn" style="background: #16A34A; font-size: 13px; text-decoration: none; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <i class="fa-solid fa-file-excel"></i> تحميل كل بيانات الكافيه كـ Excel
+                        <a href="/api/export/full-data-excel" class="pin-btn" style="background: linear-gradient(135deg, #15803D 0%, #16A34A 100%); font-size: 13.5px; font-weight: 900; text-decoration: none; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 14px; border-radius: 12px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);">
+                            <i class="fa-solid fa-file-excel" style="font-size: 17px;"></i> تحميل شيت إكسل شامل للنظام بالكامل (.xlsx)
                         </a>
-                        <a href="/api/export/sales-csv" download="ceZar_Sales_Report.csv" class="pin-btn" style="background: #0D9488; font-size: 12px; text-decoration: none; margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <i class="fa-solid fa-receipt"></i> تصدير سجل المبيعات فقط (CSV)
-                        </a>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                            <a href="/api/export/sales-excel" class="pin-btn" style="background: #0F766E; font-size: 11.5px; font-weight: 800; text-decoration: none; margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 8px; border-radius: 10px;">
+                                <i class="fa-solid fa-receipt"></i> إكسل المبيعات (.xlsx)
+                            </a>
+                            <a href="/api/export/full-data-csv" download="ceZar_Full_Backup.csv" class="pin-btn" style="background: #475569; font-size: 11.5px; font-weight: 800; text-decoration: none; margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 8px; border-radius: 10px;">
+                                <i class="fa-solid fa-file-csv"></i> نسخة احتياطية (CSV)
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -7233,6 +7241,18 @@
                     </tr>
                 `).join('');
             }
+        }
+
+        function exportAdvancedReportExcel() {
+            const start_date = document.getElementById('advRepStartDate')?.value || '';
+            const end_date = document.getElementById('advRepEndDate')?.value || '';
+            const order_type = document.getElementById('advRepOrderType')?.value || 'all';
+            const payment_method = document.getElementById('advRepPayment')?.value || 'all';
+            const params = new URLSearchParams({
+                start_date, end_date, order_type, payment_method,
+                report_type: currentAdvRepMode
+            });
+            window.open(`/api/reports/advanced/export-excel?${params.toString()}`, '_blank');
         }
 
         function exportAdvancedReportCsv() {
