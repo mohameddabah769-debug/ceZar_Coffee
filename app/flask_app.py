@@ -3106,6 +3106,30 @@ def reset_test_data():
             return jsonify({"status": "error", "detail": f"تعذر تصفير البيانات: {str(e)}"}), 500
 
 
+@app.route("/api/admin/export-json", methods=["GET"])
+@app.route("/api/cezar/admin/export-json", methods=["GET"])
+def export_json_backup():
+    import json
+    with SessionLocal() as db:
+        try:
+            from app.json_backup import export_system_to_json
+            data = export_system_to_json(db)
+            json_str = json.dumps(data, ensure_ascii=False, indent=2)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"cezar_coffee_backup_{timestamp}.json"
+            return Response(
+                json_str.encode("utf-8"),
+                mimetype="application/json; charset=utf-8",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}"',
+                    "Cache-Control": "no-cache, no-store, must-revalidate"
+                }
+            )
+        except Exception as e:
+            app.logger.error(f"JSON export error: {e}")
+            return jsonify({"status": "error", "detail": str(e)}), 500
+
+
 @app.route("/api/backup/restore", methods=["POST"])
 @app.route("/api/cezar/backup/restore", methods=["POST"])
 @app.route("/api/admin/restore-db", methods=["POST"])
@@ -3115,8 +3139,27 @@ def restore_database_backup():
     if "file" not in request.files:
         return jsonify({"detail": "لم يتم اختيار ملف", "status": "error"}), 400
     file = request.files["file"]
+
+    # Handle JSON Backup Restore
+    if file.filename.endswith(".json"):
+        import json
+        from app.json_backup import restore_system_from_json
+        try:
+            content = file.read().decode("utf-8")
+            data = json.loads(content)
+            with SessionLocal() as db:
+                counts = restore_system_from_json(db, data)
+                return jsonify({
+                    "status": "success",
+                    "message": f"تم استرجاع النظام بنجاح من ملف JSON! ({counts.get('menu_items', 0)} صنف منيو، {counts.get('inventory_items', 0)} خامة مخزن)",
+                    "counts": counts
+                })
+        except Exception as e:
+            app.logger.error(f"JSON restore error: {e}")
+            return jsonify({"detail": f"خطأ أثناء استرجاع ملف JSON: {str(e)}", "status": "error"}), 400
+
     if not file.filename.endswith(".db"):
-        return jsonify({"detail": "يجب رفع ملف قاعدة بيانات بصيغة .db فقط", "status": "error"}), 400
+        return jsonify({"detail": "يجب رفع ملف بصيغة .json أو .db فقط", "status": "error"}), 400
 
     content = file.read()
     if len(content) < 100 or not content.startswith(b"SQLite format 3"):

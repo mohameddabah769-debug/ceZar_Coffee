@@ -2660,24 +2660,29 @@
                 </div>
             </div>
 
-            <!-- 2. Dual Backup & Restore Container (Matching Al-Haramain 2-Column Row) -->
+            <!-- 2. Dual Backup & Restore Container (Matching Al-Haramain JSON Architecture) -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 18px;">
-                <!-- Side A: Full Cloud Database File -->
+                <!-- Side A: Full Cloud Database JSON File -->
                 <div style="background: white; border: 1.5px solid #CBD5E1; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                             <div style="width: 36px; height: 36px; border-radius: 10px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                                <i class="fa-solid fa-database"></i>
+                                <i class="fa-solid fa-code"></i>
                             </div>
-                            <h3 style="font-size: 15px; font-weight: 900; color: #1E293B; margin: 0;">نسخة احتياطية سحابية كاملة (.db Engine)</h3>
+                            <h3 style="font-size: 15px; font-weight: 900; color: #1E293B; margin: 0;">نسخة احتياطية سحابية كاملة (JSON Database File)</h3>
                         </div>
                         <p style="font-size: 12px; color: #64748B; line-height: 1.6; margin-bottom: 16px;">
-                            حفظ لقطة كاملة لقاعدة بيانات الكافيه في ملف رقمي حقيقي (.db) يمكن نقله أو استرجاعه في أي وقت بدون فقدان أي تفصيلة.
+                            حفظ لقطة كاملة لقاعدة البيانات في ملف JSON رقمي خفيف يمكن نقله أو استرجاعه في أي وقت بدون فقدان أي تفصيلة وبدون برامج إضافية.
                         </p>
                     </div>
-                    <a href="/api/admin/backup-db" download="cezar_coffee_backup.db" class="pin-btn" style="background: #0F172A; color: white; padding: 11px 18px; font-size: 13px; font-weight: 900; border-radius: 10px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0;">
-                        <i class="fa-solid fa-code"></i> تصدير ملف قاعدة البيانات (.db)
-                    </a>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="/api/admin/export-json" class="pin-btn" style="background: #0F172A; color: white; padding: 11px 18px; font-size: 13px; font-weight: 900; border-radius: 10px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1; margin: 0;">
+                            <i class="fa-solid fa-code"></i> تصدير ملف قاعدة البيانات (JSON)
+                        </a>
+                        <a href="/api/admin/backup-db" download="cezar_coffee_backup.db" class="pin-btn" style="background: #334155; color: white; padding: 11px 12px; font-size: 11.5px; font-weight: 800; border-radius: 10px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 4px; margin: 0;" title="نسخة الطوارئ (.db)">
+                            <i class="fa-solid fa-database"></i> .db
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Side B: Restore from Backup -->
@@ -2690,13 +2695,13 @@
                             <h3 style="font-size: 15px; font-weight: 900; color: #1E293B; margin: 0;">استعادة النظام من نسخة احتياطية (Restore from Backup)</h3>
                         </div>
                         <p style="font-size: 12px; color: #64748B; line-height: 1.6; margin-bottom: 16px;">
-                            رفع واسترجاع ملف قاعدة بيانات سابق (.db) لاسترجاع كافة البيانات والحسابات بضغطة زر واحدة.
+                            رفع واستيراد ملف JSON أو .db احتياطي سابق لاسترجاع كافة البيانات والحسابات بضغطة زر واحدة.
                         </p>
                     </div>
                     <div>
-                        <input type="file" id="dbRestoreFileInput" accept=".db" style="display: none;" onchange="submitRestoreBackup()">
+                        <input type="file" id="dbRestoreFileInput" accept=".json,.db" style="display: none;" onchange="submitRestoreBackup()">
                         <button class="pin-btn" onclick="document.getElementById('dbRestoreFileInput').click()" style="background: #D97706; color: white; padding: 11px 18px; font-size: 13px; font-weight: 900; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin: 0;">
-                            <i class="fa-solid fa-upload"></i> استيراد واستعادة نسخة سابقة
+                            <i class="fa-solid fa-upload"></i> استيراد واستعادة نسخة سابقة (JSON / DB)
                         </button>
                     </div>
                 </div>
