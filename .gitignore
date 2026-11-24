@@ -5,3 +5,11 @@ venv/
 cloudflared.exe
 *.mp4
 .DS_Store
+
+# Databases & SQLite locks (Protect production database from being overwritten)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+cezar_coffee.db
+
