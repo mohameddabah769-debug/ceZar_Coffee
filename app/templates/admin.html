@@ -2601,93 +2601,126 @@
             </div>
         </div>
 
-        <!-- 6. Backup, Export & Maintenance -->
+        <!-- 6. Backup, Export & Maintenance (تصميم احترافي مطابق لـ الحرمين ERP) -->
         <div id="ownerSubMaintenance" class="owner-panel" style="display: none;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px;">
-                <!-- 1. Comprehensive Excel Backup for Owner & Management -->
-                <div style="background: white; border: 2px solid #86EFAC; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.08); position: relative;">
-                    <div style="position: absolute; top: -11px; right: 20px; background: #16A34A; color: white; padding: 2px 10px; border-radius: 12px; font-size: 10.5px; font-weight: 900;">
-                        ⭐ الخيار الأساسي لمالك الكافيه
-                    </div>
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; margin-top: 4px;">
-                            <div style="width: 44px; height: 44px; border-radius: 12px; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                                <i class="fa-solid fa-file-excel"></i>
-                            </div>
-                            <div>
-                                <h3 style="font-size: 15px; font-weight: 900; color: #14532D; margin: 0;">نسخة المالك والمحاسبة (Excel)</h3>
-                                <span style="font-size: 11px; color: #16A34A; font-weight: 800;">شيت إكسل احترافي (.xlsx) منسق بالكامل من اليمين لليسار</span>
-                            </div>
+            <!-- Database & System Stats Counters Bar (شريط إحصائيات النظام وقاعدة البيانات) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 22px;">
+                <div style="background: white; border-radius: 14px; border: 1.5px solid #E2E8F0; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="font-size: 11px; font-weight: 800; color: #64748B; margin-bottom: 4px;">إجمالي الفواتير والطلبات</div>
+                    <div id="bkpStatOrders" style="font-size: 22px; font-weight: 900; color: #0F172A;">-</div>
+                </div>
+                <div style="background: white; border-radius: 14px; border: 1.5px solid #E2E8F0; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="font-size: 11px; font-weight: 800; color: #64748B; margin-bottom: 4px;">أصناف وقائمة المنيو</div>
+                    <div id="bkpStatMenu" style="font-size: 22px; font-weight: 900; color: #0F172A;">-</div>
+                </div>
+                <div style="background: white; border-radius: 14px; border: 1.5px solid #E2E8F0; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="font-size: 11px; font-weight: 800; color: #64748B; margin-bottom: 4px;">خامات المخزن النشطة</div>
+                    <div id="bkpStatInventory" style="font-size: 22px; font-weight: 900; color: #0F172A;">-</div>
+                </div>
+                <div style="background: white; border-radius: 14px; border: 1.5px solid #E2E8F0; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="font-size: 11px; font-weight: 800; color: #64748B; margin-bottom: 4px;">سجلات المصروفات</div>
+                    <div id="bkpStatExpenses" style="font-size: 22px; font-weight: 900; color: #0F172A;">-</div>
+                </div>
+                <div style="background: white; border-radius: 14px; border: 1.5px solid #E2E8F0; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="font-size: 11px; font-weight: 800; color: #64748B; margin-bottom: 4px;">أرشيف الورديات</div>
+                    <div id="bkpStatShifts" style="font-size: 22px; font-weight: 900; color: #0F172A;">-</div>
+                </div>
+                <div style="background: white; border-radius: 14px; border: 1.5px solid #E2E8F0; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="font-size: 11px; font-weight: 800; color: #64748B; margin-bottom: 4px;">فريق العمل والمسؤولين</div>
+                    <div id="bkpStatEmployees" style="font-size: 22px; font-weight: 900; color: #0F172A;">-</div>
+                </div>
+            </div>
+
+            <!-- 1. Full-Width Excel Card (Matching Al-Haramain Green Section) -->
+            <div style="background: white; border: 1.5px solid #CBD5E1; border-radius: 16px; padding: 22px 24px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 38px; height: 38px; border-radius: 10px; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            <i class="fa-solid fa-file-excel"></i>
                         </div>
-                        <p style="font-size: 12px; color: #374151; line-height: 1.6; margin-bottom: 12px;">
-                            ملف إكسل شامل ومنظم باللغة العربية، يضم النظام كاملاً في <strong>8 صفحات تفاعلية منفصلة (Tabs)</strong>: 
-                            <br>📊 <strong>المؤشرات والملخص المالي</strong> | ☕ <strong>المنيو وقائمة الأسعار</strong> | 📦 <strong>المخزون والخامات</strong> | 🧾 <strong>سجل المبيعات والطلبات</strong> | 💸 <strong>المصروفات</strong> | 👥 <strong>فريق العمل</strong> | ⏱️ <strong>أرشيف الورديات</strong> | 🤝 <strong>الموردين</strong>.
+                        <h3 style="font-size: 16px; font-weight: 900; color: #1E293B; margin: 0;">النسخ الاحتياطي الشامل للنظام (إكسل منظم بكافة الجداول والحسابات)</h3>
+                    </div>
+                    <span style="background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800;">
+                        <i class="fa-solid fa-table-cells"></i> UTF-8 معتمد | 8 شيتات تفاعلية
+                    </span>
+                </div>
+                <p style="font-size: 12.5px; color: #64748B; line-height: 1.6; margin-bottom: 16px;">
+                    توليد ملف إكسل شامل ومنسق هندسياً يحتوي على بيانات كافيه سيزر: ملخص السيولة النقدية، سجل المبيعات والطلبات، حسابات المنيو، خامات وتكاليف المخزون، سجل المصروفات، أرشيف الورديات، ودليل الموظفين والموردين.
+                </p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <a href="/api/export/full-data-excel" class="pin-btn" style="background: #16A34A; color: white; padding: 12px 26px; font-size: 13.5px; font-weight: 900; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);">
+                        <i class="fa-solid fa-download"></i> تحميل النسخة الاحتياطية المجمعة (إكسل)
+                    </a>
+                    <a href="/api/export/sales-excel" class="pin-btn" style="background: #0D9488; color: white; padding: 12px 18px; font-size: 12.5px; font-weight: 800; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-receipt"></i> إكسل المبيعات فقط
+                    </a>
+                    <a href="/api/export/full-data-csv" download="ceZar_Full_Backup.csv" class="pin-btn" style="background: #475569; color: white; padding: 12px 18px; font-size: 12.5px; font-weight: 800; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-file-csv"></i> نسخة احتياطية خفيفة (CSV)
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2. Dual Backup & Restore Container (Matching Al-Haramain 2-Column Row) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 18px;">
+                <!-- Side A: Full Cloud Database File -->
+                <div style="background: white; border: 1.5px solid #CBD5E1; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <div style="width: 36px; height: 36px; border-radius: 10px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                                <i class="fa-solid fa-database"></i>
+                            </div>
+                            <h3 style="font-size: 15px; font-weight: 900; color: #1E293B; margin: 0;">نسخة احتياطية سحابية كاملة (.db Engine)</h3>
+                        </div>
+                        <p style="font-size: 12px; color: #64748B; line-height: 1.6; margin-bottom: 16px;">
+                            حفظ لقطة كاملة لقاعدة بيانات الكافيه في ملف رقمي حقيقي (.db) يمكن نقله أو استرجاعه في أي وقت بدون فقدان أي تفصيلة.
                         </p>
                     </div>
-                    <div>
-                        <a href="/api/export/full-data-excel" class="pin-btn" style="background: linear-gradient(135deg, #15803D 0%, #16A34A 100%); font-size: 13.5px; font-weight: 900; text-decoration: none; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 14px; border-radius: 12px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);">
-                            <i class="fa-solid fa-file-excel" style="font-size: 17px;"></i> تحميل شيت إكسل شامل للنظام بالكامل (.xlsx)
-                        </a>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                            <a href="/api/export/sales-excel" class="pin-btn" style="background: #0F766E; font-size: 11.5px; font-weight: 800; text-decoration: none; margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 8px; border-radius: 10px;">
-                                <i class="fa-solid fa-receipt"></i> إكسل المبيعات (.xlsx)
-                            </a>
-                            <a href="/api/export/full-data-csv" download="ceZar_Full_Backup.csv" class="pin-btn" style="background: #475569; font-size: 11.5px; font-weight: 800; text-decoration: none; margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 8px; border-radius: 10px;">
-                                <i class="fa-solid fa-file-csv"></i> نسخة احتياطية (CSV)
-                            </a>
-                        </div>
-                    </div>
+                    <a href="/api/admin/backup-db" download="cezar_coffee_backup.db" class="pin-btn" style="background: #0F172A; color: white; padding: 11px 18px; font-size: 13px; font-weight: 900; border-radius: 10px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0;">
+                        <i class="fa-solid fa-code"></i> تصدير ملف قاعدة البيانات (.db)
+                    </a>
                 </div>
 
-                <!-- 2. Technical DB Backup & Restore (For Engineer / Emergency) -->
-                <div style="background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                <!-- Side B: Restore from Backup -->
+                <div style="background: white; border: 1.5px solid #CBD5E1; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                            <div style="width: 44px; height: 44px; border-radius: 12px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                                <i class="fa-solid fa-screwdriver-wrench"></i>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <div style="width: 36px; height: 36px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
                             </div>
-                            <div>
-                                <h3 style="font-size: 15px; font-weight: 900; color: #1E293B; margin: 0;">نسخة الطوارئ الفنية والصيانة (.db)</h3>
-                                <span style="font-size: 11px; color: #6366F1; font-weight: 800;">خاصة بالمهندس والمبرمج والدعم الفني</span>
-                            </div>
+                            <h3 style="font-size: 15px; font-weight: 900; color: #1E293B; margin: 0;">استعادة النظام من نسخة احتياطية (Restore from Backup)</h3>
                         </div>
-                        <p style="font-size: 12px; color: #475569; line-height: 1.5; margin-bottom: 12px;">
-                            نسخة رقمية مطابقة لكامل محرك النظام (SQLite Raw Engine). لا تُفتح في إكسل أو ويندوز، وتُستخدم فقط لاسترجاع النظام بضغطة زر عند الطوارئ أو نقل السيرفر لجهاز جديد.
+                        <p style="font-size: 12px; color: #64748B; line-height: 1.6; margin-bottom: 16px;">
+                            رفع واسترجاع ملف قاعدة بيانات سابق (.db) لاسترجاع كافة البيانات والحسابات بضغطة زر واحدة.
                         </p>
                     </div>
                     <div>
-                        <a href="/api/admin/backup-db" download="cezar_coffee_backup.db" class="pin-btn" style="background: #4F46E5; font-size: 13px; margin-bottom: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <i class="fa-solid fa-cloud-arrow-down"></i> تحميل ملف قاعدة البيانات (.db)
-                        </a>
                         <input type="file" id="dbRestoreFileInput" accept=".db" style="display: none;" onchange="submitRestoreBackup()">
-                        <button class="pin-btn" onclick="document.getElementById('dbRestoreFileInput').click()" style="background: #DC2626; font-size: 13px; margin: 0;">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> استرجاع نسخة احتياطية (Restore DB)
+                        <button class="pin-btn" onclick="document.getElementById('dbRestoreFileInput').click()" style="background: #D97706; color: white; padding: 11px 18px; font-size: 13px; font-weight: 900; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin: 0;">
+                            <i class="fa-solid fa-upload"></i> استيراد واستعادة نسخة سابقة
                         </button>
                     </div>
                 </div>
+            </div>
 
-                <!-- 3. Safe Reset -->
-                <div style="background: #FFF1F2; border: 1.5px solid #FECDD3; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                            <div style="width: 44px; height: 44px; border-radius: 12px; background: #FFE4E6; color: #E11D48; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </div>
-                            <div>
-                                <h3 style="font-size: 15px; font-weight: 900; color: #9F1239; margin: 0;">تصفير الطلبات التجريبية بأمان</h3>
-                                <span style="font-size: 11px; color: #BE123C; font-weight: 800;">قبل بدء العمل الفعلي</span>
-                            </div>
+            <!-- 3. System Reset Center (Matching Al-Haramain Red Admin Card) -->
+            <div style="background: #FFF5F5; border: 1.5px solid #FECACA; border-radius: 16px; padding: 22px 24px; box-shadow: 0 2px 8px rgba(220,38,38,0.03);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
                         </div>
-                        <p style="font-size: 12px; color: #881337; line-height: 1.5; margin-bottom: 12px;">
-                            مسح الطلبات والحجوزات والمصروفات التجريبية فقط، مع **الحفاظ التام والآمن 100% على أصناف المنيو، الأسعار، المخزون، بيانات الموظفين، والإعدادات**.
-                        </p>
+                        <h3 style="font-size: 16px; font-weight: 900; color: #991B1B; margin: 0;">إدارة تصفير النظام وإعادة ضبط البيانات (System Reset Center)</h3>
                     </div>
-                    <div>
-                        <button class="pin-btn" onclick="resetTestDataSafe()" style="background: #E11D48; font-size: 13px; margin: 0;">
-                            <i class="fa-solid fa-rotate-left"></i> تصفير الطلبات التجريبية فقط
-                        </button>
-                    </div>
+                    <span style="background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 900;">
+                        إجراء إداري حساس
+                    </span>
                 </div>
+                <p style="font-size: 12.5px; color: #991B1B; line-height: 1.6; margin-bottom: 16px;">
+                    يتيح للمدير العام تصفير الحركات والعمليات المالية والطلبات والمصروفات لبدء موسم تشغيلي جديد، مع **الحفاظ التام 100% على أصناف المنيو، الأسعار، المخزون، بيانات الموظفين، والإعدادات**، مع حماية برمز PIN تأكيدي لمنع أي خطأ.
+                </p>
+                <button class="pin-btn" onclick="resetTestDataSafe()" style="background: #DC2626; color: white; padding: 12px 26px; font-size: 13.5px; font-weight: 900; border-radius: 10px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); margin: 0;">
+                    <i class="fa-solid fa-circle-radiation"></i> فتح معالج تصفير النظام وإعادة الضبط
+                </button>
             </div>
         </div>
 
@@ -9751,6 +9784,34 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
         var currentOwnerSettings = {};
         var currentOwnerTables = [];
 
+        async function loadBackupStats() {
+            try {
+                const res = await fetch('/api/admin/system-counts');
+                const data = await res.json();
+                if (data && data.status === 'success') {
+                    const elOrders = document.getElementById('bkpStatOrders');
+                    const elMenu = document.getElementById('bkpStatMenu');
+                    const elInv = document.getElementById('bkpStatInventory');
+                    const elExp = document.getElementById('bkpStatExpenses');
+                    const elShifts = document.getElementById('bkpStatShifts');
+                    const elEmp = document.getElementById('bkpStatEmployees');
+
+                    if (elOrders) elOrders.textContent = data.orders || 0;
+                    if (elMenu) elMenu.textContent = data.menu_items || 0;
+                    if (elInv) elInv.textContent = data.inventory_items || 0;
+                    if (elExp) elExp.textContent = data.expenses || 0;
+                    if (elShifts) elShifts.textContent = data.shifts || 0;
+                    if (elEmp) elEmp.textContent = data.employees || 0;
+                }
+            } catch (e) {
+                console.warn('Backup stats fetch fallback:', e);
+                if (typeof allOrders !== 'undefined' && document.getElementById('bkpStatOrders')) document.getElementById('bkpStatOrders').textContent = allOrders.length;
+                if (typeof adminMenuItems !== 'undefined' && document.getElementById('bkpStatMenu')) document.getElementById('bkpStatMenu').textContent = adminMenuItems.length;
+                if (typeof allInventoryRawItems !== 'undefined' && document.getElementById('bkpStatInventory')) document.getElementById('bkpStatInventory').textContent = allInventoryRawItems.length;
+                if (typeof allEmployees !== 'undefined' && document.getElementById('bkpStatEmployees')) document.getElementById('bkpStatEmployees').textContent = allEmployees.length;
+            }
+        }
+
         function switchOwnerSubTab(sub) {
             document.querySelectorAll('#tabOwner .filter-pill').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.owner-panel').forEach(p => p.style.display = 'none');
@@ -9776,6 +9837,7 @@ function openAddPurchaseModal() { openRecordPurchaseModal(); }
             } else if (sub === 'maintenance') {
                 document.getElementById('pillOwnerMaintenance').classList.add('active');
                 document.getElementById('ownerSubMaintenance').style.display = 'block';
+                loadBackupStats();
             } else if (sub === 'security') {
                 const pSec = document.getElementById('pillOwnerSecurity');
                 if (pSec) pSec.classList.add('active');

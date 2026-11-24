@@ -3312,6 +3312,27 @@ def bulk_adjust_prices_flask():
         db.commit()
         return jsonify({"status": "success", "message": f"تم تعديل أسعار {count} صنف بنجاح!", "updated_count": count})
 
+@app.route("/api/admin/system-counts", methods=["GET"])
+@app.route("/api/cezar/admin/system-counts", methods=["GET"])
+def get_system_counts():
+    with SessionLocal() as db:
+        orders_cnt = db.query(func.count(TableOrder.id)).scalar() or 0
+        menu_cnt = db.query(func.count(MenuItem.id)).scalar() or 0
+        inv_cnt = db.query(func.count(InventoryItem.id)).scalar() or 0
+        exp_cnt = db.query(func.count(Expense.id)).scalar() or 0
+        shifts_cnt = db.query(func.count(Shift.id)).scalar() or 0
+        emp_cnt = db.query(func.count(Employee.id)).scalar() or 0
+        return jsonify({
+            "status": "success",
+            "orders": orders_cnt,
+            "menu_items": menu_cnt,
+            "inventory_items": inv_cnt,
+            "expenses": exp_cnt,
+            "shifts": shifts_cnt,
+            "employees": emp_cnt
+        })
+
+
 @app.route("/api/admin/backup-db", methods=["GET"])
 @app.route("/api/cezar/admin/backup-db", methods=["GET"])
 def download_db_backup_flask():
